@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "wasm": "cargo watch --why -w src/ -s 'wasm-pack build -t web'"
+  },
+  "devDependencies": {
+    "vite": "^2.9.9"
+  }
+}

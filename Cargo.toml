@@ -1,0 +1,27 @@
+[package]
+name = "respo"
+version = "0.0.1"
+edition = "2021"
+description = "a tiny virtual DOM library migrated from ClojureScript"
+license = "MIT"
+repository = "https://github.com/Respo/respo.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+js-sys = "0.3.57"
+wasm-bindgen = "0.2.80"
+console_error_panic_hook = "0.1.7"
+lazy_static = "1.4.0"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies.web-sys]
+version = "0.3.57"
+features = [
+  "console",
+  'Document',
+  'Element',
+  'Window',
+]

@@ -20,16 +20,17 @@ enum ActionOp {
   Decrement,
 }
 
-fn dispatch_action() -> Result<(), String> {
+fn dispatch_action(op: ActionOp) -> Result<(), String> {
+  log_1(&format!("action {:?}", op).into());
   let mut store = GLOBAL_STORE.write().expect("to dispatch action");
-  // match op {
-  //   ActionOp::Increment => {
-  //     store.counted += 1;
-  //   }
-  //   ActionOp::Decrement => {
-  //     store.counted -= 1;
-  //   }
-  // }
+  match op {
+    ActionOp::Increment => {
+      store.counted += 1;
+    }
+    ActionOp::Decrement => {
+      store.counted -= 1;
+    }
+  }
   Ok(())
 }
 
@@ -49,13 +50,26 @@ pub fn load_demo_app() -> JsValue {
         vec![
           div(HashMap::new(), RespoCssStyle(HashMap::new()), HashMap::new(), vec![]),
           span(
-            HashMap::from_iter([("innerText".to_owned(), "a demo".to_owned())]),
+            HashMap::from_iter([("innerText".to_owned(), "demo inc".to_owned())]),
             RespoCssStyle(HashMap::new()),
             HashMap::from_iter([(
               "click".to_owned(),
               RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
                 log_1(&"click".into());
-                (*dispatch.0)()?;
+                (*dispatch.0)(ActionOp::Increment)?;
+                Ok(())
+              })),
+            )]),
+            vec![],
+          ),
+          span(
+            HashMap::from_iter([("innerText".to_owned(), "demo dec".to_owned())]),
+            RespoCssStyle(HashMap::new()),
+            HashMap::from_iter([(
+              "click".to_owned(),
+              RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
+                log_1(&"click".into());
+                (*dispatch.0)(ActionOp::Decrement)?;
                 Ok(())
               })),
             )]),

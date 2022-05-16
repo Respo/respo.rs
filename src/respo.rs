@@ -29,12 +29,15 @@ fn load_user_events() -> Vec<RespoEventMark> {
 }
 
 /// render elements
-pub fn render_node(
+pub fn render_node<T>(
   mount_target: &Element,
-  mut renderer: Box<dyn FnMut() -> RespoNode>,
-  dispatch_action: DispatchFn,
-) -> Result<(), JsValue> {
-  let tree: RespoNode = renderer();
+  mut renderer: Box<dyn FnMut() -> RespoNode<T>>,
+  dispatch_action: DispatchFn<T>,
+) -> Result<(), JsValue>
+where
+  T: 'static + Debug + Clone,
+{
+  let tree: RespoNode<T> = renderer();
   let mut prev_tree = tree.clone();
   let element = build_dom_tree(&tree, &[])?;
 
@@ -72,7 +75,10 @@ pub fn render_node(
   Ok(())
 }
 
-fn request_for_target_handler(tree: &RespoNode, name: &str, coord: &[RespoCoord]) -> Result<RespoEventHandler, String> {
+fn request_for_target_handler<T>(tree: &RespoNode<T>, name: &str, coord: &[RespoCoord]) -> Result<RespoEventHandler<T>, String>
+where
+  T: Debug + Clone,
+{
   if coord.is_empty() {
     match tree {
       RespoNode::Component(name, ..) => Err(format!("expected element, found target being a component: {}", &name)),
@@ -101,7 +107,10 @@ fn request_for_target_handler(tree: &RespoNode, name: &str, coord: &[RespoCoord]
   }
 }
 
-pub fn build_dom_tree(tree: &RespoNode, coord: &[RespoCoord]) -> Result<Node, JsValue> {
+pub fn build_dom_tree<T>(tree: &RespoNode<T>, coord: &[RespoCoord]) -> Result<Node, JsValue>
+where
+  T: Debug + Clone,
+{
   let window = web_sys::window().expect("no global `window` exists");
   let document = window.document().expect("should have a document on window");
 
@@ -180,7 +189,10 @@ pub fn track_delegated_event(coord: &[RespoCoord], name: &str) {
   });
 }
 
-pub fn tree_diff(new_tree: &RespoNode, old_tree: &RespoNode) -> Vec<DomChange> {
+pub fn tree_diff<T>(new_tree: &RespoNode<T>, old_tree: &RespoNode<T>) -> Vec<DomChange<T>>
+where
+  T: Debug + Clone,
+{
   // TODO
   vec![]
 }

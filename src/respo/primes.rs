@@ -5,24 +5,32 @@ use std::{collections::HashMap, fmt::Debug};
 use web_sys::{InputEvent, KeyboardEvent, MouseEvent};
 
 #[derive(Debug, Clone)]
-pub enum RespoNode {
-  Component(String, Vec<RespoEffect>, Box<RespoNode>),
+pub enum RespoNode<T>
+where
+  T: Debug + Clone,
+{
+  Component(String, Vec<RespoEffect>, Box<RespoNode<T>>),
   Element {
     /// tagName
     name: String,
     attrs: HashMap<String, String>,
-    event: HashMap<String, RespoEventHandler>,
+    event: HashMap<String, RespoEventHandler<T>>,
     style: RespoCssStyle,
-    children: Vec<RespoNode>,
+    children: Vec<RespoNode<T>>,
   },
 }
 
 pub type StrDict = HashMap<String, String>;
 
 #[derive(Clone)]
-pub struct RespoEventHandler(pub Rc<dyn Fn(RespoEvent, DispatchFn) -> Result<(), String>>);
+pub struct RespoEventHandler<T>(pub Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>)
+where
+  T: Debug + Clone;
 
-impl Debug for RespoEventHandler {
+impl<T> Debug for RespoEventHandler<T>
+where
+  T: Debug + Clone,
+{
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "RespoEventHandler(...)")
   }
@@ -84,11 +92,14 @@ impl Debug for RespoEffectHandler {
 pub type DigitCoord = Vec<u32>;
 
 #[derive(Debug, Clone)]
-pub enum DomChange {
-  AddElement(DigitCoord, RespoNode),
-  AppendElement(DigitCoord, RespoNode),
+pub enum DomChange<T>
+where
+  T: Debug + Clone,
+{
+  AddElement(DigitCoord, RespoNode<T>),
+  AppendElement(DigitCoord, RespoNode<T>),
   RemoveElement(DigitCoord),
-  ReplaceElement(DigitCoord, RespoNode),
+  ReplaceElement(DigitCoord, RespoNode<T>),
   AddAttribute(DigitCoord, String, String),
   RemoveAttribute(DigitCoord, String),
   ReplaceAttribute(DigitCoord, String, String),
@@ -101,9 +112,14 @@ pub enum DomChange {
 }
 
 #[derive(Clone)]
-pub struct DispatchFn(pub Rc<dyn Fn() -> Result<(), String>>);
+pub struct DispatchFn<T>(pub Rc<dyn Fn(T) -> Result<(), String>>)
+where
+  T: Debug + Clone;
 
-impl Debug for DispatchFn {
+impl<T> Debug for DispatchFn<T>
+where
+  T: Debug + Clone,
+{
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     f.write_str("[DispatchFn]")
   }

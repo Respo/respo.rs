@@ -1,8 +1,7 @@
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
-use web_sys::console::{log_1, log_2};
+//! A tiny frameworkd around a Virtual DOM library, migrated from Respo.cljs .
 
-#[wasm_bindgen(js_name = renderElement)]
-pub fn render_element() {
-  log_1(&"Respo TODOs".into());
-}
+mod app;
+mod respo;
+
+pub use app::load_demo_app;
+pub use respo::render_node;

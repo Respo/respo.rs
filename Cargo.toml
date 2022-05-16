@@ -25,4 +25,8 @@ features = [
   'Element',
   'Window',
   "HtmlElement",
+  "HtmlInputElement",
+  "MouseEvent",
+  "KeyboardEvent",
+  "InputEvent",
 ]

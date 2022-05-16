@@ -1,36 +1,38 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{collections::HashMap, rc::Rc};
 
-use crate::render_element;
 use wasm_bindgen::prelude::*;
 use web_sys::console::log_1;
 
-struct A {
-  callback: Box<dyn FnMut() -> f32>,
-}
+use crate::respo::{div, render_node, span, RespoCssStyle, RespoEventHandler};
 
 #[wasm_bindgen(js_name = loadDemoApp)]
 pub fn load_demo_app() -> JsValue {
-  let b = Rc::new(RefCell::new(1.0));
-  let mut a = A {
-    callback: Box::new(move || {
-      let mut bi = (*b).borrow_mut();
-      let ret = *bi;
-      *bi += 1.;
-      ret
-    }),
-  };
+  let window = web_sys::window().expect("no global `window` exists");
+  let document = window.document().expect("should have a document on window");
+  let mount_target = document.query_selector(".app").expect("should have a .app").unwrap();
 
-  log_1(&(a.callback)().to_string().into());
+  let tree = div(
+    HashMap::new(),
+    RespoCssStyle(HashMap::new()),
+    HashMap::new(),
+    vec![
+      div(HashMap::new(), RespoCssStyle(HashMap::new()), HashMap::new(), vec![]),
+      span(
+        HashMap::from_iter([("innerText".to_owned(), "a demo".to_owned())]),
+        RespoCssStyle(HashMap::new()),
+        HashMap::from_iter([(
+          "click".to_owned(),
+          RespoEventHandler(Rc::new(move || {
+            log_1(&"click".into());
+            Ok(())
+          })),
+        )]),
+        vec![],
+      ),
+    ],
+  );
 
-  log_1(&(a.callback)().to_string().into());
-
-  log_1(&(a.callback)().to_string().into());
-
-  log_1(&(a.callback)().to_string().into());
-
-  log_1(&(a.callback)().to_string().into());
-
-  render_element();
+  render_node(&mount_target, &tree).unwrap();
 
   JsValue::NULL
 }

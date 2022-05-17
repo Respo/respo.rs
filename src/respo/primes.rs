@@ -20,6 +20,75 @@ where
   },
 }
 
+impl<T> RespoNode<T>
+where
+  T: Debug + Clone,
+{
+  pub fn add_style(&mut self, more: RespoCssStyle) -> Result<&mut Self, String> {
+    match self {
+      RespoNode::Component(_, _, node) => {
+        node.add_style(more)?;
+      }
+      RespoNode::Element { ref mut style, .. } => {
+        for (k, v) in &more.0 {
+          style.0.insert(k.to_owned(), v.to_owned());
+        }
+      }
+    }
+    Ok(self)
+  }
+  pub fn add_attrs<U, V>(&mut self, more: U) -> &mut Self
+  where
+    U: IntoIterator<Item = (V, V)>,
+    V: Into<String> + ToOwned,
+  {
+    match self {
+      RespoNode::Component(_, _, node) => {
+        node.add_attrs(more);
+      }
+      RespoNode::Element { ref mut attrs, .. } => {
+        for (k, v) in more {
+          attrs.insert(k.into(), v.into());
+        }
+      }
+    }
+    self
+  }
+  pub fn add_event<U, V>(&mut self, more: U) -> &mut Self
+  where
+    U: IntoIterator<Item = (V, RespoEventHandler<T>)>,
+    V: Into<String> + ToOwned,
+  {
+    match self {
+      RespoNode::Component(_, _, node) => {
+        node.add_event(more);
+      }
+      RespoNode::Element { ref mut event, .. } => {
+        for (k, v) in more {
+          event.insert(k.into(), v.to_owned());
+        }
+      }
+    }
+    self
+  }
+  pub fn add_children<U>(&mut self, more: U) -> &mut Self
+  where
+    U: IntoIterator<Item = RespoNode<T>>,
+  {
+    match self {
+      RespoNode::Component(_, _, node) => {
+        node.add_children(more);
+      }
+      RespoNode::Element { ref mut children, .. } => {
+        for v in more {
+          children.push(v.to_owned());
+        }
+      }
+    }
+    self
+  }
+}
+
 pub type StrDict = HashMap<String, String>;
 
 #[derive(Clone)]
@@ -122,5 +191,14 @@ where
 {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     f.write_str("[DispatchFn]")
+  }
+}
+
+impl<T> DispatchFn<T>
+where
+  T: Debug + Clone,
+{
+  pub fn run(&self, op: T) -> Result<(), String> {
+    (self.0)(op)
   }
 }

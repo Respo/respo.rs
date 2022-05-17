@@ -3,7 +3,7 @@ use std::{collections::HashMap, rc::Rc, sync::RwLock};
 use wasm_bindgen::prelude::*;
 use web_sys::console::log_1;
 
-use crate::respo::{div, render_node, span, DispatchFn, RespoCssStyle, RespoEventHandler};
+use crate::respo::{div, div0, render_node, span, span0, DispatchFn, RespoCssStyle, RespoEventHandler, RespoNode};
 
 lazy_static::lazy_static! {
   static ref GLOBAL_STORE: RwLock<Store> = RwLock::new(Store::default());
@@ -42,40 +42,35 @@ pub fn load_demo_app() -> JsValue {
 
   render_node(
     &mount_target,
-    Box::new(move || {
-      div(
-        HashMap::new(),
-        RespoCssStyle(HashMap::new()),
-        HashMap::new(),
-        vec![
-          div(HashMap::new(), RespoCssStyle(HashMap::new()), HashMap::new(), vec![]),
-          span(
-            HashMap::from_iter([("innerText".to_owned(), "demo inc".to_owned())]),
-            RespoCssStyle(HashMap::new()),
-            HashMap::from_iter([(
-              "click".to_owned(),
-              RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
-                log_1(&"click".into());
-                (*dispatch.0)(ActionOp::Increment)?;
-                Ok(())
-              })),
-            )]),
-            vec![],
-          ),
-          span(
-            HashMap::from_iter([("innerText".to_owned(), "demo dec".to_owned())]),
-            RespoCssStyle(HashMap::new()),
-            HashMap::from_iter([(
-              "click".to_owned(),
-              RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
-                log_1(&"click".into());
-                (*dispatch.0)(ActionOp::Decrement)?;
-                Ok(())
-              })),
-            )]),
-            vec![],
-          ),
-        ],
+    Box::new(move || -> Result<RespoNode<ActionOp>, String> {
+      Ok(
+        div0()
+          .add_children([
+            div(HashMap::new(), RespoCssStyle(HashMap::new()), HashMap::new(), vec![]),
+            span0()
+              .add_attrs([("innerText".to_owned(), "demo inc".to_owned())])
+              .add_event([(
+                "click",
+                RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
+                  log_1(&"click".into());
+                  dispatch.run(ActionOp::Increment)?;
+                  Ok(())
+                })),
+              )])
+              .to_owned(),
+            span0()
+              .add_attrs([("innerText".to_owned(), "demo dec".to_owned())])
+              .add_event([(
+                "click".to_owned(),
+                RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
+                  log_1(&"click".into());
+                  dispatch.run(ActionOp::Decrement)?;
+                  Ok(())
+                })),
+              )])
+              .to_owned(),
+          ])
+          .to_owned(),
       )
     }),
     DispatchFn(Rc::new(dispatch_action)),

@@ -31,13 +31,13 @@ fn load_user_events() -> Vec<RespoEventMark> {
 /// render elements
 pub fn render_node<T>(
   mount_target: &Element,
-  mut renderer: Box<dyn FnMut() -> RespoNode<T>>,
+  mut renderer: Box<dyn FnMut() -> Result<RespoNode<T>, String>>,
   dispatch_action: DispatchFn<T>,
 ) -> Result<(), JsValue>
 where
   T: 'static + Debug + Clone,
 {
-  let tree: RespoNode<T> = renderer();
+  let tree: RespoNode<T> = renderer()?;
   let mut prev_tree = tree.clone();
   let element = build_dom_tree(&tree, &[])?;
 
@@ -45,7 +45,7 @@ where
 
   log_1(&format!("render tree: {:?}", tree).into());
 
-  util::raq_loop_slow(Box::new(move || {
+  util::raq_loop_slow(Box::new(move || -> Result<(), String> {
     let event_marks = load_user_events();
 
     // log_1(&"loop".into());
@@ -66,10 +66,12 @@ where
           }
         }
       }
-      let new_tree = renderer();
+      let new_tree = renderer()?;
       let changes = tree_diff(&new_tree, &prev_tree);
       prev_tree = new_tree;
     }
+
+    Ok(())
   }));
 
   Ok(())

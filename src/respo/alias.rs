@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Debug};
+use std::{collections::HashMap, fmt::Debug, vec};
 
 use crate::respo::primes::RespoCssStyle;
 
@@ -37,5 +37,31 @@ where
     event,
     style,
     children,
+  }
+}
+
+pub fn span0<T>() -> RespoNode<T>
+where
+  T: Debug + Clone,
+{
+  RespoNode::Element {
+    name: "span".to_owned(),
+    attrs: HashMap::new(),
+    event: HashMap::new(),
+    style: RespoCssStyle(HashMap::new()),
+    children: vec![],
+  }
+}
+
+pub fn div0<T>() -> RespoNode<T>
+where
+  T: Debug + Clone,
+{
+  RespoNode::Element {
+    name: "span".to_owned(),
+    attrs: HashMap::new(),
+    event: HashMap::new(),
+    style: RespoCssStyle(HashMap::new()),
+    children: vec![],
   }
 }

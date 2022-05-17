@@ -3,12 +3,12 @@ use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
 
 #[allow(dead_code)]
-pub fn raq_loop(mut cb: Box<dyn FnMut()>) {
+pub fn raq_loop(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
   let f_ = Rc::new(RefCell::new(None));
   let g = f_.clone();
 
   *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-    cb();
+    cb().expect("called in raq loop");
 
     // Schedule ourself for another requestAnimationFrame callback.
     request_animation_frame(f_.borrow().as_ref().unwrap());
@@ -29,12 +29,12 @@ fn window() -> web_sys::Window {
 
 /// this API is used for development, prefer `req_loop` for fast response
 #[allow(dead_code)]
-pub fn raq_loop_slow(mut cb: Box<dyn FnMut()>) {
+pub fn raq_loop_slow(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
   let f = Rc::new(RefCell::new(None));
   let g = f.clone();
 
   *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-    cb();
+    cb().expect("called in raq loop");
 
     let f2 = f.clone();
     let h = Closure::wrap(Box::new(move || {

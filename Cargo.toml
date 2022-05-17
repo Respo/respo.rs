@@ -29,4 +29,9 @@ features = [
   "MouseEvent",
   "KeyboardEvent",
   "InputEvent",
+  "Node",
+  "NodeList",
+  "Element",
+  "HtmlCollection",
+  "CssStyleDeclaration",
 ]

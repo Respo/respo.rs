@@ -49,3 +49,8 @@ pub fn raq_loop_slow(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
 
   request_animation_frame(g.borrow().as_ref().unwrap());
 }
+
+// just get first of tuple
+pub fn fst<T, U>(pair: &(T, U)) -> &T {
+  &pair.0
+}

@@ -1,9 +1,12 @@
-use std::{collections::HashMap, rc::Rc, sync::RwLock};
+extern crate console_error_panic_hook;
+
+use std::panic;
+use std::{rc::Rc, sync::RwLock};
 
 use wasm_bindgen::prelude::*;
 use web_sys::console::log_1;
 
-use crate::respo::{div, div0, render_node, span0, DispatchFn, RespoCssStyle, RespoEventHandler, RespoNode};
+use crate::respo::{div0, render_node, span0, DispatchFn, RespoEventHandler, RespoNode};
 
 lazy_static::lazy_static! {
   static ref GLOBAL_STORE: RwLock<Store> = RwLock::new(Store::default());
@@ -11,7 +14,7 @@ lazy_static::lazy_static! {
 
 #[derive(Clone, Debug, Default)]
 struct Store {
-  counted: u32,
+  counted: i32,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -36,18 +39,20 @@ fn dispatch_action(op: ActionOp) -> Result<(), String> {
 
 #[wasm_bindgen(js_name = loadDemoApp)]
 pub fn load_demo_app() -> JsValue {
-  let window = web_sys::window().expect("no global `window` exists");
-  let document = window.document().expect("should have a document on window");
-  let mount_target = document.query_selector(".app").expect("should have a .app").unwrap();
+  panic::set_hook(Box::new(console_error_panic_hook::hook));
 
   render_node(
-    &mount_target,
+    ".app",
     Box::new(move || -> Result<RespoNode<ActionOp>, String> {
+      let store = GLOBAL_STORE.read().expect("to render");
       Ok(
         div0()
           .add_children([
             span0()
-              .add_attrs([("innerText".to_owned(), "demo inc".to_owned())])
+              .add_attrs([("innerText", format!("value is: {}", store.counted))])
+              .to_owned(),
+            span0()
+              .add_attrs([("innerText", "demo inc")])
               .add_event([(
                 "click",
                 RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
@@ -58,9 +63,9 @@ pub fn load_demo_app() -> JsValue {
               )])
               .to_owned(),
             span0()
-              .add_attrs([("innerText".to_owned(), "demo dec".to_owned())])
+              .add_attrs([("innerText", "demo dec")])
               .add_event([(
-                "click".to_owned(),
+                "click",
                 RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
                   log_1(&format!("click {:?}", e).into());
                   dispatch.run(ActionOp::Decrement)?;

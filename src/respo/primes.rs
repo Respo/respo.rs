@@ -131,15 +131,34 @@ pub struct RespoEventMark {
   pub coord: Vec<RespoCoord>,
   /// TODO event type
   pub name: String,
+  /// partial copy of DOM events, that shares across threads,
+  /// but being async, methods like `.prevent_default()` and `.stop_propagation()` will not work
+  pub event_info: RespoEvent,
 }
 
 #[derive(Debug, Clone)]
 /// event wraps on top of DOM events
 pub enum RespoEvent {
   // TODO
-  Click,
-  Keyboard(KeyboardEvent),
-  Input(InputEvent),
+  Click {
+    coord: DigitCoord,
+    client_x: f64,
+    client_y: f64,
+  },
+  Keyboard {
+    coord: DigitCoord,
+    key: String,
+    key_code: u32,
+    shift_key: bool,
+    ctrl_key: bool,
+    alt_key: bool,
+    meta_key: bool,
+    repeat: bool,
+  },
+  Input {
+    coord: DigitCoord,
+    value: String,
+  },
 }
 
 #[derive(Debug, Clone)]
@@ -158,7 +177,26 @@ impl Debug for RespoEffectHandler {
   }
 }
 
-pub type DigitCoord = Vec<u32>;
+#[derive(Debug, Clone)]
+pub struct DigitCoord(Vec<u32>);
+
+impl<T> From<T> for DigitCoord
+where
+  T: IntoIterator<Item = RespoCoord>,
+{
+  fn from(coord: T) -> Self {
+    let mut res = Vec::new();
+    for c in coord {
+      match c {
+        RespoCoord::Idx(idx) => res.push(idx),
+        RespoCoord::Comp(name) => {
+          // ignore
+        }
+      }
+    }
+    Self(res)
+  }
+}
 
 #[derive(Debug, Clone)]
 pub enum DomChange<T>

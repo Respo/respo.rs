@@ -4,6 +4,7 @@ use crate::respo::primes::RespoCssStyle;
 
 use super::primes::{RespoEventHandler, RespoNode, StrDict};
 
+#[allow(dead_code)]
 pub fn div<T>(
   attrs: StrDict,
   style: RespoCssStyle,
@@ -22,6 +23,7 @@ where
   }
 }
 
+#[allow(dead_code)]
 pub fn span<T>(
   attrs: StrDict,
   style: RespoCssStyle,
@@ -40,6 +42,7 @@ where
   }
 }
 
+#[allow(dead_code)]
 pub fn span0<T>() -> RespoNode<T>
 where
   T: Debug + Clone,
@@ -53,6 +56,7 @@ where
   }
 }
 
+#[allow(dead_code)]
 pub fn div0<T>() -> RespoNode<T>
 where
   T: Debug + Clone,

@@ -3,13 +3,12 @@ mod primes;
 mod util;
 
 use std::fmt::Debug;
-use std::rc::Rc;
 use std::sync::RwLock;
 
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::console::{error_1, log_1, warn_1};
-use web_sys::{Element, HtmlElement, HtmlInputElement, Node};
+use web_sys::{Element, HtmlElement, HtmlInputElement, InputEvent, MouseEvent, Node};
 
 pub use alias::*;
 pub use primes::*;
@@ -53,7 +52,7 @@ where
     if !event_marks.is_empty() {
       for mark in event_marks {
         match request_for_target_handler(&tree, &mark.name, &mark.coord) {
-          Ok(handler) => match (*handler.0)(RespoEvent::Click, dispatch_action.clone()) {
+          Ok(handler) => match (*handler.0)(mark.event_info, dispatch_action.clone()) {
             Ok(()) => {
               log_1(&format!("finished event: {} {:?}", mark.name, mark.coord).into());
             }
@@ -149,12 +148,20 @@ where
       }
 
       for key in event.keys() {
+        let coord = coord.to_owned();
         match key.as_str() {
           "click" => {
-            let c = coord.to_owned();
-            let handler = Closure::wrap(Box::new(move || {
-              track_delegated_event(&c, "click");
-            }) as Box<dyn FnMut()>);
+            let handler = Closure::wrap(Box::new(move |e: MouseEvent| {
+              track_delegated_event(
+                &coord,
+                "click",
+                RespoEvent::Click {
+                  coord: coord.to_owned().into(),
+                  client_x: e.client_x() as f64,
+                  client_y: e.client_y() as f64,
+                },
+              );
+            }) as Box<dyn FnMut(MouseEvent)>);
             element
               .dyn_ref::<HtmlElement>()
               .unwrap()
@@ -162,10 +169,21 @@ where
             handler.forget();
           }
           "input" => {
-            let c = coord.to_owned();
-            let handler = Closure::wrap(Box::new(move || {
-              track_delegated_event(&c, "input");
-            }) as Box<dyn FnMut()>);
+            let handler = Closure::wrap(Box::new(move |e: InputEvent| {
+              track_delegated_event(
+                &coord,
+                "input",
+                RespoEvent::Input {
+                  coord: coord.to_owned().into(),
+                  value: e
+                    .target()
+                    .expect("to reach event target")
+                    .dyn_ref::<HtmlInputElement>()
+                    .unwrap()
+                    .value(),
+                },
+              );
+            }) as Box<dyn FnMut(InputEvent)>);
             element
               .dyn_ref::<HtmlInputElement>()
               .unwrap()
@@ -178,16 +196,17 @@ where
         }
       }
 
-      Ok(element.dyn_ref::<Node>().unwrap().clone())
+      Ok(element.dyn_ref::<Node>().expect("converting to Node").clone())
     }
   }
 }
 
-pub fn track_delegated_event(coord: &[RespoCoord], name: &str) {
+pub fn track_delegated_event(coord: &[RespoCoord], name: &str, event: RespoEvent) {
   let mut queue = EVENTS_QUEUE.write().expect("to track delegated event");
   queue.push(RespoEventMark {
     name: name.to_owned(),
     coord: coord.to_owned(),
+    event_info: event,
   });
 }
 

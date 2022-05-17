@@ -84,7 +84,7 @@ where
       }
       let new_tree = renderer()?;
       let mut changes: Vec<DomChange<T>> = vec![];
-      diff_tree(&new_tree, &prev_tree, DigitCoord::default(), Vec::new(), &mut changes)?;
+      diff_tree(&new_tree, &prev_tree, Vec::new(), &mut changes)?;
       log_1(&format!("changes: {:?}", changes).into());
       patch_tree(&mount_target, &changes)?;
       prev_tree = new_tree;

@@ -8,8 +8,7 @@ use crate::respo::util::fst;
 pub fn diff_tree<T>(
   new_tree: &RespoNode<T>,
   old_tree: &RespoNode<T>,
-  digit_coord: DigitCoord,
-  respo_coord: Vec<RespoCoord>,
+  coord: Vec<RespoCoord>,
   changes: &mut Vec<DomChange<T>>,
 ) -> Result<(), String>
 where
@@ -17,28 +16,22 @@ where
 {
   match (new_tree, old_tree) {
     (RespoNode::Component(name, _, new_child), RespoNode::Component(name_old, _, old_child)) => {
+      let mut next_coord = coord.clone();
+      next_coord.push(RespoCoord::Comp(String::from(name)));
       if name == name_old {
-        let mut next_coord = respo_coord.clone();
-        next_coord.push(RespoCoord::Comp(String::from(name)));
-        diff_tree(new_child, old_child, digit_coord, next_coord, changes)?;
+        diff_tree(new_child, old_child, next_coord, changes)?;
       } else {
         changes.push(DomChange::ReplaceElement {
-          digit_coord,
+          coord: next_coord,
           node: *old_child.to_owned(),
         });
       }
     }
     (RespoNode::Component(..), b) => {
-      changes.push(DomChange::ReplaceElement {
-        digit_coord,
-        node: b.to_owned(),
-      });
+      changes.push(DomChange::ReplaceElement { coord, node: b.to_owned() });
     }
     (_, b @ RespoNode::Component(..)) => {
-      changes.push(DomChange::ReplaceElement {
-        digit_coord,
-        node: b.to_owned(),
-      });
+      changes.push(DomChange::ReplaceElement { coord, node: b.to_owned() });
     }
     (
       RespoNode::Element {
@@ -57,16 +50,13 @@ where
       },
     ) => {
       if name != old_name {
-        changes.push(DomChange::ReplaceElement {
-          digit_coord,
-          node: b.to_owned(),
-        });
+        changes.push(DomChange::ReplaceElement { coord, node: b.to_owned() });
       } else {
-        diff_attrs(attrs, old_attrs, &digit_coord, changes);
-        diff_style(&style.0, &old_style.0, &digit_coord, changes);
+        diff_attrs(attrs, old_attrs, &coord, changes);
+        diff_style(&style.0, &old_style.0, &coord, changes);
 
-        diff_event(event, old_event, &respo_coord, &digit_coord, changes);
-        diff_children(children, old_children, &digit_coord, respo_coord, changes)?;
+        diff_event(event, old_event, &coord, changes);
+        diff_children(children, old_children, coord, changes)?;
       }
     }
   }
@@ -77,7 +67,7 @@ where
 fn diff_attrs<T>(
   new_attrs: &HashMap<String, String>,
   old_attrs: &HashMap<String, String>,
-  coord: &DigitCoord,
+  coord: &Vec<RespoCoord>,
   changes: &mut Vec<DomChange<T>>,
 ) where
   T: Debug + Clone,
@@ -102,7 +92,7 @@ fn diff_attrs<T>(
 
   if !added.is_empty() || !removed.is_empty() {
     changes.push(DomChange::ModifyAttrs {
-      digit_coord: coord.to_owned(),
+      coord: coord.to_owned(),
       set: added,
       unset: removed,
     });
@@ -112,7 +102,7 @@ fn diff_attrs<T>(
 fn diff_style<T>(
   new_style: &HashMap<String, String>,
   old_style: &HashMap<String, String>,
-  coord: &DigitCoord,
+  coord: &Vec<RespoCoord>,
   changes: &mut Vec<DomChange<T>>,
 ) where
   T: Debug + Clone,
@@ -137,7 +127,7 @@ fn diff_style<T>(
 
   if !added.is_empty() || !removed.is_empty() {
     changes.push(DomChange::ModifyStyle {
-      digit_coord: coord.to_owned(),
+      coord: coord.to_owned(),
       set: added,
       unset: removed,
     });
@@ -147,8 +137,7 @@ fn diff_style<T>(
 fn diff_event<T, U>(
   new_event: &HashMap<String, U>,
   old_event: &HashMap<String, U>,
-  respo_coord: &Vec<RespoCoord>,
-  digit_coord: &DigitCoord,
+  coord: &Vec<RespoCoord>,
   changes: &mut Vec<DomChange<T>>,
 ) where
   T: Debug + Clone,
@@ -158,8 +147,7 @@ fn diff_event<T, U>(
 
   if new_keys != old_keys {
     changes.push(DomChange::ModifyEvent {
-      digit_coord: digit_coord.to_owned(),
-      respo_coord: respo_coord.to_owned(),
+      coord: coord.to_owned(),
       add: new_keys.difference(&old_keys).map(ToOwned::to_owned).collect(),
       remove: old_keys.difference(&new_keys).map(ToOwned::to_owned).collect(),
     });
@@ -169,8 +157,7 @@ fn diff_event<T, U>(
 fn diff_children<T>(
   new_children: &[(RespoIndexKey, RespoNode<T>)],
   old_children: &[(RespoIndexKey, RespoNode<T>)],
-  coord: &DigitCoord,
-  respo_coord: Vec<RespoCoord>,
+  coord: Vec<RespoCoord>,
   changes: &mut Vec<DomChange<T>>,
 ) -> Result<(), String>
 where
@@ -185,10 +172,7 @@ where
     if new_tracking_pointer >= new_children.len() {
       if old_tracking_pointer >= old_children.len() {
         if !operations.is_empty() {
-          changes.push(DomChange::ModifyChildren {
-            digit_coord: coord.to_owned(),
-            operations,
-          });
+          changes.push(DomChange::ModifyChildren { coord, operations });
         }
 
         return Ok(());
@@ -203,9 +187,9 @@ where
       let new_entry = &new_children[new_tracking_pointer];
       let old_entry = &old_children[old_tracking_pointer];
       if new_entry.0 == old_entry.0 {
-        let mut next_coord = respo_coord.clone();
+        let mut next_coord = coord.clone();
         next_coord.push(RespoCoord::Idx(cursor));
-        diff_tree(&new_entry.1, &old_entry.1, coord.extend(cursor), next_coord, changes)?;
+        diff_tree(&new_entry.1, &old_entry.1, next_coord, changes)?;
         cursor += 1;
         new_tracking_pointer += 1;
         old_tracking_pointer += 1;

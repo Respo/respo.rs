@@ -160,14 +160,12 @@ pub struct RespoEventMark {
 pub enum RespoEvent {
   // TODO
   Click {
-    digit_coord: DigitCoord,
-    respo_coord: Vec<RespoCoord>,
+    coord: Vec<RespoCoord>,
     client_x: f64,
     client_y: f64,
   },
   Keyboard {
-    digit_coord: DigitCoord,
-    respo_coord: Vec<RespoCoord>,
+    coord: Vec<RespoCoord>,
     key: String,
     key_code: u32,
     shift_key: bool,
@@ -177,8 +175,7 @@ pub enum RespoEvent {
     repeat: bool,
   },
   Input {
-    digit_coord: DigitCoord,
-    respo_coord: Vec<RespoCoord>,
+    coord: Vec<RespoCoord>,
     value: String,
   },
 }
@@ -199,60 +196,31 @@ impl Debug for RespoEffectHandler {
   }
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct DigitCoord(pub Vec<u32>);
-
-impl<T> From<T> for DigitCoord
-where
-  T: IntoIterator<Item = RespoCoord>,
-{
-  fn from(coord: T) -> Self {
-    let mut res = Vec::new();
-    for c in coord {
-      match c {
-        RespoCoord::Idx(idx) => res.push(idx),
-        // ignore component paths
-        RespoCoord::Comp(..) => {}
-      }
-    }
-    Self(res)
-  }
-}
-
-impl DigitCoord {
-  pub fn extend(&self, idx: u32) -> Self {
-    let mut res = self.0.clone();
-    res.push(idx);
-    Self(res)
-  }
-}
-
 #[derive(Debug, Clone)]
 pub enum DomChange<T>
 where
   T: Debug + Clone,
 {
   ReplaceElement {
-    digit_coord: DigitCoord,
+    coord: Vec<RespoCoord>,
     node: RespoNode<T>,
   },
   ModifyChildren {
-    digit_coord: DigitCoord,
+    coord: Vec<RespoCoord>,
     operations: Vec<ChildDomOp<T>>,
   },
   ModifyAttrs {
-    digit_coord: DigitCoord,
+    coord: Vec<RespoCoord>,
     set: StrDict,
     unset: HashSet<String>,
   },
   ModifyStyle {
-    digit_coord: DigitCoord,
+    coord: Vec<RespoCoord>,
     set: StrDict,
     unset: HashSet<String>,
   },
   ModifyEvent {
-    digit_coord: DigitCoord,
-    respo_coord: Vec<RespoCoord>,
+    coord: Vec<RespoCoord>,
     add: HashSet<String>,
     remove: HashSet<String>,
   }, // TODO effects not started
@@ -262,13 +230,13 @@ impl<T> DomChange<T>
 where
   T: Debug + Clone,
 {
-  pub fn get_coord(&self) -> DigitCoord {
+  pub fn get_coord(&self) -> Vec<RespoCoord> {
     match self {
-      DomChange::ReplaceElement { digit_coord, .. } => digit_coord.clone(),
-      DomChange::ModifyChildren { digit_coord, .. } => digit_coord.clone(),
-      DomChange::ModifyAttrs { digit_coord, .. } => digit_coord.clone(),
-      DomChange::ModifyStyle { digit_coord, .. } => digit_coord.clone(),
-      DomChange::ModifyEvent { digit_coord, .. } => digit_coord.clone(),
+      DomChange::ReplaceElement { coord, .. } => coord.clone(),
+      DomChange::ModifyChildren { coord, .. } => coord.clone(),
+      DomChange::ModifyAttrs { coord, .. } => coord.clone(),
+      DomChange::ModifyStyle { coord, .. } => coord.clone(),
+      DomChange::ModifyEvent { coord, .. } => coord.clone(),
     }
   }
 }

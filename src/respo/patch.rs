@@ -6,7 +6,7 @@ use web_sys::{Element, HtmlElement, HtmlInputElement, InputEvent, MouseEvent, No
 use wasm_bindgen::JsCast;
 use web_sys::console::warn_1;
 
-use super::{track_delegated_event, DigitCoord, DomChange, RespoCoord, RespoEvent};
+use super::{track_delegated_event, DomChange, RespoCoord, RespoEvent};
 
 pub fn patch_tree<T>(mount_target: &Node, changes: &Vec<DomChange<T>>) -> Result<(), String>
 where
@@ -55,12 +55,10 @@ where
           style.set_property(k, v).expect("set style");
         }
       }
-      DomChange::ModifyEvent {
-        add, remove, respo_coord, ..
-      } => {
+      DomChange::ModifyEvent { add, remove, coord, .. } => {
         let el = target.dyn_ref::<Element>().expect("to element");
         for k in add.iter() {
-          attach_event(el, k, respo_coord)?;
+          attach_event(el, k, coord)?;
         }
         let el = el.dyn_ref::<HtmlElement>().expect("html element");
         for k in remove {
@@ -85,14 +83,16 @@ where
   Ok(())
 }
 
-fn find_coord_target(mount_target: &Node, coord: &DigitCoord) -> Result<Node, String> {
+fn find_coord_target(mount_target: &Node, coord: &[RespoCoord]) -> Result<Node, String> {
   let mut target = mount_target.clone();
-  for digit in &coord.0 {
-    let child = target.child_nodes().item(*digit);
-    if child.is_none() {
-      return Err(format!("no child at index {}", digit));
+  for digit in coord {
+    if let &RespoCoord::Idx(idx) = digit {
+      let child = target.child_nodes().item(idx);
+      if child.is_none() {
+        return Err(format!("no child at index {}", &idx));
+      }
+      target = child.ok_or_else(|| format!("does not find child at index: {}", &idx))?;
     }
-    target = child.ok_or_else(|| format!("does not find child at index: {}", digit))?;
   }
   Ok(target)
 }
@@ -106,8 +106,7 @@ pub fn attach_event(element: &Element, key: &str, coord: &Vec<RespoCoord>) -> Re
           &coord,
           "click",
           RespoEvent::Click {
-            digit_coord: coord.to_owned().into(),
-            respo_coord: coord.to_owned(),
+            coord: coord.to_owned(),
             client_x: e.client_x() as f64,
             client_y: e.client_y() as f64,
           },
@@ -125,8 +124,7 @@ pub fn attach_event(element: &Element, key: &str, coord: &Vec<RespoCoord>) -> Re
           &coord,
           "input",
           RespoEvent::Input {
-            digit_coord: coord.to_owned().into(),
-            respo_coord: coord.to_owned(),
+            coord: coord.to_owned(),
             value: e
               .target()
               .expect("to reach event target")

@@ -1,53 +1,84 @@
 extern crate console_error_panic_hook;
 
+use std::any::Any;
+use std::cell::RefCell;
 use std::panic;
-use std::{rc::Rc, sync::RwLock};
+use std::rc::Rc;
 
 use wasm_bindgen::prelude::*;
 use web_sys::console::log_1;
 
 use crate::respo::{
-  button0, div0, query_select_node, render_node, span0, DispatchFn, RespoColor, RespoEventHandler, RespoNode, RespoStyleRule,
+  button0, div0, query_select_node, render_node, span0, DispatchFn, LocalState, LocalStateWrapper, RespoColor, RespoEventHandler,
+  RespoNode, RespoStyleRule, StatesTree,
 };
 
-lazy_static::lazy_static! {
-  static ref GLOBAL_STORE: RwLock<Store> = RwLock::new(Store::default());
-}
-
-#[derive(Clone, Debug, Default)]
+#[derive(Debug)]
 struct Store {
   counted: i32,
+  states: StatesTree,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum ActionOp {
   Increment,
   Decrement,
+  StatesChange(Vec<String>, LocalStateWrapper),
 }
 
-fn dispatch_action(op: ActionOp) -> Result<(), String> {
-  log_1(&format!("action {:?}", op).into());
-  let mut store = GLOBAL_STORE.write().expect("to dispatch action");
-  match op {
-    ActionOp::Increment => {
-      store.counted += 1;
-    }
-    ActionOp::Decrement => {
-      store.counted -= 1;
-    }
+#[derive(Debug, Clone, Default)]
+struct MainState {
+  counted: i32,
+}
+
+impl LocalState for MainState {
+  fn as_any(&self) -> &dyn Any {
+    self
   }
-  Ok(())
 }
 
 #[wasm_bindgen(js_name = loadDemoApp)]
 pub fn load_demo_app() -> JsValue {
   panic::set_hook(Box::new(console_error_panic_hook::hook));
+
   let mount_target = query_select_node(".app").expect("found mount target");
+
+  // need to push store inside function to keep all in one thread
+  let global_store = Rc::new(RefCell::new(Store {
+    counted: 0,
+    states: StatesTree::default(),
+  }));
+  let g_copy = global_store.clone();
+
+  let dispatch_action = move |op: ActionOp| -> Result<(), String> {
+    log_1(&format!("action {:?}", op).into());
+    let mut store = global_store.borrow_mut();
+    match op {
+      ActionOp::Increment => {
+        store.counted += 1;
+      }
+      ActionOp::Decrement => {
+        store.counted -= 1;
+      }
+      ActionOp::StatesChange(path, new_state) => {
+        store.states = store.states.set_in(&path, new_state);
+      }
+    }
+    Ok(())
+  };
 
   render_node(
     mount_target,
     Box::new(move || -> Result<RespoNode<ActionOp>, String> {
-      let store = GLOBAL_STORE.read().expect("to render");
+      let store = g_copy.borrow();
+      let states = store.states.to_owned();
+      let cursor = states.path();
+      log_1(&"rerendering".into());
+      let internal_state = states.load().ref_into::<MainState>().map(ToOwned::to_owned);
+      log_1(&format!("internal: {:?}", internal_state).into());
+      let state: MainState = internal_state.unwrap_or_default();
+      let s2 = state.clone();
+      log_1(&format!("state: {:?}", state).into());
       Ok(
         div0()
           .add_children([
@@ -61,6 +92,13 @@ pub fn load_demo_app() -> JsValue {
                     RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
                       log_1(&format!("click {:?}", e).into());
                       dispatch.run(ActionOp::Increment)?;
+                      log_1(&format!("local state {:?}", s2.to_owned()).into());
+                      dispatch.run(ActionOp::StatesChange(
+                        cursor.to_owned(),
+                        LocalStateWrapper::ref_from(Some(&MainState {
+                          counted: state.counted + 2,
+                        })),
+                      ))?;
                       Ok(())
                     })),
                   )])
@@ -79,13 +117,20 @@ pub fn load_demo_app() -> JsValue {
                   .to_owned(),
               ])
               .to_owned(),
-            span0()
-              .add_attrs([("innerText", format!("value is: {}", store.counted))])
-              .add_style([
-                RespoStyleRule::Color(RespoColor::Blue),
-                RespoStyleRule::FontFamily("Menlo".to_owned()),
-                RespoStyleRule::FontSize(10.0 + store.counted as f32),
-              ])
+            div0()
+              .add_children([span0()
+                .add_attrs([("innerText", format!("value is: {}", store.counted))])
+                .add_style([
+                  RespoStyleRule::Color(RespoColor::Blue),
+                  RespoStyleRule::FontFamily("Menlo".to_owned()),
+                  RespoStyleRule::FontSize(10.0 + store.counted as f32),
+                ])
+                .to_owned()])
+              .to_owned(),
+            div0()
+              .add_children([span0()
+                .add_attrs([("innerText", format!("local state: {}", state.counted))])
+                .to_owned()])
               .to_owned(),
           ])
           .to_owned(),

@@ -3,6 +3,7 @@ mod css;
 mod diff;
 mod patch;
 mod primes;
+mod states_tree;
 mod util;
 
 use std::fmt::Debug;
@@ -15,6 +16,7 @@ use web_sys::{HtmlElement, Node};
 pub use alias::*;
 pub use css::*;
 pub use primes::*;
+pub use states_tree::*;
 
 use self::diff::diff_tree;
 use self::patch::{attach_event, patch_tree};
@@ -55,13 +57,13 @@ pub fn render_node<T>(
 where
   T: 'static + Debug + Clone,
 {
-  let tree: RespoNode<T> = renderer()?;
-  let mut prev_tree = tree.clone();
-  let element = build_dom_tree(&tree, &[])?;
+  let tree0: RespoNode<T> = renderer()?;
+  let mut prev_tree = tree0.clone();
+  let element = build_dom_tree(&tree0, &[])?;
 
   mount_target.append_child(&element)?;
 
-  log_1(&format!("render tree: {:?}", tree).into());
+  log_1(&format!("render tree: {:?}", tree0).into());
 
   util::raq_loop_slow(Box::new(move || -> Result<(), String> {
     let event_marks = load_user_events();
@@ -70,7 +72,7 @@ where
 
     if !event_marks.is_empty() {
       for mark in event_marks {
-        match request_for_target_handler(&tree, &mark.name, &mark.coord) {
+        match request_for_target_handler(&prev_tree, &mark.name, &mark.coord) {
           Ok(handler) => match (*handler.0)(mark.event_info, dispatch_action.clone()) {
             Ok(()) => {
               log_1(&format!("finished event: {} {:?}", mark.name, mark.coord).into());

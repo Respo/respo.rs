@@ -47,7 +47,7 @@ impl StatesTree {
       let (p_head, p_rest) = path.split_at(1);
       let p0 = p_head[0].to_owned();
       if self.branches.contains_key(&p0) {
-        let branch = self.branches.get(&p0).unwrap().clone();
+        let branch = self.branches[&p0].clone();
         let next_branch = branch.set_in(p_rest, new_state);
 
         let mut next = self.clone();

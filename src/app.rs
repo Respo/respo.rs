@@ -134,7 +134,7 @@ pub fn load_demo_app() -> JsValue {
     }),
     DispatchFn(Rc::new(dispatch_action)),
   )
-  .unwrap();
+  .expect("rendering node");
 
   JsValue::NULL
 }

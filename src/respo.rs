@@ -39,7 +39,7 @@ fn load_user_events() -> Vec<RespoEventMark> {
 pub fn query_select_node(pattern: &str) -> Result<Node, String> {
   let window = web_sys::window().expect("no global `window` exists");
   let document = window.document().expect("should have a document on window");
-  let target = document.query_selector(pattern).expect("should have a .app").unwrap();
+  let target = document.query_selector(pattern).expect("call selector").expect("find .app");
 
   if let Some(element) = target.dyn_ref::<Node>() {
     Ok(element.to_owned())
@@ -153,7 +153,7 @@ where
         if key == "style" {
           warn_1(&"style is handled outside attrs".into());
         } else if key == "innerText" {
-          element.dyn_ref::<HtmlElement>().unwrap().set_inner_text(value);
+          element.dyn_ref::<HtmlElement>().expect("into html element").set_inner_text(value);
         } else if key == "innerHTML" {
           element.set_inner_html(value);
         } else {

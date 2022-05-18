@@ -33,7 +33,7 @@ where
           } else if k == "innerHTML" {
             el.set_inner_html(v);
           } else {
-            el.set_attribute(k, v).map_err(|e| e.as_string().unwrap())?;
+            el.set_attribute(k, v).expect("to set attribute");
           }
         }
         for k in unset {
@@ -42,7 +42,7 @@ where
           } else if k == "innerHTML" {
             el.set_inner_html("");
           } else {
-            el.remove_attribute(k).map_err(|e| e.as_string().unwrap())?;
+            el.remove_attribute(k).expect("to remove attribute");
           }
         }
       }
@@ -156,7 +156,7 @@ pub fn attach_event(element: &Element, key: &str, coord: &Vec<RespoCoord>) -> Re
       }) as Box<dyn FnMut(MouseEvent)>);
       element
         .dyn_ref::<HtmlElement>()
-        .unwrap()
+        .expect("convert to html element")
         .set_onclick(Some(handler.as_ref().unchecked_ref()));
       handler.forget();
     }
@@ -171,14 +171,14 @@ pub fn attach_event(element: &Element, key: &str, coord: &Vec<RespoCoord>) -> Re
               .target()
               .expect("to reach event target")
               .dyn_ref::<HtmlInputElement>()
-              .unwrap()
+              .expect("to convert to html input element")
               .value(),
           },
         );
       }) as Box<dyn FnMut(InputEvent)>);
       element
         .dyn_ref::<HtmlInputElement>()
-        .unwrap()
+        .expect("convert to html input element")
         .set_oninput(Some(handler.as_ref().unchecked_ref()));
       handler.forget();
     }

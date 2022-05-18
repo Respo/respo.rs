@@ -19,7 +19,11 @@ where
     attrs,
     event,
     style,
-    children,
+    children: children
+      .iter()
+      .enumerate()
+      .map(|(i, c)| (i.to_string().into(), c.clone()))
+      .collect(),
   }
 }
 
@@ -38,7 +42,11 @@ where
     attrs,
     event,
     style,
-    children,
+    children: children
+      .iter()
+      .enumerate()
+      .map(|(i, c)| (i.to_string().into(), c.clone()))
+      .collect(),
   }
 }
 

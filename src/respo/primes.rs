@@ -1,8 +1,8 @@
 use std::boxed::Box;
+use std::collections::HashSet;
 use std::fmt::Display;
 use std::rc::Rc;
 use std::{collections::HashMap, fmt::Debug};
-use web_sys::{InputEvent, KeyboardEvent, MouseEvent};
 
 #[derive(Debug, Clone)]
 pub enum RespoNode<T>
@@ -16,9 +16,27 @@ where
     attrs: HashMap<String, String>,
     event: HashMap<String, RespoEventHandler<T>>,
     style: RespoCssStyle,
-    children: Vec<RespoNode<T>>,
+    children: Vec<(RespoIndexKey, RespoNode<T>)>,
   },
 }
+
+#[derive(PartialEq, Eq, Debug, Clone)]
+pub struct RespoIndexKey(String);
+
+impl<T> From<T> for RespoIndexKey
+where
+  T: Display + Clone + Debug,
+{
+  fn from(data: T) -> Self {
+    Self(data.to_string())
+  }
+}
+
+// impl Display for RespoIndexKey {
+//   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//     write!(f, "{}", self.0)
+//   }
+// }
 
 impl<T> RespoNode<T>
 where
@@ -37,10 +55,11 @@ where
     }
     Ok(self)
   }
-  pub fn add_attrs<U, V>(&mut self, more: U) -> &mut Self
+  pub fn add_attrs<U, V, W>(&mut self, more: U) -> &mut Self
   where
-    U: IntoIterator<Item = (V, V)>,
+    U: IntoIterator<Item = (V, W)>,
     V: Into<String> + ToOwned,
+    W: Into<String> + ToOwned,
   {
     match self {
       RespoNode::Component(_, _, node) => {
@@ -80,8 +99,8 @@ where
         node.add_children(more);
       }
       RespoNode::Element { ref mut children, .. } => {
-        for v in more {
-          children.push(v.to_owned());
+        for (idx, v) in more.into_iter().enumerate() {
+          children.push((idx.into(), v));
         }
       }
     }
@@ -141,12 +160,12 @@ pub struct RespoEventMark {
 pub enum RespoEvent {
   // TODO
   Click {
-    coord: DigitCoord,
+    coord: Vec<RespoCoord>,
     client_x: f64,
     client_y: f64,
   },
   Keyboard {
-    coord: DigitCoord,
+    coord: Vec<RespoCoord>,
     key: String,
     key_code: u32,
     shift_key: bool,
@@ -156,16 +175,16 @@ pub enum RespoEvent {
     repeat: bool,
   },
   Input {
-    coord: DigitCoord,
+    coord: Vec<RespoCoord>,
     value: String,
   },
 }
 
+/// TODO need a container for values
 #[derive(Debug, Clone)]
 pub struct RespoEffect {
-  /// TODO need a container for values
-  args: Vec<String>,
-  handler: RespoEffectHandler,
+  // args: Vec<String>,
+// handler: RespoEffectHandler,
 }
 
 #[derive(Clone)]
@@ -178,44 +197,58 @@ impl Debug for RespoEffectHandler {
 }
 
 #[derive(Debug, Clone)]
-pub struct DigitCoord(Vec<u32>);
-
-impl<T> From<T> for DigitCoord
-where
-  T: IntoIterator<Item = RespoCoord>,
-{
-  fn from(coord: T) -> Self {
-    let mut res = Vec::new();
-    for c in coord {
-      match c {
-        RespoCoord::Idx(idx) => res.push(idx),
-        RespoCoord::Comp(name) => {
-          // ignore
-        }
-      }
-    }
-    Self(res)
-  }
-}
-
-#[derive(Debug, Clone)]
 pub enum DomChange<T>
 where
   T: Debug + Clone,
 {
-  AddElement(DigitCoord, RespoNode<T>),
-  AppendElement(DigitCoord, RespoNode<T>),
-  RemoveElement(DigitCoord),
-  ReplaceElement(DigitCoord, RespoNode<T>),
-  AddAttribute(DigitCoord, String, String),
-  RemoveAttribute(DigitCoord, String),
-  ReplaceAttribute(DigitCoord, String, String),
-  AddStyle(DigitCoord, String, String),
-  RemoveStyle(DigitCoord, String),
-  ReplaceStyle(DigitCoord, String, String),
-  AddEvent(DigitCoord, String),
-  RemoveEvent(DigitCoord, String),
-  // TODO effects not started
+  ReplaceElement {
+    coord: Vec<RespoCoord>,
+    node: RespoNode<T>,
+  },
+  ModifyChildren {
+    coord: Vec<RespoCoord>,
+    operations: Vec<ChildDomOp<T>>,
+  },
+  ModifyAttrs {
+    coord: Vec<RespoCoord>,
+    set: StrDict,
+    unset: HashSet<String>,
+  },
+  ModifyStyle {
+    coord: Vec<RespoCoord>,
+    set: StrDict,
+    unset: HashSet<String>,
+  },
+  ModifyEvent {
+    coord: Vec<RespoCoord>,
+    add: HashSet<String>,
+    remove: HashSet<String>,
+  }, // TODO effects not started
+}
+
+impl<T> DomChange<T>
+where
+  T: Debug + Clone,
+{
+  pub fn get_coord(&self) -> Vec<RespoCoord> {
+    match self {
+      DomChange::ReplaceElement { coord, .. } => coord.clone(),
+      DomChange::ModifyChildren { coord, .. } => coord.clone(),
+      DomChange::ModifyAttrs { coord, .. } => coord.clone(),
+      DomChange::ModifyStyle { coord, .. } => coord.clone(),
+      DomChange::ModifyEvent { coord, .. } => coord.clone(),
+    }
+  }
+}
+
+#[derive(Debug, Clone)]
+pub enum ChildDomOp<T>
+where
+  T: Debug + Clone,
+{
+  InsertAfter(u32, RespoNode<T>),
+  RemoveAt(u32),
+  Append(RespoNode<T>),
 }
 
 #[derive(Clone)]

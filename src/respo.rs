@@ -1,17 +1,21 @@
 mod alias;
+mod diff;
+mod patch;
 mod primes;
 mod util;
 
 use std::fmt::Debug;
 use std::sync::RwLock;
 
-use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::console::{error_1, log_1, warn_1};
-use web_sys::{Element, HtmlElement, HtmlInputElement, InputEvent, MouseEvent, Node};
+use web_sys::{HtmlElement, Node};
 
 pub use alias::*;
 pub use primes::*;
+
+use self::diff::diff_tree;
+use self::patch::{attach_event, patch_tree};
 
 lazy_static::lazy_static! {
   /// event queue that code in the loop will detect
@@ -27,9 +31,21 @@ fn load_user_events() -> Vec<RespoEventMark> {
   events
 }
 
+fn select_node(pattern: &str) -> Result<Node, String> {
+  let window = web_sys::window().expect("no global `window` exists");
+  let document = window.document().expect("should have a document on window");
+  let target = document.query_selector(pattern).expect("should have a .app").unwrap();
+
+  if let Some(element) = target.dyn_ref::<Node>() {
+    Ok(element.to_owned())
+  } else {
+    Err(format!("failed to find {}", pattern))
+  }
+}
+
 /// render elements
 pub fn render_node<T>(
-  mount_target: &Element,
+  pattern: &str,
   mut renderer: Box<dyn FnMut() -> Result<RespoNode<T>, String>>,
   dispatch_action: DispatchFn<T>,
 ) -> Result<(), JsValue>
@@ -40,6 +56,7 @@ where
   let mut prev_tree = tree.clone();
   let element = build_dom_tree(&tree, &[])?;
 
+  let mount_target = select_node(pattern)?;
   mount_target.append_child(&element)?;
 
   log_1(&format!("render tree: {:?}", tree).into());
@@ -66,7 +83,10 @@ where
         }
       }
       let new_tree = renderer()?;
-      let changes = tree_diff(&new_tree, &prev_tree);
+      let mut changes: Vec<DomChange<T>> = vec![];
+      diff_tree(&new_tree, &prev_tree, Vec::new(), &mut changes)?;
+      log_1(&format!("changes: {:?}", changes).into());
+      patch_tree(&mount_target, &changes)?;
       prev_tree = new_tree;
     }
 
@@ -99,7 +119,7 @@ where
         }
       }
       (RespoNode::Element { children, .. }, RespoCoord::Idx(idx)) => match children.get(*idx as usize) {
-        Some(child) => request_for_target_handler(child, name, &coord[1..]),
+        Some((_k, child)) => request_for_target_handler(child, name, &coord[1..]),
         None => Err(format!("no child at index {}", idx)),
       },
       (RespoNode::Component(..), RespoCoord::Idx(..)) => Err(String::from("expected element, found target being a component")),
@@ -141,7 +161,7 @@ where
         }
       }
       element.set_attribute("style", &style.to_string())?;
-      for (idx, child) in children.iter().enumerate() {
+      for (idx, (_k, child)) in children.iter().enumerate() {
         let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Idx(idx as u32));
         element.append_child(&build_dom_tree(child, &next_coord)?)?;
@@ -149,51 +169,7 @@ where
 
       for key in event.keys() {
         let coord = coord.to_owned();
-        match key.as_str() {
-          "click" => {
-            let handler = Closure::wrap(Box::new(move |e: MouseEvent| {
-              track_delegated_event(
-                &coord,
-                "click",
-                RespoEvent::Click {
-                  coord: coord.to_owned().into(),
-                  client_x: e.client_x() as f64,
-                  client_y: e.client_y() as f64,
-                },
-              );
-            }) as Box<dyn FnMut(MouseEvent)>);
-            element
-              .dyn_ref::<HtmlElement>()
-              .unwrap()
-              .set_onclick(Some(handler.as_ref().unchecked_ref()));
-            handler.forget();
-          }
-          "input" => {
-            let handler = Closure::wrap(Box::new(move |e: InputEvent| {
-              track_delegated_event(
-                &coord,
-                "input",
-                RespoEvent::Input {
-                  coord: coord.to_owned().into(),
-                  value: e
-                    .target()
-                    .expect("to reach event target")
-                    .dyn_ref::<HtmlInputElement>()
-                    .unwrap()
-                    .value(),
-                },
-              );
-            }) as Box<dyn FnMut(InputEvent)>);
-            element
-              .dyn_ref::<HtmlInputElement>()
-              .unwrap()
-              .set_oninput(Some(handler.as_ref().unchecked_ref()));
-            handler.forget();
-          }
-          _ => {
-            warn_1(&format!("unhandled event: {}", key).into());
-          }
-        }
+        attach_event(&element, key.as_str(), &coord)?;
       }
 
       Ok(element.dyn_ref::<Node>().expect("converting to Node").clone())
@@ -208,12 +184,4 @@ pub fn track_delegated_event(coord: &[RespoCoord], name: &str, event: RespoEvent
     coord: coord.to_owned(),
     event_info: event,
   });
-}
-
-pub fn tree_diff<T>(new_tree: &RespoNode<T>, old_tree: &RespoNode<T>) -> Vec<DomChange<T>>
-where
-  T: Debug + Clone,
-{
-  // TODO
-  vec![]
 }

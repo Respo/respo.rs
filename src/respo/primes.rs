@@ -4,6 +4,8 @@ use std::fmt::Display;
 use std::rc::Rc;
 use std::{collections::HashMap, fmt::Debug};
 
+use super::css::{RespoStyle, RespoStyleRule};
+
 #[derive(Debug, Clone)]
 pub enum RespoNode<T>
 where
@@ -15,7 +17,7 @@ where
     name: String,
     attrs: HashMap<String, String>,
     event: HashMap<String, RespoEventHandler<T>>,
-    style: RespoCssStyle,
+    style: RespoStyle,
     children: Vec<(RespoIndexKey, RespoNode<T>)>,
   },
 }
@@ -42,18 +44,22 @@ impl<T> RespoNode<T>
 where
   T: Debug + Clone,
 {
-  pub fn add_style(&mut self, more: RespoCssStyle) -> Result<&mut Self, String> {
+  pub fn add_style<U>(&mut self, more: U) -> &mut Self
+  where
+    U: IntoIterator<Item = RespoStyleRule>,
+  {
     match self {
       RespoNode::Component(_, _, node) => {
-        node.add_style(more)?;
+        node.add_style(more);
       }
       RespoNode::Element { ref mut style, .. } => {
-        for (k, v) in &more.0 {
+        for pair in more.into_iter() {
+          let (k, v) = pair.get_pair();
           style.0.insert(k.to_owned(), v.to_owned());
         }
       }
     }
-    Ok(self)
+    self
   }
   pub fn add_attrs<U, V, W>(&mut self, more: U) -> &mut Self
   where
@@ -121,18 +127,6 @@ where
 {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "RespoEventHandler(...)")
-  }
-}
-
-#[derive(Debug, Clone)]
-pub struct RespoCssStyle(pub HashMap<String, String>);
-
-impl Display for RespoCssStyle {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    for (key, value) in self.0.iter() {
-      write!(f, "{}:{};", key, value)?;
-    }
-    Ok(())
   }
 }
 

@@ -6,7 +6,7 @@ use std::{rc::Rc, sync::RwLock};
 use wasm_bindgen::prelude::*;
 use web_sys::console::log_1;
 
-use crate::respo::{div0, render_node, span0, DispatchFn, RespoEventHandler, RespoNode};
+use crate::respo::{div0, query_select_node, render_node, span0, DispatchFn, RespoColor, RespoEventHandler, RespoNode, RespoStyleRule};
 
 lazy_static::lazy_static! {
   static ref GLOBAL_STORE: RwLock<Store> = RwLock::new(Store::default());
@@ -40,9 +40,10 @@ fn dispatch_action(op: ActionOp) -> Result<(), String> {
 #[wasm_bindgen(js_name = loadDemoApp)]
 pub fn load_demo_app() -> JsValue {
   panic::set_hook(Box::new(console_error_panic_hook::hook));
+  let mount_target = query_select_node(".app").expect("found mount target");
 
   render_node(
-    ".app",
+    mount_target,
     Box::new(move || -> Result<RespoNode<ActionOp>, String> {
       let store = GLOBAL_STORE.read().expect("to render");
       Ok(
@@ -50,6 +51,10 @@ pub fn load_demo_app() -> JsValue {
           .add_children([
             span0()
               .add_attrs([("innerText", format!("value is: {}", store.counted))])
+              .add_style([
+                RespoStyleRule::Color(RespoColor::Blue),
+                RespoStyleRule::FontFamily("Menlo".to_owned()),
+              ])
               .to_owned(),
             span0()
               .add_attrs([("innerText", "demo inc")])

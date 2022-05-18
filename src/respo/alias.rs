@@ -1,13 +1,13 @@
 use std::{collections::HashMap, fmt::Debug, vec};
 
-use crate::respo::primes::RespoCssStyle;
+use crate::respo::css::RespoStyle;
 
 use super::primes::{RespoEventHandler, RespoNode, StrDict};
 
 #[allow(dead_code)]
 pub fn div<T>(
   attrs: StrDict,
-  style: RespoCssStyle,
+  style: RespoStyle,
   event: HashMap<String, RespoEventHandler<T>>,
   children: Vec<RespoNode<T>>,
 ) -> RespoNode<T>
@@ -30,7 +30,7 @@ where
 #[allow(dead_code)]
 pub fn span<T>(
   attrs: StrDict,
-  style: RespoCssStyle,
+  style: RespoStyle,
   event: HashMap<String, RespoEventHandler<T>>,
   children: Vec<RespoNode<T>>,
 ) -> RespoNode<T>
@@ -59,7 +59,7 @@ where
     name: "span".to_owned(),
     attrs: HashMap::new(),
     event: HashMap::new(),
-    style: RespoCssStyle(HashMap::new()),
+    style: RespoStyle::default(),
     children: vec![],
   }
 }
@@ -73,7 +73,7 @@ where
     name: "span".to_owned(),
     attrs: HashMap::new(),
     event: HashMap::new(),
-    style: RespoCssStyle(HashMap::new()),
+    style: RespoStyle::default(),
     children: vec![],
   }
 }

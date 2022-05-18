@@ -1,4 +1,5 @@
 mod alias;
+mod css;
 mod diff;
 mod patch;
 mod primes;
@@ -12,6 +13,7 @@ use web_sys::console::{error_1, log_1, warn_1};
 use web_sys::{HtmlElement, Node};
 
 pub use alias::*;
+pub use css::*;
 pub use primes::*;
 
 use self::diff::diff_tree;
@@ -31,7 +33,8 @@ fn load_user_events() -> Vec<RespoEventMark> {
   events
 }
 
-fn select_node(pattern: &str) -> Result<Node, String> {
+/// a shorthand for get an Node with given pattern
+pub fn query_select_node(pattern: &str) -> Result<Node, String> {
   let window = web_sys::window().expect("no global `window` exists");
   let document = window.document().expect("should have a document on window");
   let target = document.query_selector(pattern).expect("should have a .app").unwrap();
@@ -45,7 +48,7 @@ fn select_node(pattern: &str) -> Result<Node, String> {
 
 /// render elements
 pub fn render_node<T>(
-  pattern: &str,
+  mount_target: Node,
   mut renderer: Box<dyn FnMut() -> Result<RespoNode<T>, String>>,
   dispatch_action: DispatchFn<T>,
 ) -> Result<(), JsValue>
@@ -56,7 +59,6 @@ where
   let mut prev_tree = tree.clone();
   let element = build_dom_tree(&tree, &[])?;
 
-  let mount_target = select_node(pattern)?;
   mount_target.append_child(&element)?;
 
   log_1(&format!("render tree: {:?}", tree).into());

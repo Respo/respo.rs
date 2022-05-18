@@ -6,7 +6,9 @@ use std::{rc::Rc, sync::RwLock};
 use wasm_bindgen::prelude::*;
 use web_sys::console::log_1;
 
-use crate::respo::{div0, query_select_node, render_node, span0, DispatchFn, RespoColor, RespoEventHandler, RespoNode, RespoStyleRule};
+use crate::respo::{
+  button0, div0, query_select_node, render_node, span0, DispatchFn, RespoColor, RespoEventHandler, RespoNode, RespoStyleRule,
+};
 
 lazy_static::lazy_static! {
   static ref GLOBAL_STORE: RwLock<Store> = RwLock::new(Store::default());
@@ -49,34 +51,41 @@ pub fn load_demo_app() -> JsValue {
       Ok(
         div0()
           .add_children([
+            div0()
+              .add_children([
+                button0()
+                  .add_attrs([("innerText", "demo inc"), ("class", "my-button")])
+                  .add_style([RespoStyleRule::Margin(4.)])
+                  .add_event([(
+                    "click",
+                    RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
+                      log_1(&format!("click {:?}", e).into());
+                      dispatch.run(ActionOp::Increment)?;
+                      Ok(())
+                    })),
+                  )])
+                  .to_owned(),
+                button0()
+                  .add_attrs([("innerText", "demo dec"), ("class", "my-button")])
+                  .add_style([RespoStyleRule::Margin(4.)])
+                  .add_event([(
+                    "click",
+                    RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
+                      log_1(&format!("click {:?}", e).into());
+                      dispatch.run(ActionOp::Decrement)?;
+                      Ok(())
+                    })),
+                  )])
+                  .to_owned(),
+              ])
+              .to_owned(),
             span0()
               .add_attrs([("innerText", format!("value is: {}", store.counted))])
               .add_style([
                 RespoStyleRule::Color(RespoColor::Blue),
                 RespoStyleRule::FontFamily("Menlo".to_owned()),
+                RespoStyleRule::FontSize(10.0 + store.counted as f32),
               ])
-              .to_owned(),
-            span0()
-              .add_attrs([("innerText", "demo inc")])
-              .add_event([(
-                "click",
-                RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
-                  log_1(&format!("click {:?}", e).into());
-                  dispatch.run(ActionOp::Increment)?;
-                  Ok(())
-                })),
-              )])
-              .to_owned(),
-            span0()
-              .add_attrs([("innerText", "demo dec")])
-              .add_event([(
-                "click",
-                RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
-                  log_1(&format!("click {:?}", e).into());
-                  dispatch.run(ActionOp::Decrement)?;
-                  Ok(())
-                })),
-              )])
               .to_owned(),
           ])
           .to_owned(),

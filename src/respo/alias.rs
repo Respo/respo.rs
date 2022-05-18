@@ -70,7 +70,21 @@ where
   T: Debug + Clone,
 {
   RespoNode::Element {
-    name: "span".to_owned(),
+    name: "div".to_owned(),
+    attrs: HashMap::new(),
+    event: HashMap::new(),
+    style: RespoStyle::default(),
+    children: vec![],
+  }
+}
+
+#[allow(dead_code)]
+pub fn button0<T>() -> RespoNode<T>
+where
+  T: Debug + Clone,
+{
+  RespoNode::Element {
+    name: "button".to_owned(),
     attrs: HashMap::new(),
     event: HashMap::new(),
     style: RespoStyle::default(),

@@ -97,19 +97,19 @@ impl RespoStyleRule {
     match self {
       RespoStyleRule::Width(size) => ("width".to_owned(), size.to_string()),
       RespoStyleRule::Height(size) => ("height".to_owned(), size.to_string()),
-      RespoStyleRule::Margin(margin) => ("margin".to_owned(), margin.to_string()),
-      RespoStyleRule::Margin4(top, right, bottom, left) => ("margin".to_owned(), format!("{} {} {} {}", top, right, bottom, left)),
-      RespoStyleRule::Padding(padding) => ("padding".to_owned(), padding.to_string()),
-      RespoStyleRule::Padding4(top, right, bottom, left) => ("padding".to_owned(), format!("{} {} {} {}", top, right, bottom, left)),
-      RespoStyleRule::Border(width, style, color) => ("border".to_owned(), format!("{} {} {}", width, style, color)),
-      RespoStyleRule::Outline(width, style, color) => ("outline".to_owned(), format!("{} {} {}", width, style, color)),
+      RespoStyleRule::Margin(margin) => ("margin".to_owned(), format!("{margin}px")),
+      RespoStyleRule::Margin4(top, right, bottom, left) => ("margin".to_owned(), format!("{top}px {right}px {bottom}px {left}px")),
+      RespoStyleRule::Padding(padding) => ("padding".to_owned(), format!("{padding}px")),
+      RespoStyleRule::Padding4(top, right, bottom, left) => ("padding".to_owned(), format!("{top}px {right}px {bottom}px {left}px")),
+      RespoStyleRule::Border(width, style, color) => ("border".to_owned(), format!("{width}px {style} {color}")),
+      RespoStyleRule::Outline(width, style, color) => ("outline".to_owned(), format!("{width}px {style} {color}")),
       RespoStyleRule::BoxShadow(x, y, blur, spread, color) => {
-        ("box-shadow".to_owned(), format!("{} {} {} {} {}", x, y, blur, spread, color))
+        ("box-shadow".to_owned(), format!("{x}px {y}px {blur}px {spread}px {color}"))
       }
-      RespoStyleRule::BorderRadius(radius) => ("border-radius".to_owned(), radius.to_string()),
+      RespoStyleRule::BorderRadius(radius) => ("border-radius".to_owned(), format!("{radius}px")),
       RespoStyleRule::Overflow(overflow) => ("overflow".to_owned(), overflow.to_string()),
-      RespoStyleRule::MaxWidth(size) => ("max-width".to_owned(), size.to_string()),
-      RespoStyleRule::MaxHeight(size) => ("max-height".to_owned(), size.to_string()),
+      RespoStyleRule::MaxWidth(size) => ("max-width".to_owned(), format!("{size}px")),
+      RespoStyleRule::MaxHeight(size) => ("max-height".to_owned(), format!("{size}px")),
       RespoStyleRule::Opacity(opacity) => ("opacity".to_owned(), opacity.to_string()),
       RespoStyleRule::BackgroundColor(color) => ("background-color".to_owned(), color.to_string()),
       RespoStyleRule::BackgroundImage(image) => ("background-image".to_owned(), image.to_string()),
@@ -117,9 +117,9 @@ impl RespoStyleRule {
       RespoStyleRule::BackgroundFilter(filter) => ("background-filter".to_owned(), filter.to_string()),
       RespoStyleRule::Color(color) => ("color".to_owned(), color.to_string()),
       RespoStyleRule::FontFamily(family) => ("font-family".to_owned(), family.to_string()),
-      RespoStyleRule::FontSize(size) => ("font-size".to_owned(), size.to_string()),
+      RespoStyleRule::FontSize(size) => ("font-size".to_owned(), format!("{size}px")),
       RespoStyleRule::FontStyle(style) => ("font-style".to_owned(), style.to_string()),
-      RespoStyleRule::TextShadow(x, y, blur, color) => ("text-shadow".to_owned(), format!("{} {} {} {}", x, y, blur, color)),
+      RespoStyleRule::TextShadow(x, y, blur, color) => ("text-shadow".to_owned(), format!("{x}px {y}px {blur}px {color}px")),
       RespoStyleRule::LineHeight(line_height) => ("line-height".to_owned(), line_height.to_string()),
       RespoStyleRule::VerticalAlign(align) => ("vertical-align".to_owned(), align.to_string()),
       RespoStyleRule::TextOverflow(overflow) => ("text-overflow".to_owned(), overflow.to_string()),
@@ -452,21 +452,17 @@ pub enum RespoTransform {
   Scale(f32, f32),
   Rotate(f32),
   Skew(f32, f32),
-  SkewX(f32),
-  SkewY(f32),
   Matrix(f32, f32, f32, f32, f32, f32),
 }
 
 impl Display for RespoTransform {
   fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
     match self {
-      RespoTransform::Translate(x, y) => write!(f, "translate({}, {})", x, y),
+      RespoTransform::Translate(x, y) => write!(f, "translate({}px, {}px)", x, y),
       RespoTransform::Scale(x, y) => write!(f, "scale({}, {})", x, y),
-      RespoTransform::Rotate(r) => write!(f, "rotate({})", r),
-      RespoTransform::Skew(x, y) => write!(f, "skew({}, {})", x, y),
-      RespoTransform::SkewX(x) => write!(f, "skewX({})", x),
-      RespoTransform::SkewY(y) => write!(f, "skewY({})", y),
-      RespoTransform::Matrix(a, b, c, d, e, g) => write!(f, "matrix({}, {}, {}, {}, {}, {})", a, b, c, d, e, g),
+      RespoTransform::Rotate(r) => write!(f, "rotate({}deg)", r),
+      RespoTransform::Skew(x, y) => write!(f, "skew({}deg, {}deg)", x, y),
+      RespoTransform::Matrix(a, b, c, d, e, g) => write!(f, "matrix({a}, {b}, {c}, {d}, {e}, {g})"),
     }
   }
 }

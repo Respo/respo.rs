@@ -47,7 +47,7 @@ where
         }
       }
       DomChange::ModifyStyle { set, unset, .. } => {
-        let style = mount_target.dyn_ref::<HtmlElement>().expect("into html element").style();
+        let style = target.dyn_ref::<HtmlElement>().expect("into html element").style();
         for s in unset {
           style.remove_property(s).expect("remove style");
         }

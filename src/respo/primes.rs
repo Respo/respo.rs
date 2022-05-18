@@ -4,7 +4,7 @@ use std::fmt::Display;
 use std::rc::Rc;
 use std::{collections::HashMap, fmt::Debug};
 
-use super::css::{RespoStyle, RespoStyleRule};
+use super::css::{CssRule, RespoStyle};
 
 #[derive(Debug, Clone)]
 pub enum RespoNode<T>
@@ -46,7 +46,7 @@ where
 {
   pub fn add_style<U>(&mut self, more: U) -> &mut Self
   where
-    U: IntoIterator<Item = RespoStyleRule>,
+    U: IntoIterator<Item = CssRule>,
   {
     match self {
       RespoNode::Component(_, _, node) => {

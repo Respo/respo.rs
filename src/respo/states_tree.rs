@@ -3,22 +3,20 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::rc::Rc;
 
-use web_sys::console::log_1;
-
-pub trait LocalState {
+pub trait LocalStateAbstract {
   fn as_any(&self) -> &dyn Any;
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct StatesTree {
-  data: LocalStateWrapper,
+  data: LocalState,
   cursor: Vec<String>,
   branches: HashMap<String, Rc<StatesTree>>,
 }
 
 impl StatesTree {
   // data
-  pub fn load(&self) -> LocalStateWrapper {
+  pub fn load(&self) -> LocalState {
     self.data.to_owned()
   }
 
@@ -31,14 +29,14 @@ impl StatesTree {
     let mut next_cursor = self.cursor.clone();
     next_cursor.push(path.to_owned());
     Self {
-      data: LocalStateWrapper(None),
+      data: LocalState(None),
       cursor: next_cursor,
       branches: HashMap::new(),
     }
   }
 
   /// returns a new tree
-  pub fn set_in(&self, path: &[String], new_state: LocalStateWrapper) -> Self {
+  pub fn set_in(&self, path: &[String], new_state: LocalState) -> Self {
     if path.is_empty() {
       Self {
         data: new_state,
@@ -67,15 +65,15 @@ impl StatesTree {
 // a trick to put dyn trait object inside a struct
 // thanks to https://users.rust-lang.org/t/how-to-add-a-trait-value-into-hashmap/6542/3
 #[derive(Clone, Default)]
-pub struct LocalStateWrapper(pub Option<Rc<dyn LocalState>>);
+pub struct LocalState(pub Option<Rc<dyn LocalStateAbstract>>);
 
-impl Debug for LocalStateWrapper {
+impl Debug for LocalState {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "LocalStateWrapper {{}}")
   }
 }
 
-impl PartialEq for LocalStateWrapper {
+impl PartialEq for LocalState {
   fn eq(&self, other: &Self) -> bool {
     match (&self.0, &other.0) {
       (None, None) => true,
@@ -89,12 +87,12 @@ impl PartialEq for LocalStateWrapper {
   }
 }
 
-impl Eq for LocalStateWrapper {}
+impl Eq for LocalState {}
 
-impl LocalStateWrapper {
+impl LocalState {
   pub fn ref_into<T>(&self) -> Option<&T>
   where
-    T: 'static + LocalState,
+    T: 'static + LocalStateAbstract,
   {
     // thanks to https://bennetthardwick.com/rust/downcast-trait-object/
     match &self.0 {
@@ -105,17 +103,16 @@ impl LocalStateWrapper {
 
   pub fn ref_from<T>(data: Option<&T>) -> Self
   where
-    T: 'static + LocalState + Debug + Clone,
+    T: 'static + LocalStateAbstract + Debug + Clone,
   {
-    log_1(&format!("before convert: {:?}", data).into());
     match data {
       Some(v) => {
         // thanks to https://users.rust-lang.org/t/why-i-can-use-dynamic-dispatch-dyn-mytrait-with-rc-but-not-refcell/49517/2
         // log_1(&format!("after convert: {:?}", l).into());
-        let x: Rc<dyn LocalState> = Rc::new(v.to_owned());
-        LocalStateWrapper(Some(x))
+        let x: Rc<dyn LocalStateAbstract> = Rc::new(v.to_owned());
+        LocalState(Some(x))
       }
-      None => LocalStateWrapper(None),
+      None => LocalState(None),
     }
   }
 }

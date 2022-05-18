@@ -10,7 +10,7 @@ use std::fmt::Debug;
 use std::sync::RwLock;
 
 use wasm_bindgen::{JsCast, JsValue};
-use web_sys::console::{error_1, log_1, warn_1};
+use web_sys::console::{error_1, info_1, warn_1};
 use web_sys::{HtmlElement, Node};
 
 pub use alias::*;
@@ -63,19 +63,15 @@ where
 
   mount_target.append_child(&element)?;
 
-  log_1(&format!("render tree: {:?}", tree0).into());
-
   util::raq_loop_slow(Box::new(move || -> Result<(), String> {
     let event_marks = load_user_events();
-
-    // log_1(&"loop".into());
 
     if !event_marks.is_empty() {
       for mark in event_marks {
         match request_for_target_handler(&prev_tree, &mark.name, &mark.coord) {
           Ok(handler) => match (*handler.0)(mark.event_info, dispatch_action.clone()) {
             Ok(()) => {
-              log_1(&format!("finished event: {} {:?}", mark.name, mark.coord).into());
+              // log_1(&format!("finished event: {} {:?}", mark.name, mark.coord).into());
             }
             Err(e) => {
               error_1(&format!("event handler error: {:?}", e).into());
@@ -89,7 +85,7 @@ where
       let new_tree = renderer()?;
       let mut changes: Vec<DomChange<T>> = vec![];
       diff_tree(&new_tree, &prev_tree, Vec::new(), &mut changes)?;
-      log_1(&format!("changes: {:?}", changes).into());
+      info_1(&format!("changes: {:?}", changes).into());
       patch_tree(&mount_target, &changes)?;
       prev_tree = new_tree;
     }

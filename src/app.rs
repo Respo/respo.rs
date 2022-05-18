@@ -9,8 +9,8 @@ use wasm_bindgen::prelude::*;
 use web_sys::console::log_1;
 
 use crate::respo::{
-  button0, div0, query_select_node, render_node, span0, DispatchFn, LocalState, LocalStateWrapper, RespoColor, RespoEventHandler,
-  RespoNode, RespoStyleRule, StatesTree,
+  button0, div0, query_select_node, render_node, span0, CssColor, CssRule, DispatchFn, LocalState, LocalStateAbstract,
+  RespoEventHandler, RespoNode, StatesTree,
 };
 
 #[derive(Debug)]
@@ -23,7 +23,7 @@ struct Store {
 enum ActionOp {
   Increment,
   Decrement,
-  StatesChange(Vec<String>, LocalStateWrapper),
+  StatesChange(Vec<String>, LocalState),
 }
 
 #[derive(Debug, Clone, Default)]
@@ -31,7 +31,7 @@ struct MainState {
   counted: i32,
 }
 
-impl LocalState for MainState {
+impl LocalStateAbstract for MainState {
   fn as_any(&self) -> &dyn Any {
     self
   }
@@ -48,11 +48,11 @@ pub fn load_demo_app() -> JsValue {
     counted: 0,
     states: StatesTree::default(),
   }));
-  let g_copy = global_store.clone();
 
+  let store_to_action = global_store.clone();
   let dispatch_action = move |op: ActionOp| -> Result<(), String> {
-    log_1(&format!("action {:?}", op).into());
-    let mut store = global_store.borrow_mut();
+    // log_1(&format!("action {:?}", op).into());
+    let mut store = store_to_action.borrow_mut();
     match op {
       ActionOp::Increment => {
         store.counted += 1;
@@ -70,15 +70,12 @@ pub fn load_demo_app() -> JsValue {
   render_node(
     mount_target,
     Box::new(move || -> Result<RespoNode<ActionOp>, String> {
-      let store = g_copy.borrow();
+      let store = global_store.borrow();
       let states = store.states.to_owned();
       let cursor = states.path();
-      log_1(&"rerendering".into());
-      let internal_state = states.load().ref_into::<MainState>().map(ToOwned::to_owned);
-      log_1(&format!("internal: {:?}", internal_state).into());
-      let state: MainState = internal_state.unwrap_or_default();
-      let s2 = state.clone();
-      log_1(&format!("state: {:?}", state).into());
+
+      let state: MainState = states.load().ref_into::<MainState>().map(ToOwned::to_owned).unwrap_or_default();
+
       Ok(
         div0()
           .add_children([
@@ -86,16 +83,15 @@ pub fn load_demo_app() -> JsValue {
               .add_children([
                 button0()
                   .add_attrs([("innerText", "demo inc"), ("class", "my-button")])
-                  .add_style([RespoStyleRule::Margin(4.)])
+                  .add_style([CssRule::Margin(4.)])
                   .add_event([(
                     "click",
                     RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
                       log_1(&format!("click {:?}", e).into());
                       dispatch.run(ActionOp::Increment)?;
-                      log_1(&format!("local state {:?}", s2.to_owned()).into());
                       dispatch.run(ActionOp::StatesChange(
                         cursor.to_owned(),
-                        LocalStateWrapper::ref_from(Some(&MainState {
+                        LocalState::ref_from(Some(&MainState {
                           counted: state.counted + 2,
                         })),
                       ))?;
@@ -105,7 +101,7 @@ pub fn load_demo_app() -> JsValue {
                   .to_owned(),
                 button0()
                   .add_attrs([("innerText", "demo dec"), ("class", "my-button")])
-                  .add_style([RespoStyleRule::Margin(4.)])
+                  .add_style([CssRule::Margin(4.)])
                   .add_event([(
                     "click",
                     RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
@@ -121,9 +117,9 @@ pub fn load_demo_app() -> JsValue {
               .add_children([span0()
                 .add_attrs([("innerText", format!("value is: {}", store.counted))])
                 .add_style([
-                  RespoStyleRule::Color(RespoColor::Blue),
-                  RespoStyleRule::FontFamily("Menlo".to_owned()),
-                  RespoStyleRule::FontSize(10.0 + store.counted as f32),
+                  CssRule::Color(CssColor::Blue),
+                  CssRule::FontFamily("Menlo".to_owned()),
+                  CssRule::FontSize(10.0 + store.counted as f32),
                 ])
                 .to_owned()])
               .to_owned(),

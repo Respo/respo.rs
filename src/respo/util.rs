@@ -1,6 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
+use web_sys::Node;
 
 #[allow(dead_code)]
 pub fn raq_loop(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
@@ -54,4 +55,17 @@ pub fn raq_loop_slow(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
 // just get first of tuple
 pub fn fst<T, U>(pair: &(T, U)) -> &T {
   &pair.0
+}
+
+/// a shorthand for get an Node with given pattern
+pub fn query_select_node(pattern: &str) -> Result<Node, String> {
+  let window = web_sys::window().expect("no global `window` exists");
+  let document = window.document().expect("should have a document on window");
+  let target = document.query_selector(pattern).expect("call selector").expect("find .app");
+
+  if let Some(element) = target.dyn_ref::<Node>() {
+    Ok(element.to_owned())
+  } else {
+    Err(format!("failed to find {}", pattern))
+  }
 }

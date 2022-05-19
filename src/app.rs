@@ -9,8 +9,8 @@ use wasm_bindgen::prelude::*;
 use web_sys::console::log_1;
 
 use crate::respo::{
-  button, div, query_select_node, render_node, span, CssColor, CssRule, DispatchFn, LocalState, LocalStateAbstract, RespoEventHandler,
-  RespoNode, StatesTree,
+  button, div, render_node, span, util::query_select_node, CssColor, CssRule, DispatchFn, LocalState, LocalStateAbstract, RespoEvent,
+  RespoEventHandler, RespoNode, StatesTree,
 };
 
 #[derive(Debug)]
@@ -88,6 +88,10 @@ pub fn load_demo_app() -> JsValue {
                     "click",
                     RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
                       log_1(&format!("click {:?}", e).into());
+                      if let RespoEvent::Click { original_event, .. } = e {
+                        original_event.prevent_default();
+                      }
+
                       dispatch.run(ActionOp::Increment)?;
                       dispatch.run(ActionOp::StatesChange(
                         cursor.to_owned(),
@@ -105,7 +109,7 @@ pub fn load_demo_app() -> JsValue {
                   .add_event([(
                     "click",
                     RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
-                      log_1(&format!("click {:?}", e).into());
+                      log_1(&format!("click {:?}", e,).into());
                       dispatch.run(ActionOp::Decrement)?;
                       Ok(())
                     })),

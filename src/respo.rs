@@ -4,13 +4,15 @@ mod diff;
 mod patch;
 mod primes;
 mod states_tree;
-mod util;
+pub mod util;
 
+use std::cell::RefCell;
 use std::fmt::Debug;
+use std::rc::Rc;
 use std::sync::RwLock;
 
 use wasm_bindgen::{JsCast, JsValue};
-use web_sys::console::{error_1, info_1, warn_1};
+use web_sys::console::{error_1, info_1, log_1, warn_1};
 use web_sys::{HtmlElement, Node};
 
 pub use alias::*;
@@ -23,28 +25,26 @@ use self::patch::{attach_event, patch_tree};
 
 lazy_static::lazy_static! {
   /// event queue that code in the loop will detect
-  static ref EVENTS_QUEUE: RwLock<Vec<RespoEventMark>> = RwLock::new(Vec::new());
+  static ref NEED_TO_ERENDER: RwLock<bool> = RwLock::new(false);
 }
 
-fn load_user_events() -> Vec<RespoEventMark> {
-  let mut events = Vec::new();
-  let mut queue = EVENTS_QUEUE.write().expect("to load events quwuw");
-  for event in queue.drain(..) {
-    events.push(event);
+/// check where need to trigger rerendering, also resets the status to false
+fn drain_rerender_status() -> bool {
+  let ret = { *NEED_TO_ERENDER.read().expect("to drain rerender status") };
+
+  if ret {
+    let mut need_to_erender = NEED_TO_ERENDER.write().expect("to drain rerender status");
+    *need_to_erender = false;
   }
-  events
+  ret
 }
 
-/// a shorthand for get an Node with given pattern
-pub fn query_select_node(pattern: &str) -> Result<Node, String> {
-  let window = web_sys::window().expect("no global `window` exists");
-  let document = window.document().expect("should have a document on window");
-  let target = document.query_selector(pattern).expect("call selector").expect("find .app");
+pub fn mark_need_rerender() {
+  let ret = { *NEED_TO_ERENDER.read().expect("to drain rerender status") };
 
-  if let Some(element) = target.dyn_ref::<Node>() {
-    Ok(element.to_owned())
-  } else {
-    Err(format!("failed to find {}", pattern))
+  if !ret {
+    let mut need_to_erender = NEED_TO_ERENDER.write().expect("to drain rerender status");
+    *need_to_erender = true;
   }
 }
 
@@ -58,36 +58,43 @@ where
   T: 'static + Debug + Clone,
 {
   let tree0: RespoNode<T> = renderer()?;
-  let mut prev_tree = tree0.clone();
-  let element = build_dom_tree(&tree0, &[])?;
+  let prev_tree = Rc::new(RefCell::new(tree0.clone()));
+
+  let to_prev_tree = prev_tree.clone();
+  let handle_event = EventHandlerFn(Rc::new(move |mark: RespoEventMark| -> Result<(), String> {
+    match request_for_target_handler(&to_prev_tree.borrow(), &mark.name, &mark.coord) {
+      Ok(handler) => match (*handler.0)(mark.event_info, dispatch_action.clone()) {
+        Ok(()) => {
+          // log_1(&format!("finished event: {} {:?}", mark.name, mark.coord).into());
+          mark_need_rerender();
+        }
+        Err(e) => {
+          error_1(&format!("event handler error: {:?}", e).into());
+        }
+      },
+      Err(msg) => {
+        error_1(&format!("event not handled: {}", msg).into());
+      }
+    }
+
+    Ok(())
+  }));
+
+  let handler = handle_event.clone();
+  let element = build_dom_tree(&tree0, &[], handler)?;
 
   mount_target.append_child(&element)?;
 
+  let to_prev_tree = prev_tree.clone();
   util::raq_loop_slow(Box::new(move || -> Result<(), String> {
-    let event_marks = load_user_events();
-
-    if !event_marks.is_empty() {
-      for mark in event_marks {
-        match request_for_target_handler(&prev_tree, &mark.name, &mark.coord) {
-          Ok(handler) => match (*handler.0)(mark.event_info, dispatch_action.clone()) {
-            Ok(()) => {
-              // log_1(&format!("finished event: {} {:?}", mark.name, mark.coord).into());
-            }
-            Err(e) => {
-              error_1(&format!("event handler error: {:?}", e).into());
-            }
-          },
-          Err(msg) => {
-            error_1(&format!("event not handled: {}", msg).into());
-          }
-        }
-      }
+    if drain_rerender_status() {
       let new_tree = renderer()?;
       let mut changes: Vec<DomChange<T>> = vec![];
-      diff_tree(&new_tree, &prev_tree, Vec::new(), &mut changes)?;
+      diff_tree(&new_tree, &to_prev_tree.borrow(), Vec::new(), &mut changes)?;
       info_1(&format!("changes: {:?}", changes).into());
-      patch_tree(&mount_target, &changes)?;
-      prev_tree = new_tree;
+      let handler = handle_event.clone();
+      patch_tree(&mount_target, &changes, handler)?;
+      prev_tree.replace(new_tree);
     }
 
     Ok(())
@@ -96,16 +103,16 @@ where
   Ok(())
 }
 
-fn request_for_target_handler<T>(tree: &RespoNode<T>, name: &str, coord: &[RespoCoord]) -> Result<RespoEventHandler<T>, String>
+fn request_for_target_handler<T>(tree: &RespoNode<T>, event_name: &str, coord: &[RespoCoord]) -> Result<RespoEventHandler<T>, String>
 where
   T: Debug + Clone,
 {
   if coord.is_empty() {
     match tree {
       RespoNode::Component(name, ..) => Err(format!("expected element, found target being a component: {}", &name)),
-      RespoNode::Element { name: tag_name, event, .. } => match event.get(name) {
+      RespoNode::Element { name: tag_name, event, .. } => match event.get(event_name) {
         Some(v) => Ok((*v).to_owned()),
-        None => Err(format!("no handler for event {} on {}", &name, tag_name)),
+        None => Err(format!("no handler for event:{} on {} {:?}", &event_name, tag_name, event,)),
       },
     }
   } else {
@@ -119,7 +126,7 @@ where
         }
       }
       (RespoNode::Element { children, .. }, RespoCoord::Idx(idx)) => match children.get(*idx as usize) {
-        Some((_k, child)) => request_for_target_handler(child, name, &coord[1..]),
+        Some((_k, child)) => request_for_target_handler(child, event_name, &coord[1..]),
         None => Err(format!("no child at index {}", idx)),
       },
       (RespoNode::Component(..), RespoCoord::Idx(..)) => Err(String::from("expected element, found target being a component")),
@@ -128,7 +135,7 @@ where
   }
 }
 
-pub fn build_dom_tree<T>(tree: &RespoNode<T>, coord: &[RespoCoord]) -> Result<Node, JsValue>
+pub fn build_dom_tree<T>(tree: &RespoNode<T>, coord: &[RespoCoord], handle_event: EventHandlerFn) -> Result<Node, JsValue>
 where
   T: Debug + Clone,
 {
@@ -139,7 +146,7 @@ where
     RespoNode::Component(name, _, child) => {
       let mut next_coord: Vec<RespoCoord> = coord.to_owned();
       next_coord.push(RespoCoord::Comp(name.clone()));
-      build_dom_tree(child, &next_coord)
+      build_dom_tree(child, &next_coord, handle_event)
     }
     RespoNode::Element {
       name,
@@ -164,24 +171,19 @@ where
       for (idx, (_k, child)) in children.iter().enumerate() {
         let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Idx(idx as u32));
-        element.append_child(&build_dom_tree(child, &next_coord)?)?;
+        let handler = handle_event.clone();
+        element.append_child(&build_dom_tree(child, &next_coord, handler)?)?;
       }
+
+      // log_1(&format!("creano handler forted element: {} {:?}", name, event).into());
 
       for key in event.keys() {
         let coord = coord.to_owned();
-        attach_event(&element, key.as_str(), &coord)?;
+        let handler = handle_event.clone();
+        attach_event(&element, key.as_str(), &coord, handler)?;
       }
 
       Ok(element.dyn_ref::<Node>().expect("converting to Node").clone())
     }
   }
-}
-
-pub fn track_delegated_event(coord: &[RespoCoord], name: &str, event: RespoEvent) {
-  let mut queue = EVENTS_QUEUE.write().expect("to track delegated event");
-  queue.push(RespoEventMark {
-    name: name.to_owned(),
-    coord: coord.to_owned(),
-    event_info: event,
-  });
 }

@@ -1,14 +1,14 @@
 use std::fmt::Debug;
 
 use wasm_bindgen::prelude::Closure;
-use web_sys::{Element, HtmlElement, HtmlInputElement, InputEvent, MouseEvent, Node};
+use web_sys::{console::log_1, Element, HtmlElement, HtmlInputElement, InputEvent, MouseEvent, Node};
 
 use wasm_bindgen::JsCast;
 use web_sys::console::warn_1;
 
-use super::{build_dom_tree, track_delegated_event, ChildDomOp, DomChange, RespoCoord, RespoEvent};
+use super::{build_dom_tree, ChildDomOp, DomChange, EventHandlerFn, RespoCoord, RespoEvent, RespoEventMark};
 
-pub fn patch_tree<T>(mount_target: &Node, changes: &Vec<DomChange<T>>) -> Result<(), String>
+pub fn patch_tree<T>(mount_target: &Node, changes: &Vec<DomChange<T>>, handle_event: EventHandlerFn) -> Result<(), String>
 where
   T: Debug + Clone,
 {
@@ -58,7 +58,8 @@ where
       DomChange::ModifyEvent { add, remove, coord, .. } => {
         let el = target.dyn_ref::<Element>().expect("to element");
         for k in add.iter() {
-          attach_event(el, k, coord)?;
+          let handler = handle_event.clone();
+          attach_event(el, k, coord, handler)?;
         }
         let el = el.dyn_ref::<HtmlElement>().expect("html element");
         for k in remove {
@@ -75,7 +76,8 @@ where
       }
       DomChange::ReplaceElement { node, .. } => {
         let parent = target.parent_element().expect("load parent");
-        let new_element = build_dom_tree(node, &coord).expect("build element");
+        let handler = handle_event.clone();
+        let new_element = build_dom_tree(node, &coord, handler).expect("build element");
         parent
           .dyn_ref::<Node>()
           .expect("to node")
@@ -85,9 +87,10 @@ where
       }
       DomChange::ModifyChildren { operations, .. } => {
         for op in operations {
+          let handler = handle_event.clone();
           match op {
             ChildDomOp::Append(node) => {
-              let new_element = build_dom_tree(node, &coord).expect("new element");
+              let new_element = build_dom_tree(node, &coord, handler).expect("new element");
               target
                 .dyn_ref::<Node>()
                 .expect("to node")
@@ -108,7 +111,8 @@ where
               if idx >= &children.length() {
                 return Err(format!("child not found at {}", &idx));
               } else {
-                let new_element = build_dom_tree(node, &coord).expect("new element");
+                let handler = handle_event.clone();
+                let new_element = build_dom_tree(node, &coord, handler).expect("new element");
                 if idx == &children.length() {
                   let child = children.item(*idx + 1).ok_or_else(|| format!("child not found at {}", &idx))?;
                   target.insert_before(&new_element, Some(&child)).expect("element inserted");
@@ -139,20 +143,23 @@ fn find_coord_target(mount_target: &Node, coord: &[RespoCoord]) -> Result<Node, 
   Ok(target)
 }
 
-pub fn attach_event(element: &Element, key: &str, coord: &Vec<RespoCoord>) -> Result<(), String> {
+pub fn attach_event(element: &Element, key: &str, coord: &Vec<RespoCoord>, handle_event: EventHandlerFn) -> Result<(), String> {
   let coord = coord.to_owned();
+  // log_1(&format!("attach event {}", key).into());
   match key {
     "click" => {
       let handler = Closure::wrap(Box::new(move |e: MouseEvent| {
-        track_delegated_event(
-          &coord,
-          "click",
-          RespoEvent::Click {
+        handle_event
+          .run(RespoEventMark {
+            name: "click".to_owned(),
             coord: coord.to_owned(),
-            client_x: e.client_x() as f64,
-            client_y: e.client_y() as f64,
-          },
-        );
+            event_info: RespoEvent::Click {
+              client_x: e.client_x() as f64,
+              client_y: e.client_y() as f64,
+              original_event: e,
+            },
+          })
+          .expect("handle click event");
       }) as Box<dyn FnMut(MouseEvent)>);
       element
         .dyn_ref::<HtmlElement>()
@@ -162,19 +169,21 @@ pub fn attach_event(element: &Element, key: &str, coord: &Vec<RespoCoord>) -> Re
     }
     "input" => {
       let handler = Closure::wrap(Box::new(move |e: InputEvent| {
-        track_delegated_event(
-          &coord,
-          "input",
-          RespoEvent::Input {
+        handle_event
+          .run(RespoEventMark {
             coord: coord.to_owned(),
-            value: e
-              .target()
-              .expect("to reach event target")
-              .dyn_ref::<HtmlInputElement>()
-              .expect("to convert to html input element")
-              .value(),
-          },
-        );
+            name: "input".to_owned(),
+            event_info: RespoEvent::Input {
+              value: e
+                .target()
+                .expect("to reach event target")
+                .dyn_ref::<HtmlInputElement>()
+                .expect("to convert to html input element")
+                .value(),
+              original_event: e,
+            },
+          })
+          .expect("handle input event");
       }) as Box<dyn FnMut(InputEvent)>);
       element
         .dyn_ref::<HtmlInputElement>()

@@ -4,6 +4,8 @@ use std::fmt::Display;
 use std::rc::Rc;
 use std::{collections::HashMap, fmt::Debug};
 
+use web_sys::{InputEvent, KeyboardEvent, MouseEvent};
+
 use super::css::{CssRule, RespoStyle};
 
 #[derive(Debug, Clone)]
@@ -164,12 +166,11 @@ pub struct RespoEventMark {
 pub enum RespoEvent {
   // TODO
   Click {
-    coord: Vec<RespoCoord>,
     client_x: f64,
     client_y: f64,
+    original_event: MouseEvent,
   },
   Keyboard {
-    coord: Vec<RespoCoord>,
     key: String,
     key_code: u32,
     shift_key: bool,
@@ -177,10 +178,11 @@ pub enum RespoEvent {
     alt_key: bool,
     meta_key: bool,
     repeat: bool,
+    original_event: KeyboardEvent,
   },
   Input {
-    coord: Vec<RespoCoord>,
     value: String,
+    original_event: InputEvent,
   },
 }
 
@@ -275,5 +277,20 @@ where
 {
   pub fn run(&self, op: T) -> Result<(), String> {
     (self.0)(op)
+  }
+}
+
+#[derive(Clone)]
+pub struct EventHandlerFn(pub Rc<dyn Fn(RespoEventMark) -> Result<(), String>>);
+
+impl Debug for EventHandlerFn {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.write_str("[EventHandlerFn]")
+  }
+}
+
+impl EventHandlerFn {
+  pub fn run(&self, e: RespoEventMark) -> Result<(), String> {
+    (self.0)(e)
   }
 }

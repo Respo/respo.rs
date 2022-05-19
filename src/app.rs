@@ -1,22 +1,37 @@
 extern crate console_error_panic_hook;
 
-use std::any::Any;
 use std::cell::RefCell;
-use std::panic;
 use std::rc::Rc;
+use std::{any::Any, fmt::Debug};
+use std::{panic, vec};
 
 use wasm_bindgen::prelude::*;
 use web_sys::console::log_1;
 
 use crate::respo::{
-  button, div, render_node, span, util::query_select_node, CssColor, CssRule, DispatchFn, LocalState, LocalStateAbstract, RespoEvent,
-  RespoEventHandler, RespoNode, StatesTree,
+  button, div, render_node, span, util::query_select_node, CssColor, CssRule, DispatchFn, LocalState, RespoCacheable, RespoEffectArg,
+  RespoEvent, RespoEventHandler, RespoNode, StatesTree,
 };
+use crate::respo::{RespoEffect, RespoEffectHandler};
 
 #[derive(Debug)]
 struct Store {
   counted: i32,
+  tasks: Vec<Task>,
   states: StatesTree,
+}
+
+#[derive(Debug, Clone)]
+struct Task {
+  done: bool,
+  content: String,
+  time: f32,
+}
+
+impl RespoCacheable for Task {
+  fn as_any(&self) -> &dyn Any {
+    self
+  }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -31,7 +46,7 @@ struct MainState {
   counted: i32,
 }
 
-impl LocalStateAbstract for MainState {
+impl RespoCacheable for MainState {
   fn as_any(&self) -> &dyn Any {
     self
   }
@@ -47,6 +62,7 @@ pub fn load_demo_app() -> JsValue {
   let global_store = Rc::new(RefCell::new(Store {
     counted: 0,
     states: StatesTree::default(),
+    tasks: vec![],
   }));
 
   let store_to_action = global_store.clone();
@@ -132,6 +148,8 @@ pub fn load_demo_app() -> JsValue {
                 .add_attrs([("innerText", format!("local state: {}", state.counted))])
                 .to_owned()])
               .to_owned(),
+            comp_panel(&states.pick("panel"))?,
+            comp_todolist(&states.pick("todolist"), &vec![])?,
           ])
           .to_owned(),
       )
@@ -141,4 +159,69 @@ pub fn load_demo_app() -> JsValue {
   .expect("rendering node");
 
   JsValue::NULL
+}
+
+fn comp_panel<T>(states: &StatesTree) -> Result<RespoNode<T>, String>
+where
+  T: Debug + Clone,
+{
+  Ok(RespoNode::Component(
+    "panel".to_owned(),
+    vec![RespoEffect {
+      args: vec![],
+      handler: RespoEffectHandler(Rc::new(move |args, action_type, el| -> Result<(), String> {
+        log_1(&"TODO".into());
+        Ok(())
+      })),
+    }],
+    Box::new(
+      div()
+        .add_children([span().add_attrs([("innerText", String::from("TODO panel"))]).to_owned()])
+        .to_owned(),
+    ),
+  ))
+}
+
+fn comp_todolist<T>(states: &StatesTree, tasks: &Vec<Task>) -> Result<RespoNode<T>, String>
+where
+  T: Debug + Clone,
+{
+  Ok(
+    div()
+      .add_children([
+        span().add_attrs([("innerText", format!("TODO {:?}", tasks))]).to_owned(),
+        comp_task(
+          &states.pick("task"),
+          &Task {
+            done: false,
+            content: String::from("task 1"),
+            time: 0.0,
+          },
+        )?,
+      ])
+      .to_owned(),
+  )
+}
+
+fn comp_task<T>(states: &StatesTree, task: &Task) -> Result<RespoNode<T>, String>
+where
+  T: Debug + Clone,
+{
+  let arg: Rc<dyn RespoCacheable> = Rc::new(task.to_owned());
+
+  Ok(RespoNode::Component(
+    "tasks".to_owned(),
+    vec![RespoEffect {
+      args: vec![RespoEffectArg(arg)],
+      handler: RespoEffectHandler(Rc::new(move |args, effect_type, el| -> Result<(), String> {
+        // TODO
+        Ok(())
+      })),
+    }],
+    Box::new(
+      div()
+        .add_children([span().add_attrs([("innerText", format!("TODO {:?}", task))]).to_owned()])
+        .to_owned(),
+    ),
+  ))
 }

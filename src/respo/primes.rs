@@ -4,9 +4,10 @@ use std::fmt::Display;
 use std::rc::Rc;
 use std::{collections::HashMap, fmt::Debug};
 
-use web_sys::{InputEvent, KeyboardEvent, MouseEvent};
+use web_sys::{InputEvent, KeyboardEvent, MouseEvent, Node};
 
 use super::css::{CssRule, RespoStyle};
+use super::RespoCacheable;
 
 #[derive(Debug, Clone)]
 pub enum RespoNode<T>
@@ -124,6 +125,19 @@ where
     }
     self
   }
+
+  pub fn add_effects<U>(&mut self, more: U) -> &mut Self
+  where
+    U: IntoIterator<Item = RespoEffect>,
+  {
+    match self {
+      RespoNode::Component(_, ref mut effects, node) => {
+        effects.extend(more);
+        self
+      }
+      RespoNode::Element { .. } => unreachable!("effects are on components"),
+    }
+  }
 }
 
 pub type StrDict = HashMap<String, String>;
@@ -164,7 +178,6 @@ pub struct RespoEventMark {
 #[derive(Debug, Clone)]
 /// event wraps on top of DOM events
 pub enum RespoEvent {
-  // TODO
   Click {
     client_x: f64,
     client_y: f64,
@@ -189,17 +202,44 @@ pub enum RespoEvent {
 /// TODO need a container for values
 #[derive(Debug, Clone)]
 pub struct RespoEffect {
-  // args: Vec<String>,
-// handler: RespoEffectHandler,
+  pub args: RespoEffectArgList,
+  pub handler: RespoEffectHandler,
 }
 
 #[derive(Clone)]
-pub struct RespoEffectHandler(pub Rc<dyn FnMut() -> Result<(), String>>);
+pub struct RespoEffectArg(pub Rc<dyn RespoCacheable>);
+
+impl Debug for RespoEffectArg {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "RespoEffectArgs(...)")
+  }
+}
+
+impl PartialEq for RespoEffectArg {
+  fn eq(&self, other: &Self) -> bool {
+    // TODO I don't have an idea for comparing such dynamic pointers
+    #[allow(clippy::vtable_address_comparisons)]
+    Rc::ptr_eq(&self.0, &other.0)
+  }
+}
+
+/// a list of args
+type RespoEffectArgList = Vec<RespoEffectArg>;
+
+#[derive(Clone)]
+pub struct RespoEffectHandler(pub Rc<dyn FnMut(RespoEffectArgList, RespoEffectType, Node) -> Result<(), String>>);
 
 impl Debug for RespoEffectHandler {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "RespoEventHandler(...)")
   }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RespoEffectType {
+  Mount,
+  Update,
+  Unmount,
 }
 
 #[derive(Debug, Clone)]

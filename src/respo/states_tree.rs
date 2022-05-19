@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::rc::Rc;
 
-pub trait LocalStateAbstract {
+/// that can be stored in Respo's caching tree
+pub trait RespoCacheable {
   fn as_any(&self) -> &dyn Any;
 }
 
@@ -65,7 +66,7 @@ impl StatesTree {
 // a trick to put dyn trait object inside a struct
 // thanks to https://users.rust-lang.org/t/how-to-add-a-trait-value-into-hashmap/6542/3
 #[derive(Clone, Default)]
-pub struct LocalState(pub Option<Rc<dyn LocalStateAbstract>>);
+pub struct LocalState(pub Option<Rc<dyn RespoCacheable>>);
 
 impl Debug for LocalState {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -92,7 +93,7 @@ impl Eq for LocalState {}
 impl LocalState {
   pub fn ref_into<T>(&self) -> Option<&T>
   where
-    T: 'static + LocalStateAbstract,
+    T: 'static + RespoCacheable,
   {
     // thanks to https://bennetthardwick.com/rust/downcast-trait-object/
     match &self.0 {
@@ -103,13 +104,13 @@ impl LocalState {
 
   pub fn ref_from<T>(data: Option<&T>) -> Self
   where
-    T: 'static + LocalStateAbstract + Debug + Clone,
+    T: 'static + RespoCacheable + Debug + Clone,
   {
     match data {
       Some(v) => {
         // thanks to https://users.rust-lang.org/t/why-i-can-use-dynamic-dispatch-dyn-mytrait-with-rc-but-not-refcell/49517/2
         // log_1(&format!("after convert: {:?}", l).into());
-        let x: Rc<dyn LocalStateAbstract> = Rc::new(v.to_owned());
+        let x: Rc<dyn RespoCacheable> = Rc::new(v.to_owned());
         LocalState(Some(x))
       }
       None => LocalState(None),

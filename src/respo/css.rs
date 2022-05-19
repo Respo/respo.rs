@@ -529,7 +529,7 @@ pub fn declare_static_style<T>(name: T, rules: &[(String, &[CssRule])]) -> Strin
 where
   T: Into<String> + Clone,
 {
-  let defined_styles = CLASS_NAME_IN_TAGS.write().expect("access styles");
+  let mut defined_styles = CLASS_NAME_IN_TAGS.write().expect("access styles");
   if defined_styles.contains(&name.to_owned().into()) {
     name.into()
   } else {
@@ -553,6 +553,8 @@ where
     head
       .append_child(style_tag.dyn_ref::<Element>().expect("get element"))
       .expect("add style");
+
+    defined_styles.insert(name.to_owned().into());
 
     name.into()
   }

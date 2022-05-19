@@ -5,12 +5,15 @@ use std::rc::Rc;
 use std::{any::Any, fmt::Debug};
 use std::{panic, vec};
 
+use serde::{Deserialize, Serialize};
+
+use serde_json::Value;
 use wasm_bindgen::prelude::*;
 use web_sys::console::log_1;
 
 use crate::respo::{
-  button, div, render_node, span, util::query_select_node, CssColor, CssRule, DispatchFn, LocalState, RespoCacheable, RespoEffectArg,
-  RespoEvent, RespoEventHandler, RespoNode, StatesTree,
+  button, div, render_node, span, util::query_select_node, CssColor, CssRule, DispatchFn, RespoEvent, RespoEventHandler, RespoNode,
+  StatesTree,
 };
 use crate::respo::{RespoEffect, RespoEffectHandler};
 
@@ -21,35 +24,23 @@ struct Store {
   states: StatesTree,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct Task {
   done: bool,
   content: String,
   time: f32,
 }
 
-impl RespoCacheable for Task {
-  fn as_any(&self) -> &dyn Any {
-    self
-  }
-}
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum ActionOp {
   Increment,
   Decrement,
-  StatesChange(Vec<String>, LocalState),
+  StatesChange(Vec<String>, Option<Value>),
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 struct MainState {
   counted: i32,
-}
-
-impl RespoCacheable for MainState {
-  fn as_any(&self) -> &dyn Any {
-    self
-  }
 }
 
 #[wasm_bindgen(js_name = loadDemoApp)]
@@ -90,7 +81,10 @@ pub fn load_demo_app() -> JsValue {
       let states = store.states.to_owned();
       let cursor = states.path();
 
-      let state: MainState = states.load().ref_into::<MainState>().map(ToOwned::to_owned).unwrap_or_default();
+      let state: MainState = match &states.data {
+        Some(v) => serde_json::from_value(v.to_owned()).expect("to main state"),
+        None => MainState::default(),
+      };
 
       Ok(
         div()
@@ -111,9 +105,12 @@ pub fn load_demo_app() -> JsValue {
                       dispatch.run(ActionOp::Increment)?;
                       dispatch.run(ActionOp::StatesChange(
                         cursor.to_owned(),
-                        LocalState::ref_from(Some(&MainState {
-                          counted: state.counted + 2,
-                        })),
+                        Some(
+                          serde_json::to_value(MainState {
+                            counted: state.counted + 2,
+                          })
+                          .expect("to json"),
+                        ),
                       ))?;
                       Ok(())
                     })),
@@ -207,13 +204,12 @@ fn comp_task<T>(states: &StatesTree, task: &Task) -> Result<RespoNode<T>, String
 where
   T: Debug + Clone,
 {
-  let arg: Rc<dyn RespoCacheable> = Rc::new(task.to_owned());
-
   Ok(RespoNode::Component(
     "tasks".to_owned(),
     vec![RespoEffect {
-      args: vec![RespoEffectArg(arg)],
+      args: vec![serde_json::to_value(task).expect("to json")],
       handler: RespoEffectHandler(Rc::new(move |args, effect_type, el| -> Result<(), String> {
+        let t: Task = serde_json::from_value(args[0].to_owned()).expect("from json");
         // TODO
         Ok(())
       })),

@@ -9,7 +9,7 @@ use web_sys::{InputEvent, KeyboardEvent, MouseEvent, Node};
 
 use super::css::{CssRule, RespoStyle};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RespoNode<T>
 where
   T: Debug + Clone,
@@ -131,7 +131,7 @@ where
     U: IntoIterator<Item = RespoEffect>,
   {
     match self {
-      RespoNode::Component(_, ref mut effects, node) => {
+      RespoNode::Component(_, ref mut effects, _) => {
         effects.extend(more);
         self
       }
@@ -146,6 +146,18 @@ pub type StrDict = HashMap<String, String>;
 pub struct RespoEventHandler<T>(pub Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>)
 where
   T: Debug + Clone;
+
+impl<T> PartialEq for RespoEventHandler<T>
+where
+  T: Debug + Clone,
+{
+  /// returns true since informations are erased when attaching to the DOM
+  fn eq(&self, _: &Self) -> bool {
+    true
+  }
+}
+
+impl<T> Eq for RespoEventHandler<T> where T: Debug + Clone {}
 
 impl<T> Debug for RespoEventHandler<T>
 where
@@ -205,6 +217,15 @@ pub struct RespoEffect {
   pub args: Vec<Value>,
   pub handler: RespoEffectHandler,
 }
+
+impl PartialEq for RespoEffect {
+  /// closure are not compared, changes happen in and passed via args
+  fn eq(&self, other: &Self) -> bool {
+    self.args == other.args
+  }
+}
+
+impl Eq for RespoEffect {}
 
 type UnitStrResult = Result<(), String>;
 

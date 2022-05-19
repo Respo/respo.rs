@@ -1,21 +1,17 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::rc::Rc;
 
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use super::pre;
-
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct StatesTree {
   pub data: Option<Value>,
   cursor: Vec<String>,
-  branches: HashMap<String, Rc<StatesTree>>,
+  branches: HashMap<String, Box<StatesTree>>,
 }
 
 impl StatesTree {
-  // data
-
   pub fn path(&self) -> Vec<String> {
     self.cursor.clone()
   }
@@ -57,11 +53,11 @@ impl StatesTree {
         let next_branch = branch.set_in(p_rest, new_state);
 
         let mut next = self.clone();
-        next.branches.insert(p0, Rc::new(next_branch));
+        next.branches.insert(p0, Box::new(next_branch));
         next
       } else {
         let mut next = self.clone();
-        next.branches.insert(p0, Rc::new(StatesTree::pick(self, &path[0])));
+        next.branches.insert(p0, Box::new(StatesTree::pick(self, &path[0])));
         next
       }
     }

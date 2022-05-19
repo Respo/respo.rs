@@ -24,6 +24,7 @@ version = "0.3.57"
 features = [
   "console",
   'Document',
+  "HtmlHeadElement",
   'Element',
   'Window',
   "HtmlElement",

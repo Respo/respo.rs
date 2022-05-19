@@ -1,8 +1,13 @@
 extern crate console_error_panic_hook;
 
+mod data_types;
+mod panel;
+mod task;
+mod todolist;
+
 use std::cell::RefCell;
+use std::fmt::Debug;
 use std::rc::Rc;
-use std::{any::Any, fmt::Debug};
 use std::{panic, vec};
 
 use serde::{Deserialize, Serialize};
@@ -15,9 +20,9 @@ use crate::respo::{
   button, div, render_node, span, util::query_select_node, CssColor, CssRule, DispatchFn, RespoEvent, RespoEventHandler, RespoNode,
   StatesTree,
 };
-use crate::respo::{RespoEffect, RespoEffectHandler};
+use crate::respo::{declare_static_style, RespoEffect, RespoEffectHandler};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 struct Store {
   counted: i32,
   tasks: Vec<Task>,
@@ -204,6 +209,14 @@ fn comp_task<T>(states: &StatesTree, task: &Task) -> Result<RespoNode<T>, String
 where
   T: Debug + Clone,
 {
+  let style_task_container = declare_static_style(
+    "task-comp",
+    &[(
+      "$0".to_owned(),
+      &[CssRule::Margin(4.), CssRule::BackgroundColor(CssColor::Hsla(200., 90., 90., 1.))],
+    )],
+  );
+
   Ok(RespoNode::Component(
     "tasks".to_owned(),
     vec![RespoEffect {
@@ -216,6 +229,7 @@ where
     }],
     Box::new(
       div()
+        .add_attrs([("class", style_task_container)])
         .add_children([span().add_attrs([("innerText", format!("TODO {:?}", task))]).to_owned()])
         .to_owned(),
     ),

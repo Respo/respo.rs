@@ -4,6 +4,10 @@ use std::fmt::Display;
 use std::rc::Rc;
 use std::{collections::HashMap, fmt::Debug};
 
+use web_sys::{InputEvent, KeyboardEvent, MouseEvent};
+
+use super::css::{CssRule, RespoStyle};
+
 #[derive(Debug, Clone)]
 pub enum RespoNode<T>
 where
@@ -15,7 +19,7 @@ where
     name: String,
     attrs: HashMap<String, String>,
     event: HashMap<String, RespoEventHandler<T>>,
-    style: RespoCssStyle,
+    style: RespoStyle,
     children: Vec<(RespoIndexKey, RespoNode<T>)>,
   },
 }
@@ -42,18 +46,32 @@ impl<T> RespoNode<T>
 where
   T: Debug + Clone,
 {
-  pub fn add_style(&mut self, more: RespoCssStyle) -> Result<&mut Self, String> {
+  pub fn make_tag(name: &str) -> Self {
+    Self::Element {
+      name: name.to_owned(),
+      attrs: HashMap::new(),
+      event: HashMap::new(),
+      style: RespoStyle::default(),
+      children: Vec::new(),
+    }
+  }
+
+  pub fn add_style<U>(&mut self, more: U) -> &mut Self
+  where
+    U: IntoIterator<Item = CssRule>,
+  {
     match self {
       RespoNode::Component(_, _, node) => {
-        node.add_style(more)?;
+        node.add_style(more);
       }
       RespoNode::Element { ref mut style, .. } => {
-        for (k, v) in &more.0 {
+        for pair in more.into_iter() {
+          let (k, v) = pair.get_pair();
           style.0.insert(k.to_owned(), v.to_owned());
         }
       }
     }
-    Ok(self)
+    self
   }
   pub fn add_attrs<U, V, W>(&mut self, more: U) -> &mut Self
   where
@@ -125,18 +143,6 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub struct RespoCssStyle(pub HashMap<String, String>);
-
-impl Display for RespoCssStyle {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    for (key, value) in self.0.iter() {
-      write!(f, "{}:{};", key, value)?;
-    }
-    Ok(())
-  }
-}
-
-#[derive(Debug, Clone)]
 pub enum RespoCoord {
   Idx(u32),
   /// for indexing by component name, even though there's only one of that
@@ -160,12 +166,11 @@ pub struct RespoEventMark {
 pub enum RespoEvent {
   // TODO
   Click {
-    coord: Vec<RespoCoord>,
     client_x: f64,
     client_y: f64,
+    original_event: MouseEvent,
   },
   Keyboard {
-    coord: Vec<RespoCoord>,
     key: String,
     key_code: u32,
     shift_key: bool,
@@ -173,10 +178,11 @@ pub enum RespoEvent {
     alt_key: bool,
     meta_key: bool,
     repeat: bool,
+    original_event: KeyboardEvent,
   },
   Input {
-    coord: Vec<RespoCoord>,
     value: String,
+    original_event: InputEvent,
   },
 }
 
@@ -271,5 +277,20 @@ where
 {
   pub fn run(&self, op: T) -> Result<(), String> {
     (self.0)(op)
+  }
+}
+
+#[derive(Clone)]
+pub struct EventHandlerFn(pub Rc<dyn Fn(RespoEventMark) -> Result<(), String>>);
+
+impl Debug for EventHandlerFn {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.write_str("[EventHandlerFn]")
+  }
+}
+
+impl EventHandlerFn {
+  pub fn run(&self, e: RespoEventMark) -> Result<(), String> {
+    (self.0)(e)
   }
 }

@@ -1,93 +1,38 @@
-use std::{collections::HashMap, fmt::Debug, vec};
+//! provide some frequestly used aliases,
+//! for the rest, use `RespoNode::make_tag(tag_name)` to create you own.
 
-use crate::respo::css::RespoStyle;
+use std::fmt::Debug;
 
-use super::primes::{RespoEventHandler, RespoNode, StrDict};
+use super::primes::RespoNode;
 
-#[allow(dead_code)]
-pub fn div<T>(
-  attrs: StrDict,
-  style: RespoStyle,
-  event: HashMap<String, RespoEventHandler<T>>,
-  children: Vec<RespoNode<T>>,
-) -> RespoNode<T>
-where
-  T: Debug + Clone,
-{
-  RespoNode::Element {
-    name: "div".to_owned(),
-    attrs,
-    event,
-    style,
-    children: children
-      .iter()
-      .enumerate()
-      .map(|(i, c)| (i.to_string().into(), c.clone()))
-      .collect(),
-  }
+#[macro_export]
+macro_rules! declare_tag {
+  ( $name:ident ) => {
+    #[allow(dead_code)]
+    pub fn $name<T>() -> RespoNode<T>
+    where
+      T: Debug + Clone,
+    {
+      RespoNode::make_tag(stringify!($name))
+    }
+  };
 }
 
-#[allow(dead_code)]
-pub fn span<T>(
-  attrs: StrDict,
-  style: RespoStyle,
-  event: HashMap<String, RespoEventHandler<T>>,
-  children: Vec<RespoNode<T>>,
-) -> RespoNode<T>
-where
-  T: Debug + Clone,
-{
-  RespoNode::Element {
-    name: "span".to_owned(),
-    attrs,
-    event,
-    style,
-    children: children
-      .iter()
-      .enumerate()
-      .map(|(i, c)| (i.to_string().into(), c.clone()))
-      .collect(),
-  }
-}
-
-#[allow(dead_code)]
-pub fn span0<T>() -> RespoNode<T>
-where
-  T: Debug + Clone,
-{
-  RespoNode::Element {
-    name: "span".to_owned(),
-    attrs: HashMap::new(),
-    event: HashMap::new(),
-    style: RespoStyle::default(),
-    children: vec![],
-  }
-}
-
-#[allow(dead_code)]
-pub fn div0<T>() -> RespoNode<T>
-where
-  T: Debug + Clone,
-{
-  RespoNode::Element {
-    name: "div".to_owned(),
-    attrs: HashMap::new(),
-    event: HashMap::new(),
-    style: RespoStyle::default(),
-    children: vec![],
-  }
-}
-
-#[allow(dead_code)]
-pub fn button0<T>() -> RespoNode<T>
-where
-  T: Debug + Clone,
-{
-  RespoNode::Element {
-    name: "button".to_owned(),
-    attrs: HashMap::new(),
-    event: HashMap::new(),
-    style: RespoStyle::default(),
-    children: vec![],
-  }
-}
+declare_tag!(div);
+declare_tag!(header);
+declare_tag!(section);
+declare_tag!(footer);
+declare_tag!(span);
+declare_tag!(input);
+declare_tag!(link);
+declare_tag!(button);
+declare_tag!(pre);
+declare_tag!(img);
+declare_tag!(video);
+declare_tag!(code);
+declare_tag!(a);
+declare_tag!(h1);
+declare_tag!(h2);
+declare_tag!(h3);
+declare_tag!(h4);
+declare_tag!(blockquote);

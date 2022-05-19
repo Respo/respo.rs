@@ -9,8 +9,8 @@ use wasm_bindgen::prelude::*;
 use web_sys::console::log_1;
 
 use crate::respo::{
-  button0, div0, query_select_node, render_node, span0, CssColor, CssRule, DispatchFn, LocalState, LocalStateAbstract,
-  RespoEventHandler, RespoNode, StatesTree,
+  button, div, query_select_node, render_node, span, CssColor, CssRule, DispatchFn, LocalState, LocalStateAbstract, RespoEventHandler,
+  RespoNode, StatesTree,
 };
 
 #[derive(Debug)]
@@ -77,11 +77,11 @@ pub fn load_demo_app() -> JsValue {
       let state: MainState = states.load().ref_into::<MainState>().map(ToOwned::to_owned).unwrap_or_default();
 
       Ok(
-        div0()
+        div()
           .add_children([
-            div0()
+            div()
               .add_children([
-                button0()
+                button()
                   .add_attrs([("innerText", "demo inc"), ("class", "my-button")])
                   .add_style([CssRule::Margin(4.)])
                   .add_event([(
@@ -99,7 +99,7 @@ pub fn load_demo_app() -> JsValue {
                     })),
                   )])
                   .to_owned(),
-                button0()
+                button()
                   .add_attrs([("innerText", "demo dec"), ("class", "my-button")])
                   .add_style([CssRule::Margin(4.)])
                   .add_event([(
@@ -113,8 +113,8 @@ pub fn load_demo_app() -> JsValue {
                   .to_owned(),
               ])
               .to_owned(),
-            div0()
-              .add_children([span0()
+            div()
+              .add_children([span()
                 .add_attrs([("innerText", format!("value is: {}", store.counted))])
                 .add_style([
                   CssRule::Color(CssColor::Blue),
@@ -123,8 +123,8 @@ pub fn load_demo_app() -> JsValue {
                 ])
                 .to_owned()])
               .to_owned(),
-            div0()
-              .add_children([span0()
+            div()
+              .add_children([span()
                 .add_attrs([("innerText", format!("local state: {}", state.counted))])
                 .to_owned()])
               .to_owned(),

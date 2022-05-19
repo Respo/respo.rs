@@ -44,6 +44,16 @@ impl<T> RespoNode<T>
 where
   T: Debug + Clone,
 {
+  pub fn make_tag(name: &str) -> Self {
+    Self::Element {
+      name: name.to_owned(),
+      attrs: HashMap::new(),
+      event: HashMap::new(),
+      style: RespoStyle::default(),
+      children: Vec::new(),
+    }
+  }
+
   pub fn add_style<U>(&mut self, more: U) -> &mut Self
   where
     U: IntoIterator<Item = CssRule>,

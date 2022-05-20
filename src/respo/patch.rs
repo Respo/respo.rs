@@ -6,9 +6,17 @@ use web_sys::{console::log_1, Element, HtmlElement, HtmlInputElement, InputEvent
 use wasm_bindgen::JsCast;
 use web_sys::console::warn_1;
 
-use super::{build_dom_tree, ChildDomOp, DomChange, EventHandlerFn, RespoCoord, RespoEvent, RespoEventMark};
+use super::{
+  build_dom_tree, load_coord_target_tree, ChildDomOp, DomChange, EventHandlerFn, RespoCoord, RespoEffectType, RespoEvent,
+  RespoEventMark, RespoNode,
+};
 
-pub fn patch_tree<T>(mount_target: &Node, changes: &Vec<DomChange<T>>, handle_event: EventHandlerFn) -> Result<(), String>
+pub fn patch_tree<T>(
+  tree: &RespoNode<T>,
+  mount_target: &Node,
+  changes: &Vec<DomChange<T>>,
+  handle_event: EventHandlerFn,
+) -> Result<(), String>
 where
   T: Debug + Clone,
 {
@@ -23,7 +31,7 @@ where
 
   for op in changes {
     let coord = op.get_coord();
-    let target = find_coord_target(&mount_target.first_child().ok_or("to get first child")?, &coord)?;
+    let target = find_coord_dom_target(&mount_target.first_child().ok_or("to get first child")?, &coord)?;
     match op {
       DomChange::ModifyAttrs { set, unset, .. } => {
         let el = target.dyn_ref::<Element>().expect("load as element");
@@ -124,12 +132,29 @@ where
           }
         }
       }
+
+      DomChange::Effect {
+        coord,
+        effect_type,
+        skip_indexes,
+      } => {
+        let target_tree = load_coord_target_tree(tree, coord)?;
+        if let RespoNode::Component(_, effects, _) = target_tree {
+          for (idx, effect) in effects.iter().enumerate() {
+            if !skip_indexes.contains(&(idx as u32)) {
+              effect.run(effect_type.to_owned(), &target)?;
+            }
+          }
+        } else {
+          warn_1(&format!("expected component for effects, got: {:?}", target_tree).into());
+        }
+      }
     }
   }
   Ok(())
 }
 
-fn find_coord_target(mount_target: &Node, coord: &[RespoCoord]) -> Result<Node, String> {
+fn find_coord_dom_target(mount_target: &Node, coord: &[RespoCoord]) -> Result<Node, String> {
   let mut target = mount_target.clone();
   for digit in coord {
     if let &RespoCoord::Idx(idx) = digit {

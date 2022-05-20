@@ -1,41 +1,23 @@
 extern crate console_error_panic_hook;
 
-use std::any::Any;
+mod counter;
+mod data_types;
+mod panel;
+mod task;
+mod todolist;
+
 use std::cell::RefCell;
-use std::panic;
 use std::rc::Rc;
+use std::{panic, vec};
 
 use wasm_bindgen::prelude::*;
-use web_sys::console::log_1;
 
-use crate::respo::{
-  button, div, render_node, span, util::query_select_node, CssColor, CssRule, DispatchFn, LocalState, LocalStateAbstract, RespoEvent,
-  RespoEventHandler, RespoNode, StatesTree,
-};
+use crate::respo::{div, render_node, util::query_select_node, DispatchFn, RespoNode, StatesTree};
 
-#[derive(Debug)]
-struct Store {
-  counted: i32,
-  states: StatesTree,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-enum ActionOp {
-  Increment,
-  Decrement,
-  StatesChange(Vec<String>, LocalState),
-}
-
-#[derive(Debug, Clone, Default)]
-struct MainState {
-  counted: i32,
-}
-
-impl LocalStateAbstract for MainState {
-  fn as_any(&self) -> &dyn Any {
-    self
-  }
-}
+use self::counter::comp_counter;
+use self::data_types::*;
+use self::panel::comp_panel;
+use self::todolist::comp_todolist;
 
 #[wasm_bindgen(js_name = loadDemoApp)]
 pub fn load_demo_app() -> JsValue {
@@ -47,6 +29,7 @@ pub fn load_demo_app() -> JsValue {
   let global_store = Rc::new(RefCell::new(Store {
     counted: 0,
     states: StatesTree::default(),
+    tasks: vec![],
   }));
 
   let store_to_action = global_store.clone();
@@ -71,67 +54,14 @@ pub fn load_demo_app() -> JsValue {
     mount_target,
     Box::new(move || -> Result<RespoNode<ActionOp>, String> {
       let store = global_store.borrow();
-      let states = store.states.to_owned();
-      let cursor = states.path();
-
-      let state: MainState = states.load().ref_into::<MainState>().map(ToOwned::to_owned).unwrap_or_default();
+      let states = store.states.clone();
 
       Ok(
         div()
           .add_children([
-            div()
-              .add_children([
-                button()
-                  .add_attrs([("innerText", "demo inc"), ("class", "my-button")])
-                  .add_style([CssRule::Margin(4.)])
-                  .add_event([(
-                    "click",
-                    RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
-                      log_1(&format!("click {:?}", e).into());
-                      if let RespoEvent::Click { original_event, .. } = e {
-                        original_event.prevent_default();
-                      }
-
-                      dispatch.run(ActionOp::Increment)?;
-                      dispatch.run(ActionOp::StatesChange(
-                        cursor.to_owned(),
-                        LocalState::ref_from(Some(&MainState {
-                          counted: state.counted + 2,
-                        })),
-                      ))?;
-                      Ok(())
-                    })),
-                  )])
-                  .to_owned(),
-                button()
-                  .add_attrs([("innerText", "demo dec"), ("class", "my-button")])
-                  .add_style([CssRule::Margin(4.)])
-                  .add_event([(
-                    "click",
-                    RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
-                      log_1(&format!("click {:?}", e,).into());
-                      dispatch.run(ActionOp::Decrement)?;
-                      Ok(())
-                    })),
-                  )])
-                  .to_owned(),
-              ])
-              .to_owned(),
-            div()
-              .add_children([span()
-                .add_attrs([("innerText", format!("value is: {}", store.counted))])
-                .add_style([
-                  CssRule::Color(CssColor::Blue),
-                  CssRule::FontFamily("Menlo".to_owned()),
-                  CssRule::FontSize(10.0 + store.counted as f32),
-                ])
-                .to_owned()])
-              .to_owned(),
-            div()
-              .add_children([span()
-                .add_attrs([("innerText", format!("local state: {}", state.counted))])
-                .to_owned()])
-              .to_owned(),
+            comp_counter(&states.pick("counter"), store.counted),
+            comp_panel(&states.pick("panel"))?,
+            comp_todolist(&states.pick("todolist"), &vec![])?,
           ])
           .to_owned(),
       )

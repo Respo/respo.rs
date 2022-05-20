@@ -1,13 +1,21 @@
 use std::{
-  collections::HashMap,
-  fmt::{self, Display, Formatter},
+  collections::{HashMap, HashSet},
+  fmt::{self, format, Display, Formatter},
+  sync::RwLock,
 };
+
+use wasm_bindgen::JsCast;
+use web_sys::{Element, HtmlElement, Node};
+
+lazy_static::lazy_static! {
+  static ref CLASS_NAME_IN_TAGS: RwLock<HashSet<String>> = RwLock::new(HashSet::new());
+}
 
 /// it provides ADT interfaces as APIs, but internally it's maintained dynamically.
 /// it's easily diffed in a hashmap.
 /// and when it's sent to JS APIs, it's still in strings, which is also dynamic.
 /// TODO order of rules might matter in edge cases
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, Eq)]
 pub struct RespoStyle(pub HashMap<String, String>);
 
 impl RespoStyle {
@@ -19,6 +27,15 @@ impl RespoStyle {
   pub fn insert(&mut self, property: String, value: String) -> &mut Self {
     self.0.insert(property, value);
     self
+  }
+
+  pub fn render_rules(rules: &[(String, Self)]) -> String {
+    let mut result = String::new();
+    for rule in rules {
+      let (query, value) = rule;
+      result.push_str(&format!("{} {{\n{}\n}}", query, value));
+    }
+    result
   }
 }
 
@@ -88,7 +105,9 @@ impl Display for CssRule {
   fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
     let pair = self.get_pair();
     f.write_str(&pair.0)?;
-    f.write_str(&pair.1)
+    f.write_str(": ")?;
+    f.write_str(&pair.1)?;
+    f.write_str("; ")
   }
 }
 
@@ -500,5 +519,43 @@ impl Display for CssTextOverflow {
       Self::Clip => write!(f, "clip"),
       Self::Ellipsis => write!(f, "ellipsis"),
     }
+  }
+}
+
+/// inserts CSS as `<style .. />` under `<head ... />` element
+/// notice that the code only generats once and being cached as DOM states,
+/// NOT working for dynamic styles that changes over time, use inline styles instead.
+pub fn declare_static_style<T>(name: T, rules: &[(String, &[CssRule])]) -> String
+where
+  T: Into<String> + Clone,
+{
+  let mut defined_styles = CLASS_NAME_IN_TAGS.write().expect("access styles");
+  if defined_styles.contains(&name.to_owned().into()) {
+    name.into()
+  } else {
+    let window = web_sys::window().expect("window");
+    let document = window.document().expect("load document");
+    let head = document.head().expect("head");
+    let style_tag = document.create_element("style").expect("create style tag");
+
+    let mut styles = String::from("");
+    for (query, properties) in rules {
+      styles.push_str(&query.replace("$0", &format!(".{}", &name.to_owned().into())));
+      styles.push_str(" {\n");
+      for p in *properties {
+        styles.push_str(&p.to_string());
+        styles.push('\n');
+      }
+      styles.push_str("}\n");
+    }
+
+    style_tag.dyn_ref::<Element>().expect("into element").set_inner_html(&styles);
+    head
+      .append_child(style_tag.dyn_ref::<Element>().expect("get element"))
+      .expect("add style");
+
+    defined_styles.insert(name.to_owned().into());
+
+    name.into()
   }
 }

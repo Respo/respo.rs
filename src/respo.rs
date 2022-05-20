@@ -20,7 +20,7 @@ pub use css::*;
 pub use primes::*;
 pub use states_tree::*;
 
-use self::diff::diff_tree;
+use self::diff::{collect_effects_outside_in_as, diff_tree};
 use self::patch::{attach_event, patch_tree};
 
 lazy_static::lazy_static! {
@@ -83,7 +83,13 @@ where
   let handler = handle_event.clone();
   let element = build_dom_tree(&tree0, &[], handler)?;
 
+  // collection mounted effects
+  let mut mount_changes: Vec<DomChange<T>> = vec![];
+  collect_effects_outside_in_as(&tree0, vec![], RespoEffectType::Mounted, &mut mount_changes)?;
+
   mount_target.append_child(&element)?;
+  let handler = handle_event.clone();
+  patch_tree(&tree0, &mount_target, &mount_changes, handler)?;
 
   let to_prev_tree = prev_tree.clone();
   util::raq_loop_slow(Box::new(move || -> Result<(), String> {
@@ -92,8 +98,26 @@ where
       let mut changes: Vec<DomChange<T>> = vec![];
       diff_tree(&new_tree, &to_prev_tree.borrow(), Vec::new(), &mut changes)?;
       info_1(&format!("changes: {:?}", changes).into());
+
+      // changes to prev_tree should be distinguished from changes to new_tree
+      let mut before_changes = vec![];
+      let mut after_changes = vec![];
+      for change in changes {
+        match &change {
+          DomChange::Effect { effect_type, .. } => {
+            if effect_type == &RespoEffectType::BeforeUnmount || effect_type == &RespoEffectType::BeforeUpdate {
+              before_changes.push(change.to_owned());
+            } else {
+              after_changes.push(change.to_owned())
+            }
+          }
+          _ => after_changes.push(change.to_owned()),
+        }
+      }
       let handler = handle_event.clone();
-      patch_tree(&mount_target, &changes, handler)?;
+      patch_tree(&prev_tree.borrow(), &mount_target, &before_changes, handler)?;
+      let handler = handle_event.clone();
+      patch_tree(&new_tree, &mount_target, &after_changes, handler)?;
       prev_tree.replace(new_tree);
     }
 
@@ -103,35 +127,44 @@ where
   Ok(())
 }
 
-fn request_for_target_handler<T>(tree: &RespoNode<T>, event_name: &str, coord: &[RespoCoord]) -> Result<RespoEventHandler<T>, String>
+fn load_coord_target_tree<T>(tree: &RespoNode<T>, coord: &[RespoCoord]) -> Result<RespoNode<T>, String>
 where
   T: Debug + Clone,
 {
   if coord.is_empty() {
-    match tree {
-      RespoNode::Component(name, ..) => Err(format!("expected element, found target being a component: {}", &name)),
-      RespoNode::Element { name: tag_name, event, .. } => match event.get(event_name) {
-        Some(v) => Ok((*v).to_owned()),
-        None => Err(format!("no handler for event:{} on {} {:?}", &event_name, tag_name, event,)),
-      },
-    }
+    Ok(tree.to_owned())
   } else {
-    let branch = coord.first().expect("to get first branch of coord");
+    let branch = coord.first().ok_or("to get first branch of coord")?;
     match (tree, branch) {
       (RespoNode::Component(name, _, tree), RespoCoord::Comp(target_name)) => {
         if name == target_name {
-          request_for_target_handler(tree, name, &coord[1..])
+          load_coord_target_tree(tree, &coord[1..])
         } else {
           Err(format!("expected component {} to be {}", &name, &target_name))
         }
       }
       (RespoNode::Element { children, .. }, RespoCoord::Idx(idx)) => match children.get(*idx as usize) {
-        Some((_k, child)) => request_for_target_handler(child, event_name, &coord[1..]),
+        Some((_k, child)) => load_coord_target_tree(child, &coord[1..]),
         None => Err(format!("no child at index {}", idx)),
       },
       (RespoNode::Component(..), RespoCoord::Idx(..)) => Err(String::from("expected element, found target being a component")),
       (RespoNode::Element { .. }, RespoCoord::Comp(..)) => Err(String::from("expected component, found target being an element")),
     }
+  }
+}
+
+fn request_for_target_handler<T>(tree: &RespoNode<T>, event_name: &str, coord: &[RespoCoord]) -> Result<RespoEventHandler<T>, String>
+where
+  T: Debug + Clone,
+{
+  let target_node = load_coord_target_tree(tree, coord)?;
+
+  match target_node {
+    RespoNode::Component(name, ..) => Err(format!("expected element, found target being a component: {}", &name)),
+    RespoNode::Element { name: tag_name, event, .. } => match event.get(event_name) {
+      Some(v) => Ok((*v).to_owned()),
+      None => Err(format!("no handler for event:{} on {} {:?}", &event_name, tag_name, event,)),
+    },
   }
 }
 

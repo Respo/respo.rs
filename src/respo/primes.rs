@@ -4,11 +4,12 @@ use std::fmt::Display;
 use std::rc::Rc;
 use std::{collections::HashMap, fmt::Debug};
 
-use web_sys::{InputEvent, KeyboardEvent, MouseEvent};
+use serde_json::Value;
+use web_sys::{InputEvent, KeyboardEvent, MouseEvent, Node};
 
 use super::css::{CssRule, RespoStyle};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RespoNode<T>
 where
   T: Debug + Clone,
@@ -124,6 +125,19 @@ where
     }
     self
   }
+
+  pub fn add_effects<U>(&mut self, more: U) -> &mut Self
+  where
+    U: IntoIterator<Item = RespoEffect>,
+  {
+    match self {
+      RespoNode::Component(_, ref mut effects, _) => {
+        effects.extend(more);
+        self
+      }
+      RespoNode::Element { .. } => unreachable!("effects are on components"),
+    }
+  }
 }
 
 pub type StrDict = HashMap<String, String>;
@@ -132,6 +146,18 @@ pub type StrDict = HashMap<String, String>;
 pub struct RespoEventHandler<T>(pub Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>)
 where
   T: Debug + Clone;
+
+impl<T> PartialEq for RespoEventHandler<T>
+where
+  T: Debug + Clone,
+{
+  /// returns true since informations are erased when attaching to the DOM
+  fn eq(&self, _: &Self) -> bool {
+    true
+  }
+}
+
+impl<T> Eq for RespoEventHandler<T> where T: Debug + Clone {}
 
 impl<T> Debug for RespoEventHandler<T>
 where
@@ -164,7 +190,6 @@ pub struct RespoEventMark {
 #[derive(Debug, Clone)]
 /// event wraps on top of DOM events
 pub enum RespoEvent {
-  // TODO
   Click {
     client_x: f64,
     client_y: f64,
@@ -189,17 +214,42 @@ pub enum RespoEvent {
 /// TODO need a container for values
 #[derive(Debug, Clone)]
 pub struct RespoEffect {
-  // args: Vec<String>,
-// handler: RespoEffectHandler,
+  pub args: Vec<Value>,
+  pub handler: RespoEffectHandler,
 }
 
+impl PartialEq for RespoEffect {
+  /// closure are not compared, changes happen in and passed via args
+  fn eq(&self, other: &Self) -> bool {
+    self.args == other.args
+  }
+}
+
+impl Eq for RespoEffect {}
+
+impl RespoEffect {
+  pub fn run(&self, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
+    (self.handler.0)(self.args.to_owned(), effect_type, el)
+  }
+}
+
+type UnitStrResult = Result<(), String>;
+
 #[derive(Clone)]
-pub struct RespoEffectHandler(pub Rc<dyn FnMut() -> Result<(), String>>);
+pub struct RespoEffectHandler(pub Rc<dyn Fn(Vec<Value>, RespoEffectType, &Node) -> UnitStrResult>);
 
 impl Debug for RespoEffectHandler {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "RespoEventHandler(...)")
   }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RespoEffectType {
+  Mounted,
+  BeforeUnmount,
+  Updated,
+  BeforeUpdate,
 }
 
 #[derive(Debug, Clone)]
@@ -229,7 +279,13 @@ where
     coord: Vec<RespoCoord>,
     add: HashSet<String>,
     remove: HashSet<String>,
-  }, // TODO effects not started
+  },
+  Effect {
+    coord: Vec<RespoCoord>,
+    effect_type: RespoEffectType,
+    // when args not changed in update, that effects are not re-run
+    skip_indexes: HashSet<u32>,
+  },
 }
 
 impl<T> DomChange<T>
@@ -243,6 +299,7 @@ where
       DomChange::ModifyAttrs { coord, .. } => coord.clone(),
       DomChange::ModifyStyle { coord, .. } => coord.clone(),
       DomChange::ModifyEvent { coord, .. } => coord.clone(),
+      DomChange::Effect { coord, .. } => coord.clone(),
     }
   }
 }

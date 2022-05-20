@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use wasm_bindgen::prelude::Closure;
-use web_sys::{console::log_1, Element, HtmlElement, HtmlInputElement, InputEvent, MouseEvent, Node};
+use web_sys::{Element, HtmlElement, HtmlInputElement, InputEvent, MouseEvent, Node};
 
 use wasm_bindgen::JsCast;
 use web_sys::console::warn_1;
@@ -170,7 +170,7 @@ fn find_coord_dom_target(mount_target: &Node, coord: &[RespoCoord]) -> Result<No
 
 pub fn attach_event(element: &Element, key: &str, coord: &Vec<RespoCoord>, handle_event: EventHandlerFn) -> Result<(), String> {
   let coord = coord.to_owned();
-  // log_1(&format!("attach event {}", key).into());
+  // util::log!("attach event {}", key);
   match key {
     "click" => {
       let handler = Closure::wrap(Box::new(move |e: MouseEvent| {

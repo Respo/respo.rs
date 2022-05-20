@@ -1,11 +1,11 @@
 use std::{
-  collections::{HashMap, HashSet},
-  fmt::{self, format, Display, Formatter},
+  collections::HashSet,
+  fmt::{self, Display, Formatter},
   sync::RwLock,
 };
 
 use wasm_bindgen::JsCast;
-use web_sys::{Element, HtmlElement, Node};
+use web_sys::Element;
 
 lazy_static::lazy_static! {
   static ref CLASS_NAME_IN_TAGS: RwLock<HashSet<String>> = RwLock::new(HashSet::new());
@@ -16,16 +16,11 @@ lazy_static::lazy_static! {
 /// and when it's sent to JS APIs, it's still in strings, which is also dynamic.
 /// TODO order of rules might matter in edge cases
 #[derive(Debug, Clone, PartialEq, Default, Eq)]
-pub struct RespoStyle(pub HashMap<String, String>);
+pub struct RespoStyle(pub Vec<(String, String)>);
 
 impl RespoStyle {
-  pub fn add(&mut self, rule: CssRule) -> &mut Self {
-    let (property, value) = rule.get_pair();
-    self.0.insert(property, value);
-    self
-  }
-  pub fn insert(&mut self, property: String, value: String) -> &mut Self {
-    self.0.insert(property, value);
+  pub fn insert(&mut self, property: &str, value: String) -> &mut Self {
+    self.0.push((property.to_owned(), value));
     self
   }
 
@@ -42,122 +37,232 @@ impl RespoStyle {
 impl Display for RespoStyle {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     for (key, value) in self.0.iter() {
-      write!(f, "{}:{};", key, value)?;
+      writeln!(f, "{}: {};", key, value)?;
     }
     Ok(())
   }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum CssRule {
-  // box styles
-  Width(CssSize),
-  Height(CssSize),
-  Margin(f32),
-  Margin4(f32, f32, f32, f32),
-  Padding(f32),
-  Padding4(f32, f32, f32, f32),
-  Border(f32, CssBorderStyle, CssColor),
-  Outline(f32, CssBorderStyle, CssColor),
-  BoxShadow(f32, f32, f32, f32, CssColor),
-  BorderRadius(f32),
-  Overflow(CssOverflow),
-  MaxWidth(CssSize),
-  MaxHeight(CssSize),
-  Opacity(f32),
-  // background
-  BackgroundColor(CssColor),
-  BackgroundImage(String),
-  BackgroundSize(CssBackgroundSize),
-  BackgroundFilter(String),
-  // text styles
-  Color(CssColor),
-  FontFamily(String),
-  FontSize(f32),
-  FontStyle(CssFontStyle),
-  TextShadow(f32, f32, f32, CssColor),
-  LineHeight(CssLineHeight),
-  VerticalAlign(CssVerticalAlign),
-  TextOverflow(CssTextOverflow),
-  Cursor(String),
-  // flex styles
-  Display(CssDisplay),
-  FlexDirection(CssFlexDirection),
-  FlexWrap(CssFlexWrap),
-  JustifyContent(CssFlexJustifyContent),
-  AlignItems(CssFlexAlignItems),
-  // positions
-  Position(RespoPosition),
-  Top(CssSize),
-  Left(CssSize),
-  Right(CssSize),
-  Bottom(CssSize),
-  ZIndex(i32),
-  // transform
-  Transform(CssTransform),
-  TransitionDuration(f32),
-  TransitionProperty(String),
-  TransitionTimingFunction(CssTimingFunction),
-  TransitionDelay(f32),
-}
-
-impl Display for CssRule {
-  fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-    let pair = self.get_pair();
-    f.write_str(&pair.0)?;
-    f.write_str(": ")?;
-    f.write_str(&pair.1)?;
-    f.write_str("; ")
+impl RespoStyle {
+  pub fn width(&mut self, rule: CssSize) -> &mut Self {
+    self.insert("width", rule.to_string());
+    self
   }
-}
-
-impl CssRule {
-  pub fn get_pair(&self) -> (String, String) {
-    match self {
-      Self::Width(size) => ("width".to_owned(), size.to_string()),
-      Self::Height(size) => ("height".to_owned(), size.to_string()),
-      Self::Margin(margin) => ("margin".to_owned(), format!("{margin}px")),
-      Self::Margin4(top, right, bottom, left) => ("margin".to_owned(), format!("{top}px {right}px {bottom}px {left}px")),
-      Self::Padding(padding) => ("padding".to_owned(), format!("{padding}px")),
-      Self::Padding4(top, right, bottom, left) => ("padding".to_owned(), format!("{top}px {right}px {bottom}px {left}px")),
-      Self::Border(width, style, color) => ("border".to_owned(), format!("{width}px {style} {color}")),
-      Self::Outline(width, style, color) => ("outline".to_owned(), format!("{width}px {style} {color}")),
-      Self::BoxShadow(x, y, blur, spread, color) => ("box-shadow".to_owned(), format!("{x}px {y}px {blur}px {spread}px {color}")),
-      Self::BorderRadius(radius) => ("border-radius".to_owned(), format!("{radius}px")),
-      Self::Overflow(overflow) => ("overflow".to_owned(), overflow.to_string()),
-      Self::MaxWidth(size) => ("max-width".to_owned(), format!("{size}px")),
-      Self::MaxHeight(size) => ("max-height".to_owned(), format!("{size}px")),
-      Self::Opacity(opacity) => ("opacity".to_owned(), opacity.to_string()),
-      Self::BackgroundColor(color) => ("background-color".to_owned(), color.to_string()),
-      Self::BackgroundImage(image) => ("background-image".to_owned(), image.to_string()),
-      Self::BackgroundSize(size) => ("background-size".to_owned(), size.to_string()),
-      Self::BackgroundFilter(filter) => ("background-filter".to_owned(), filter.to_string()),
-      Self::Color(color) => ("color".to_owned(), color.to_string()),
-      Self::FontFamily(family) => ("font-family".to_owned(), family.to_string()),
-      Self::FontSize(size) => ("font-size".to_owned(), format!("{size}px")),
-      Self::FontStyle(style) => ("font-style".to_owned(), style.to_string()),
-      Self::TextShadow(x, y, blur, color) => ("text-shadow".to_owned(), format!("{x}px {y}px {blur}px {color}px")),
-      Self::LineHeight(line_height) => ("line-height".to_owned(), line_height.to_string()),
-      Self::VerticalAlign(align) => ("vertical-align".to_owned(), align.to_string()),
-      Self::TextOverflow(overflow) => ("text-overflow".to_owned(), overflow.to_string()),
-      Self::Display(display) => ("display".to_owned(), display.to_string()),
-      Self::FlexDirection(direction) => ("flex-direction".to_owned(), direction.to_string()),
-      Self::FlexWrap(wrap) => ("flex-wrap".to_owned(), wrap.to_string()),
-      Self::JustifyContent(content) => ("justify-content".to_owned(), content.to_string()),
-      Self::AlignItems(align) => ("align-items".to_owned(), align.to_string()),
-      Self::Position(position) => ("position".to_owned(), position.to_string()),
-      Self::Top(size) => ("top".to_owned(), size.to_string()),
-      Self::Left(size) => ("left".to_owned(), size.to_string()),
-      Self::Right(size) => ("right".to_owned(), size.to_string()),
-      Self::Bottom(size) => ("bottom".to_owned(), size.to_string()),
-      Self::ZIndex(index) => ("z-index".to_owned(), index.to_string()),
-      Self::Transform(transform) => ("transform".to_owned(), transform.to_string()),
-      Self::TransitionDuration(duration) => ("transition-duration".to_owned(), duration.to_string()),
-      Self::TransitionProperty(property) => ("transition-property".to_owned(), property.to_string()),
-      Self::TransitionTimingFunction(timing_function) => ("transition-timing-function".to_owned(), timing_function.to_string()),
-      Self::TransitionDelay(delay) => ("transition-delay".to_owned(), delay.to_string()),
-      Self::Cursor(v) => ("cursor".to_owned(), v.to_string()),
+  pub fn height(&mut self, rule: CssSize) -> &mut Self {
+    self.insert("height", rule.to_string());
+    self
+  }
+  pub fn margin(&mut self, m: f32) -> &mut Self {
+    self.insert("margin", format!("{}px", m));
+    self
+  }
+  pub fn margin4(&mut self, top: f32, right: f32, bottom: f32, left: f32) -> &mut Self {
+    self.insert("margin", format!("{}px {}px {}px {}px", top, right, bottom, left));
+    self
+  }
+  pub fn padding(&mut self, p: f32) -> &mut Self {
+    self.insert("padding", format!("{}px", p));
+    self
+  }
+  pub fn padding4(&mut self, top: f32, right: f32, bottom: f32, left: f32) -> &mut Self {
+    self.insert("padding", format!("{}px {}px {}px {}px", top, right, bottom, left));
+    self
+  }
+  pub fn border(&mut self, rule: Option<(f32, CssBorderStyle, CssColor)>) -> &mut Self {
+    match rule {
+      Some((width, style, color)) => {
+        self.insert("border-width", format!("{}px", width));
+        self.insert("border-style", format!("{}", style));
+        self.insert("border-color", format!("{}", color));
+      }
+      None => {
+        self.insert("border-width", "0px".to_owned());
+        self.insert("border-style", "none".to_owned());
+        self.insert("border-color", "transparent".to_owned());
+      }
     }
+    self
+  }
+  pub fn outline(&mut self, rule: Option<(f32, CssBorderStyle, CssColor)>) -> &mut Self {
+    match rule {
+      Some((width, style, color)) => {
+        self.insert("outline-width", format!("{}px", width));
+        self.insert("outline-style", format!("{}", style));
+        self.insert("outline-color", format!("{}", color));
+      }
+      None => {
+        self.insert("outline-width", "0px".to_owned());
+        self.insert("outline-style", "none".to_owned());
+        self.insert("outline-color", "transparent".to_owned());
+      }
+    }
+    self
+  }
+  pub fn box_shadow(&mut self, x: f32, y: f32, blur: f32, spread: f32, color: CssColor) -> &mut Self {
+    self.insert("box-shadow", format!("{}px {}px {}px {}px {}", x, y, blur, spread, color));
+    self
+  }
+  pub fn border_radius(&mut self, r: f32) -> &mut Self {
+    self.insert("border-radius", format!("{}px", r));
+    self
+  }
+  pub fn overflow(&mut self, rule: CssOverflow) -> &mut Self {
+    self.insert("overflow", rule.to_string());
+    self
+  }
+  pub fn max_width(&mut self, rule: CssSize) -> &mut Self {
+    self.insert("max-width", rule.to_string());
+    self
+  }
+  pub fn max_height(&mut self, rule: CssSize) -> &mut Self {
+    self.insert("max-height", rule.to_string());
+    self
+  }
+  pub fn min_width(&mut self, rule: CssSize) -> &mut Self {
+    self.insert("min-width", rule.to_string());
+    self
+  }
+  pub fn min_height(&mut self, rule: CssSize) -> &mut Self {
+    self.insert("min-height", rule.to_string());
+    self
+  }
+  pub fn opacity(&mut self, o: f32) -> &mut Self {
+    self.insert("opacity", format!("{}", o));
+    self
+  }
+  pub fn background_color(&mut self, color: CssColor) -> &mut Self {
+    self.insert("background-color", color.to_string());
+    self
+  }
+  pub fn background_image(&mut self, image: String) -> &mut Self {
+    self.insert("background-image", image);
+    self
+  }
+  pub fn background_size(&mut self, size: CssBackgroundSize) -> &mut Self {
+    self.insert("background-size", size.to_string());
+    self
+  }
+  pub fn background_filter(&mut self, f: String) -> &mut Self {
+    self.insert("background-filter", f);
+    self
+  }
+  pub fn color(&mut self, color: CssColor) -> &mut Self {
+    self.insert("color", color.to_string());
+    self
+  }
+  pub fn font_family(&mut self, font: String) -> &mut Self {
+    self.insert("font-family", font);
+    self
+  }
+  pub fn font_size(&mut self, size: f32) -> &mut Self {
+    self.insert("font-size", format!("{}px", size));
+    self
+  }
+  pub fn font_style(&mut self, style: CssFontStyle) -> &mut Self {
+    self.insert("font-style", style.to_string());
+    self
+  }
+  pub fn font_weight(&mut self, weight: CssFontWeight) -> &mut Self {
+    self.insert("font-weight", weight.to_string());
+    self
+  }
+  pub fn text_shadow(&mut self, x: f32, y: f32, blur: f32, color: CssColor) -> &mut Self {
+    self.insert("text-shadow", format!("{}px {}px {}px {}", x, y, blur, color));
+    self
+  }
+  pub fn line_height(&mut self, height: CssLineHeight) -> &mut Self {
+    self.insert("line-height", height.to_string());
+    self
+  }
+  pub fn text_align(&mut self, align: CssTextAlign) -> &mut Self {
+    self.insert("text-align", align.to_string());
+    self
+  }
+  pub fn vertical_align(&mut self, align: CssVerticalAlign) -> &mut Self {
+    self.insert("vertical-align", align.to_string());
+    self
+  }
+  pub fn text_overflow(&mut self, overflow: CssTextOverflow) -> &mut Self {
+    self.insert("text-overflow", overflow.to_string());
+    self
+  }
+  pub fn cursor(&mut self, cursor: String) -> &mut Self {
+    self.insert("cursor", cursor);
+    self
+  }
+  pub fn display(&mut self, display: CssDisplay) -> &mut Self {
+    self.insert("display", display.to_string());
+    self
+  }
+  pub fn flex_direction(&mut self, direction: CssFlexDirection) -> &mut Self {
+    self.insert("flex-direction", direction.to_string());
+    self
+  }
+  pub fn flex_wrap(&mut self, wrap: CssFlexWrap) -> &mut Self {
+    self.insert("flex-wrap", wrap.to_string());
+    self
+  }
+  pub fn justify_content(&mut self, content: CssFlexJustifyContent) -> &mut Self {
+    self.insert("justify-content", content.to_string());
+    self
+  }
+  pub fn align_items(&mut self, items: CssFlexAlignItems) -> &mut Self {
+    self.insert("align-items", items.to_string());
+    self
+  }
+  pub fn position(&mut self, position: CssPosition) -> &mut Self {
+    self.insert("position", position.to_string());
+    self
+  }
+  pub fn top(&mut self, top: CssSize) -> &mut Self {
+    self.insert("top", top.to_string());
+    self
+  }
+  pub fn left(&mut self, left: CssSize) -> &mut Self {
+    self.insert("left", left.to_string());
+    self
+  }
+  pub fn right(&mut self, right: CssSize) -> &mut Self {
+    self.insert("right", right.to_string());
+    self
+  }
+  pub fn bottom(&mut self, bottom: CssSize) -> &mut Self {
+    self.insert("bottom", bottom.to_string());
+    self
+  }
+  pub fn z_index(&mut self, z_index: i32) -> &mut Self {
+    self.insert("z-index", z_index.to_string());
+
+    self
+  }
+  pub fn transform(&mut self, transform: CssTransform) -> &mut Self {
+    self.insert("transform", transform.to_string());
+
+    self
+  }
+  pub fn transform_origin(&mut self, origin: String) -> &mut Self {
+    self.insert("tranform-origin", origin);
+    self
+  }
+  pub fn transition_duration(&mut self, duration: f32) -> &mut Self {
+    self.insert("transition-duration", format!("{}s", duration));
+    self
+  }
+  pub fn transition_delay(&mut self, delay: f32) -> &mut Self {
+    self.insert("transition-delay", format!("{}s", delay));
+    self
+  }
+  pub fn transform_timing_function(&mut self, function: CssTimingFunction) -> &mut Self {
+    self.insert("transition-timing-function", function.to_string());
+    self
+  }
+  pub fn transform_property(&mut self, property: String) -> &mut Self {
+    self.insert("transition-property", property);
+    self
+  }
+  pub fn box_sizing(&mut self, box_sizing: CssBoxSizing) -> &mut Self {
+    self.insert("box-sizing", box_sizing.to_string());
+    self
   }
 }
 
@@ -186,14 +291,14 @@ impl Display for CssSize {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RespoPosition {
+pub enum CssPosition {
   Static,
   Relative,
   Absolute,
   Fixed,
 }
 
-impl Display for RespoPosition {
+impl Display for CssPosition {
   fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
     write!(
       f,
@@ -522,12 +627,68 @@ impl Display for CssTextOverflow {
   }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum CssBoxSizing {
+  ContentBox,
+  BorderBox,
+}
+
+impl Display for CssBoxSizing {
+  fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+    match self {
+      Self::ContentBox => write!(f, "content-box"),
+      Self::BorderBox => write!(f, "border-box"),
+    }
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum CssTextAlign {
+  Left,
+  Right,
+  Center,
+  Justify,
+}
+
+impl Display for CssTextAlign {
+  fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+    match self {
+      Self::Left => write!(f, "left"),
+      Self::Right => write!(f, "right"),
+      Self::Center => write!(f, "center"),
+      Self::Justify => write!(f, "justify"),
+    }
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum CssFontWeight {
+  Normal,
+  Bold,
+  Bolder,
+  Lighter,
+  Weight(u32),
+}
+
+impl Display for CssFontWeight {
+  fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+    match self {
+      Self::Normal => write!(f, "normal"),
+      Self::Bold => write!(f, "bold"),
+      Self::Bolder => write!(f, "bolder"),
+      Self::Lighter => write!(f, "lighter"),
+      Self::Weight(w) => write!(f, "{}", w),
+    }
+  }
+}
+
 /// inserts CSS as `<style .. />` under `<head ... />` element
 /// notice that the code only generats once and being cached as DOM states,
 /// NOT working for dynamic styles that changes over time, use inline styles instead.
-pub fn declare_static_style<T>(name: T, rules: &[(String, &[CssRule])]) -> String
+pub fn declare_static_style<T, U>(name: T, rules: &[(U, &RespoStyle)]) -> String
 where
   T: Into<String> + Clone,
+  U: Into<String> + Clone + Display,
 {
   let mut defined_styles = CLASS_NAME_IN_TAGS.write().expect("access styles");
   if defined_styles.contains(&name.to_owned().into()) {
@@ -540,12 +701,9 @@ where
 
     let mut styles = String::from("");
     for (query, properties) in rules {
-      styles.push_str(&query.replace("$0", &format!(".{}", &name.to_owned().into())));
+      styles.push_str(&query.to_string().replace("$0", &format!(".{}", &name.to_owned().into())));
       styles.push_str(" {\n");
-      for p in *properties {
-        styles.push_str(&p.to_string());
-        styles.push('\n');
-      }
+      styles.push_str(&properties.to_string());
       styles.push_str("}\n");
     }
 

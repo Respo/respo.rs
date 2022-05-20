@@ -69,3 +69,12 @@ pub fn query_select_node(pattern: &str) -> Result<Node, String> {
     Err(format!("failed to find {}", pattern))
   }
 }
+
+#[macro_export]
+macro_rules! log {
+  ($($t:tt)*) => {{
+    log_1(&format!($($t)*).into());
+  }};
+}
+
+pub(crate) use log;

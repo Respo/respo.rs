@@ -65,7 +65,7 @@ where
     match request_for_target_handler(&to_prev_tree.borrow(), &mark.name, &mark.coord) {
       Ok(handler) => match (*handler.0)(mark.event_info, dispatch_action.clone()) {
         Ok(()) => {
-          // log_1(&format!("finished event: {} {:?}", mark.name, mark.coord).into());
+          // util::log!("finished event: {} {:?}", mark.name, mark.coord);
           mark_need_rerender();
         }
         Err(e) => {
@@ -89,6 +89,7 @@ where
 
   mount_target.append_child(&element)?;
   let handler = handle_event.clone();
+  util::log!("mounted changed: {:?}", mount_changes);
   patch_tree(&tree0, &mount_target, &mount_changes, handler)?;
 
   let to_prev_tree = prev_tree.clone();
@@ -208,7 +209,7 @@ where
         element.append_child(&build_dom_tree(child, &next_coord, handler)?)?;
       }
 
-      // log_1(&format!("creano handler forted element: {} {:?}", name, event).into());
+      // util::log!("creano handler forted element: {} {:?}", name, event);
 
       for key in event.keys() {
         let coord = coord.to_owned();

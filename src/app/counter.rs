@@ -3,7 +3,7 @@ use std::{fmt::Debug, rc::Rc};
 use serde::{Deserialize, Serialize};
 use web_sys::console::log_1;
 
-use crate::respo::{button, div, span, CssColor, CssRule, RespoEvent, RespoEventHandler, RespoNode, StatesTree};
+use crate::respo::{button, div, span, util, CssColor, RespoEvent, RespoEventHandler, RespoNode, RespoStyle, StatesTree};
 
 use super::data_types::ActionOp;
 
@@ -26,11 +26,11 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> RespoNode<ActionOp> {
         .add_children([
           button()
             .add_attrs([("innerText", "demo inc"), ("class", "my-button")])
-            .add_style([CssRule::Margin(4.)])
+            .add_style(RespoStyle::default().margin(4.).to_owned())
             .add_event([(
               "click",
               RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
-                log_1(&format!("click {:?}", e).into());
+                util::log!("click {:?}", e);
                 if let RespoEvent::Click { original_event, .. } = e {
                   original_event.prevent_default();
                 }
@@ -51,11 +51,11 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> RespoNode<ActionOp> {
             .to_owned(),
           button()
             .add_attrs([("innerText", "demo dec"), ("class", "my-button")])
-            .add_style([CssRule::Margin(4.)])
+            .add_style(RespoStyle::default().margin(4.).to_owned())
             .add_event([(
               "click",
               RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
-                log_1(&format!("click {:?}", e,).into());
+                util::log!("click {:?}", e);
                 dispatch.run(ActionOp::Decrement)?;
                 Ok(())
               })),
@@ -66,11 +66,13 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> RespoNode<ActionOp> {
       div()
         .add_children([span()
           .add_attrs([("innerText", format!("value is: {}", counted))])
-          .add_style([
-            CssRule::Color(CssColor::Blue),
-            CssRule::FontFamily("Menlo".to_owned()),
-            CssRule::FontSize(10.0 + counted as f32),
-          ])
+          .add_style(
+            RespoStyle::default()
+              .color(CssColor::Blue)
+              .font_family("Menlo".to_owned())
+              .font_size(10. + counted as f32)
+              .to_owned(),
+          )
           .to_owned()])
         .to_owned(),
       div()

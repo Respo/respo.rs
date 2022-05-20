@@ -7,24 +7,15 @@ mod task;
 mod todolist;
 
 use std::cell::RefCell;
-use std::fmt::Debug;
 use std::rc::Rc;
 use std::{panic, vec};
 
-use serde::{Deserialize, Serialize};
-
 use wasm_bindgen::prelude::*;
-use web_sys::console::log_1;
 
-use data_types::*;
-
-use crate::respo::{
-  button, div, render_node, span, util::query_select_node, CssColor, CssRule, DispatchFn, RespoEvent, RespoEventHandler, RespoNode,
-  StatesTree,
-};
-use crate::respo::{declare_static_style, RespoEffect, RespoEffectHandler};
+use crate::respo::{div, render_node, util::query_select_node, DispatchFn, RespoNode, StatesTree};
 
 use self::counter::comp_counter;
+use self::data_types::*;
 use self::panel::comp_panel;
 use self::todolist::comp_todolist;
 

@@ -227,10 +227,16 @@ impl PartialEq for RespoEffect {
 
 impl Eq for RespoEffect {}
 
+impl RespoEffect {
+  pub fn run(&self, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
+    (self.handler.0)(self.args.to_owned(), effect_type, el)
+  }
+}
+
 type UnitStrResult = Result<(), String>;
 
 #[derive(Clone)]
-pub struct RespoEffectHandler(pub Rc<dyn FnMut(Vec<Value>, RespoEffectType, Node) -> UnitStrResult>);
+pub struct RespoEffectHandler(pub Rc<dyn Fn(Vec<Value>, RespoEffectType, &Node) -> UnitStrResult>);
 
 impl Debug for RespoEffectHandler {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -240,9 +246,10 @@ impl Debug for RespoEffectHandler {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RespoEffectType {
-  Mount,
-  Update,
-  Unmount,
+  Mounted,
+  BeforeUnmount,
+  Updated,
+  BeforeUpdate,
 }
 
 #[derive(Debug, Clone)]
@@ -272,7 +279,13 @@ where
     coord: Vec<RespoCoord>,
     add: HashSet<String>,
     remove: HashSet<String>,
-  }, // TODO effects not started
+  },
+  Effect {
+    coord: Vec<RespoCoord>,
+    effect_type: RespoEffectType,
+    // when args not changed in update, that effects are not re-run
+    skip_indexes: HashSet<u32>,
+  },
 }
 
 impl<T> DomChange<T>
@@ -286,6 +299,7 @@ where
       DomChange::ModifyAttrs { coord, .. } => coord.clone(),
       DomChange::ModifyStyle { coord, .. } => coord.clone(),
       DomChange::ModifyEvent { coord, .. } => coord.clone(),
+      DomChange::Effect { coord, .. } => coord.clone(),
     }
   }
 }

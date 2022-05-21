@@ -50,7 +50,7 @@ pub fn load_demo_app() -> JsValue {
       let store = global_store.borrow();
       let states = store.states.clone();
 
-      util::log!("global store: {:?}", store);
+      // util::log!("global store: {:?}", store);
 
       Ok(
         div()

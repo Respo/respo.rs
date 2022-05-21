@@ -1,12 +1,20 @@
 use std::{fmt::Debug, rc::Rc};
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
+  button, input,
   respo::{declare_static_style, div, span, CssColor, RespoEffect, RespoEffectHandler, RespoNode, RespoStyle, StatesTree},
-  ui::{ui_center, ui_row, ui_row_middle},
-  util, CssSize,
+  ui::{ui_button, ui_center, ui_input, ui_row, ui_row_middle},
+  util, CssSize, RespoEvent,
 };
 
 use super::data_types::*;
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+struct TaskState {
+  draft: String,
+}
 
 pub fn style_task_container() -> String {
   declare_static_style(
@@ -57,6 +65,14 @@ pub fn style_remove_button() -> String {
 pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>, String> {
   let task_id = task.id.to_owned();
   let task_id2 = task_id.clone();
+  let task_id3 = task_id.clone();
+
+  let cursor = states.path();
+  let cursor2 = cursor.clone();
+  let state = match &states.data {
+    Some(v) => serde_json::from_value(v.to_owned()).expect("to task state"),
+    None => TaskState::default(),
+  };
 
   Ok(RespoNode::Component(
     "tasks".to_owned(),
@@ -91,6 +107,32 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
             .on_click(Rc::new(move |e, dispatch| -> Result<(), String> {
               util::log!("remove button {:?}", e);
               dispatch.run(ActionOp::RemoveTask(task_id2.to_owned()))?;
+              Ok(())
+            }))
+            .to_owned(),
+          div()
+            .add_style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0).to_owned())
+            .to_owned(),
+          input()
+            .class(ui_input())
+            .insert_attr("value", state.draft.to_owned())
+            .insert_attr("placeholder", "something to update...")
+            .on_input(Rc::new(move |e, dispatch| -> Result<(), String> {
+              if let RespoEvent::Input { value, .. } = e {
+                dispatch.run(ActionOp::StatesChange(
+                  cursor.to_owned(),
+                  Some(serde_json::to_value(TaskState { draft: value }).expect("to json")),
+                ))?;
+              }
+              Ok(())
+            }))
+            .to_owned(),
+          button()
+            .class(ui_button())
+            .insert_attr("innerText", "Update")
+            .on_click(Rc::new(move |e, dispatch| -> Result<(), String> {
+              dispatch.run(ActionOp::UpdateTask(task_id3.to_owned(), state.draft.clone()))?;
+              dispatch.run(ActionOp::StatesChange(cursor2.to_owned(), None))?;
               Ok(())
             }))
             .to_owned(),

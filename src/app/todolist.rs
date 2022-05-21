@@ -8,7 +8,7 @@ use super::{
 pub fn comp_todolist(states: &StatesTree, tasks: &Vec<Task>) -> Result<RespoNode<ActionOp>, String> {
   let mut children = vec![];
   for task in tasks {
-    children.push((task.id.to_owned().into(), comp_task(states, task)?));
+    children.push((task.id.to_owned().into(), comp_task(&states.pick(&task.id), task)?));
   }
 
   // util::log!("{:?}", &tasks);

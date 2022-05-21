@@ -98,7 +98,8 @@ where
       let new_tree = renderer()?;
       let mut changes: Vec<DomChange<T>> = vec![];
       diff_tree(&new_tree, &to_prev_tree.borrow(), Vec::new(), &Vec::new(), &mut changes)?;
-      // info_1(&format!("changes: {:?}", changes).into());
+
+      // util::log!("changes: {:?}", changes);
 
       // changes to prev_tree should be distinguished from changes to new_tree
       let mut before_changes = vec![];

@@ -6,6 +6,8 @@ use web_sys::{Element, HtmlElement, HtmlInputElement, InputEvent, MouseEvent, No
 use wasm_bindgen::JsCast;
 use web_sys::console::warn_1;
 
+use crate::util;
+
 use super::{
   build_dom_tree, load_coord_target_tree, ChildDomOp, DomChange, EventHandlerFn, RespoCoord, RespoEvent, RespoEventMark, RespoNode,
 };
@@ -119,29 +121,40 @@ where
                 .append_child(&new_element)
                 .expect("element appended");
             }
+            ChildDomOp::Prepend(k, node) => {
+              let mut next_coord = coord.to_owned();
+              next_coord.push(RespoCoord::Key(k.to_owned()));
+              let new_element = build_dom_tree(node, &next_coord, handler).expect("new element");
+              let base = target.dyn_ref::<Node>().expect("to node").first_child().expect("to first child");
+              target
+                .dyn_ref::<Node>()
+                .expect("to node")
+                .insert_before(&new_element, Some(&base))
+                .expect("element appended");
+            }
             ChildDomOp::RemoveAt(idx) => {
               let child = target
                 .dyn_ref::<Element>()
                 .expect("get node")
                 .children()
                 .item(*idx)
-                .ok_or_else(|| format!("child not found at {}", &idx))?;
+                .ok_or_else(|| format!("child to remove not found at {}", &idx))?;
               target.remove_child(&child).expect("child removed");
             }
             ChildDomOp::InsertAfter(idx, k, node) => {
               let children = target.dyn_ref::<Element>().expect("get node").children();
               if idx >= &children.length() {
-                return Err(format!("child not found at {}", &idx));
+                return Err(format!("child to insert not found at {}", &idx));
               } else {
                 let handler = handle_event.clone();
                 let mut next_coord = coord.to_owned();
                 next_coord.push(RespoCoord::Key(k.to_owned()));
                 let new_element = build_dom_tree(node, &next_coord, handler).expect("new element");
                 if idx == &children.length() {
+                  target.append_child(&new_element).expect("element appended");
+                } else {
                   let child = children.item(*idx + 1).ok_or_else(|| format!("child not found at {}", &idx))?;
                   target.insert_before(&new_element, Some(&child)).expect("element inserted");
-                } else {
-                  target.append_child(&new_element).expect("element appended");
                 }
               }
             }

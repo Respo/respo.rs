@@ -238,10 +238,8 @@ where
         old_tracking_pointer += 1;
       }
     } else if old_tracking_pointer >= old_children.len() {
-      operations.push(ChildDomOp::Append(
-        new_children[new_tracking_pointer].0.to_owned(),
-        new_children[new_tracking_pointer].1.to_owned(),
-      ));
+      let (new_key, new_child) = &new_children[new_tracking_pointer];
+      operations.push(ChildDomOp::Append(new_key.to_owned(), new_child.to_owned()));
       new_tracking_pointer += 1;
     } else {
       let new_entry = &new_children[new_tracking_pointer];
@@ -266,12 +264,20 @@ where
         || Some(&old_entry.0) == new_children.get(new_tracking_pointer + 2).map(fst)
         || Some(&old_entry.0) == new_children.get(new_tracking_pointer + 3).map(fst)
       {
-        operations.push(ChildDomOp::Append(new_entry.0.to_owned(), new_entry.1.to_owned()));
+        if cursor == 0 {
+          operations.push(ChildDomOp::Prepend(new_entry.0.to_owned(), new_entry.1.to_owned()))
+        } else {
+          operations.push(ChildDomOp::InsertAfter(cursor - 1, new_entry.0.to_owned(), new_entry.1.to_owned()));
+        }
         cursor += 1;
         new_tracking_pointer += 1;
       } else {
         operations.push(ChildDomOp::RemoveAt(cursor));
-        operations.push(ChildDomOp::InsertAfter(cursor, new_entry.0.to_owned(), new_entry.1.to_owned()));
+        if cursor == 0 {
+          operations.push(ChildDomOp::Prepend(new_entry.0.to_owned(), new_entry.1.to_owned()))
+        } else {
+          operations.push(ChildDomOp::InsertAfter(cursor - 1, new_entry.0.to_owned(), new_entry.1.to_owned()));
+        }
 
         cursor += 1;
         new_tracking_pointer += 1;

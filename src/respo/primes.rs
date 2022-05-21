@@ -429,6 +429,7 @@ where
   InsertAfter(u32, RespoIndexKey, RespoNode<T>),
   RemoveAt(u32),
   Append(RespoIndexKey, RespoNode<T>),
+  Prepend(RespoIndexKey, RespoNode<T>),
 }
 
 #[derive(Clone)]

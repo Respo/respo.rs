@@ -1,23 +1,25 @@
 use std::{fmt::Debug, rc::Rc};
 
-use crate::respo::{
-  declare_static_style, div, span, CssColor, CssRule, RespoEffect, RespoEffectHandler, RespoNode, RespoStyle, StatesTree,
-};
+use crate::respo::{declare_static_style, div, span, CssColor, RespoEffect, RespoEffectHandler, RespoNode, RespoStyle, StatesTree};
 
 use super::data_types::*;
+
+pub fn style_task_container() -> String {
+  declare_static_style(
+    "task-comp",
+    &[(
+      "$0".to_owned(),
+      RespoStyle::default()
+        .margin(4.)
+        .background_color(CssColor::Hsla(200., 90., 90., 1.)),
+    )],
+  )
+}
 
 pub fn comp_task<T>(states: &StatesTree, task: &Task) -> Result<RespoNode<T>, String>
 where
   T: Debug + Clone,
 {
-  let style_task_container = declare_static_style(
-    "task-comp",
-    &[(
-      "$0".to_owned(),
-      &[CssRule::Margin(4.), CssRule::BackgroundColor(CssColor::Hsla(200., 90., 90., 1.))],
-    )],
-  );
-
   Ok(RespoNode::Component(
     "tasks".to_owned(),
     vec![RespoEffect {
@@ -30,7 +32,7 @@ where
     }],
     Box::new(
       div()
-        .add_attrs([("class", style_task_container)])
+        .add_attrs([("class", style_task_container())])
         .add_children([span().add_attrs([("innerText", format!("TODO {:?}", task))]).to_owned()])
         .to_owned(),
     ),

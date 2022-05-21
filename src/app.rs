@@ -13,6 +13,7 @@ use std::{panic, vec};
 use wasm_bindgen::prelude::*;
 
 use crate::respo::{div, render_node, util::query_select_node, DispatchFn, RespoNode, StatesTree};
+use crate::ui::ui_global;
 
 use self::counter::comp_counter;
 use self::data_types::*;
@@ -34,7 +35,7 @@ pub fn load_demo_app() -> JsValue {
 
   let store_to_action = global_store.clone();
   let dispatch_action = move |op: ActionOp| -> Result<(), String> {
-    // log_1(&format!("action {:?}", op).into());
+    // util::log!("action {:?}", op);
     let mut store = store_to_action.borrow_mut();
     match op {
       ActionOp::Increment => {
@@ -58,6 +59,7 @@ pub fn load_demo_app() -> JsValue {
 
       Ok(
         div()
+          .add_attrs([("class", ui_global())])
           .add_children([
             comp_counter(&states.pick("counter"), store.counted),
             comp_panel(&states.pick("panel"))?,

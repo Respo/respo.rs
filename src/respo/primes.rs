@@ -7,7 +7,7 @@ use std::{collections::HashMap, fmt::Debug};
 use serde_json::Value;
 use web_sys::{InputEvent, KeyboardEvent, MouseEvent, Node};
 
-use super::css::{CssRule, RespoStyle};
+use super::css::RespoStyle;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RespoNode<T>
@@ -57,18 +57,14 @@ where
     }
   }
 
-  pub fn add_style<U>(&mut self, more: U) -> &mut Self
-  where
-    U: IntoIterator<Item = CssRule>,
-  {
+  pub fn add_style(&mut self, more: RespoStyle) -> &mut Self {
     match self {
       RespoNode::Component(_, _, node) => {
         node.add_style(more);
       }
       RespoNode::Element { ref mut style, .. } => {
-        for pair in more.into_iter() {
-          let (k, v) = pair.get_pair();
-          style.0.insert(k.to_owned(), v.to_owned());
+        for (k, v) in more.0.into_iter() {
+          style.0.push((k.to_owned(), v.to_owned()));
         }
       }
     }

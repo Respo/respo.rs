@@ -41,7 +41,7 @@ where
           });
         }
       } else {
-        collect_effects_outside_in_as(old_tree, coord.to_owned(), RespoEffectType::BeforeUnmount, changes)?;
+        collect_effects_inside_out_as(old_tree, coord.to_owned(), RespoEffectType::BeforeUnmount, changes)?;
         changes.push(DomChange::ReplaceElement {
           coord: coord.to_owned(),
           node: *old_child.to_owned(),
@@ -57,7 +57,7 @@ where
       collect_effects_outside_in_as(new_tree, coord.to_owned(), RespoEffectType::Mounted, changes)?;
     }
     (_, b @ RespoNode::Component(..)) => {
-      collect_effects_outside_in_as(old_tree, coord.to_owned(), RespoEffectType::BeforeUnmount, changes)?;
+      collect_effects_inside_out_as(old_tree, coord.to_owned(), RespoEffectType::BeforeUnmount, changes)?;
       changes.push(DomChange::ReplaceElement {
         coord: coord.to_owned(),
         node: b.to_owned(),
@@ -86,7 +86,12 @@ where
         });
       } else {
         diff_attrs(attrs, old_attrs, &coord, changes);
-        diff_style(&style.0, &old_style.0, &coord, changes);
+        diff_style(
+          &HashMap::from_iter(style.0.to_owned()),
+          &HashMap::from_iter(old_style.0.to_owned()),
+          &coord,
+          changes,
+        );
 
         diff_event(event, old_event, &coord, changes);
         diff_children(children, old_children, coord, changes)?;

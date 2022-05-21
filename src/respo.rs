@@ -1,5 +1,5 @@
 mod alias;
-mod css;
+pub mod css;
 mod diff;
 mod patch;
 mod primes;

@@ -264,6 +264,10 @@ impl RespoStyle {
     self.insert("box-sizing", box_sizing.to_string());
     self
   }
+  pub fn text_decoration(&mut self, decoration: CssTextDecoration) -> &mut Self {
+    self.insert("text-decoration", decoration.to_string());
+    self
+  }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -478,6 +482,7 @@ pub enum CssFlexJustifyContent {
   Center,
   SpaceBetween,
   SpaceAround,
+  SpaceEvenly,
 }
 
 impl Display for CssFlexJustifyContent {
@@ -488,6 +493,7 @@ impl Display for CssFlexJustifyContent {
       Self::Center => write!(f, "center"),
       Self::SpaceBetween => write!(f, "space-between"),
       Self::SpaceAround => write!(f, "space-around"),
+      Self::SpaceEvenly => write!(f, "space-evenly"),
     }
   }
 }
@@ -678,6 +684,21 @@ impl Display for CssFontWeight {
       Self::Bolder => write!(f, "bolder"),
       Self::Lighter => write!(f, "lighter"),
       Self::Weight(w) => write!(f, "{}", w),
+    }
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CssTextDecoration {
+  Underline,
+  None,
+}
+
+impl Display for CssTextDecoration {
+  fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+    match self {
+      Self::Underline => write!(f, "underline"),
+      Self::None => write!(f, "none"),
     }
   }
 }

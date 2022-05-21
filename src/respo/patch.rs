@@ -7,8 +7,7 @@ use wasm_bindgen::JsCast;
 use web_sys::console::warn_1;
 
 use super::{
-  build_dom_tree, load_coord_target_tree, ChildDomOp, DomChange, EventHandlerFn, RespoCoord, RespoEffectType, RespoEvent,
-  RespoEventMark, RespoNode,
+  build_dom_tree, load_coord_target_tree, ChildDomOp, DomChange, EventHandlerFn, RespoCoord, RespoEvent, RespoEventMark, RespoNode,
 };
 
 pub fn patch_tree<T>(

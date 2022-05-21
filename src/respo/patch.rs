@@ -39,6 +39,12 @@ where
             el.dyn_ref::<HtmlElement>().ok_or("to html element")?.set_inner_text(v);
           } else if k == "innerHTML" {
             el.set_inner_html(v);
+          } else if k == "value" {
+            let input_el = el.dyn_ref::<HtmlInputElement>().expect("to input");
+            let prev_value = input_el.value();
+            if &prev_value != v {
+              input_el.set_value(v);
+            }
           } else {
             el.set_attribute(k, v).expect("to set attribute");
           }
@@ -48,6 +54,12 @@ where
             el.dyn_ref::<HtmlElement>().ok_or("to html element")?.set_inner_text("");
           } else if k == "innerHTML" {
             el.set_inner_html("");
+          } else if k == "value" {
+            let input_el = el.dyn_ref::<HtmlInputElement>().expect("to input");
+            let prev_value = input_el.value();
+            if !prev_value.is_empty() {
+              input_el.set_value("");
+            }
           } else {
             el.remove_attribute(k).expect("to remove attribute");
           }

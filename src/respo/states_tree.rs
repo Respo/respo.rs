@@ -57,7 +57,9 @@ impl StatesTree {
         next
       } else {
         let mut next = self.clone();
-        next.branches.insert(p0, Box::new(StatesTree::pick(self, &path[0])));
+        let mut branch = StatesTree::pick(&next, &p0);
+        branch = branch.set_in(p_rest, new_state);
+        next.branches.insert(p0, Box::new(branch));
         next
       }
     }

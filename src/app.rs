@@ -9,11 +9,13 @@ mod todolist;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::{panic, vec};
+use web_sys::console::log_1;
 
 use wasm_bindgen::prelude::*;
 
 use crate::respo::{div, render_node, util::query_select_node, DispatchFn, RespoNode, StatesTree};
 use crate::ui::ui_global;
+use crate::util;
 
 use self::counter::comp_counter;
 use self::data_types::*;
@@ -35,7 +37,7 @@ pub fn load_demo_app() -> JsValue {
 
   let store_to_action = global_store.clone();
   let dispatch_action = move |op: ActionOp| -> Result<(), String> {
-    // util::log!("action {:?}", op);
+    // util::log!("action {:?} store, {:?}", op, store_to_action.borrow());
     let mut store = store_to_action.borrow_mut();
     match op {
       ActionOp::Increment => {
@@ -56,6 +58,8 @@ pub fn load_demo_app() -> JsValue {
     Box::new(move || -> Result<RespoNode<ActionOp>, String> {
       let store = global_store.borrow();
       let states = store.states.clone();
+
+      // util::log!("global store: {:?}", store);
 
       Ok(
         div()

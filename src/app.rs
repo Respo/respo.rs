@@ -9,7 +9,6 @@ mod todolist;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::{panic, vec};
-use web_sys::console::log_1;
 
 use wasm_bindgen::prelude::*;
 
@@ -39,17 +38,9 @@ pub fn load_demo_app() -> JsValue {
   let dispatch_action = move |op: ActionOp| -> Result<(), String> {
     // util::log!("action {:?} store, {:?}", op, store_to_action.borrow());
     let mut store = store_to_action.borrow_mut();
-    match op {
-      ActionOp::Increment => {
-        store.counted += 1;
-      }
-      ActionOp::Decrement => {
-        store.counted -= 1;
-      }
-      ActionOp::StatesChange(path, new_state) => {
-        store.states = store.states.set_in(&path, new_state);
-      }
-    }
+    apply_action(&mut store, op)?;
+
+    // util::log!("store after action {:?}", store);
     Ok(())
   };
 
@@ -59,7 +50,7 @@ pub fn load_demo_app() -> JsValue {
       let store = global_store.borrow();
       let states = store.states.clone();
 
-      // util::log!("global store: {:?}", store);
+      util::log!("global store: {:?}", store);
 
       Ok(
         div()
@@ -67,7 +58,7 @@ pub fn load_demo_app() -> JsValue {
           .add_children([
             comp_counter(&states.pick("counter"), store.counted),
             comp_panel(&states.pick("panel"))?,
-            comp_todolist(&states.pick("todolist"), &vec![])?,
+            comp_todolist(&states.pick("todolist"), &store.tasks)?,
           ])
           .to_owned(),
       )

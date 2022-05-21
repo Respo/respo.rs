@@ -12,7 +12,7 @@ use std::rc::Rc;
 use std::sync::RwLock;
 
 use wasm_bindgen::{JsCast, JsValue};
-use web_sys::console::{error_1, info_1, log_1, warn_1};
+use web_sys::console::{error_1, warn_1};
 use web_sys::{HtmlElement, Node};
 
 pub use alias::*;
@@ -85,7 +85,7 @@ where
 
   // collection mounted effects
   let mut mount_changes: Vec<DomChange<T>> = vec![];
-  collect_effects_outside_in_as(&tree0, vec![], RespoEffectType::Mounted, &mut mount_changes)?;
+  collect_effects_outside_in_as(&tree0, vec![], &[], RespoEffectType::Mounted, &mut mount_changes)?;
 
   mount_target.append_child(&element)?;
   let handler = handle_event.clone();
@@ -97,8 +97,8 @@ where
     if drain_rerender_status() {
       let new_tree = renderer()?;
       let mut changes: Vec<DomChange<T>> = vec![];
-      diff_tree(&new_tree, &to_prev_tree.borrow(), Vec::new(), &mut changes)?;
-      info_1(&format!("changes: {:?}", changes).into());
+      diff_tree(&new_tree, &to_prev_tree.borrow(), Vec::new(), &Vec::new(), &mut changes)?;
+      // info_1(&format!("changes: {:?}", changes).into());
 
       // changes to prev_tree should be distinguished from changes to new_tree
       let mut before_changes = vec![];
@@ -132,6 +132,7 @@ fn load_coord_target_tree<T>(tree: &RespoNode<T>, coord: &[RespoCoord]) -> Resul
 where
   T: Debug + Clone,
 {
+  // util::log!("looking for {:?}\n  {}", coord, &tree);
   if coord.is_empty() {
     Ok(tree.to_owned())
   } else {
@@ -144,12 +145,21 @@ where
           Err(format!("expected component {} to be {}", &name, &target_name))
         }
       }
-      (RespoNode::Element { children, .. }, RespoCoord::Idx(idx)) => match children.get(*idx as usize) {
-        Some((_k, child)) => load_coord_target_tree(child, &coord[1..]),
-        None => Err(format!("no child at index {}", idx)),
+      (RespoNode::Element { children, .. }, RespoCoord::Key(idx)) => match children.iter().position(|(k, _)| idx == k) {
+        Some(i) => {
+          let child = &children.get(i).ok_or_else(|| format!("to get child {:?} {}", idx, i))?.1;
+          load_coord_target_tree(child, &coord[1..])
+        }
+        None => Err(format!("no child at index key {:?}", idx)),
       },
-      (RespoNode::Component(..), RespoCoord::Idx(..)) => Err(String::from("expected element, found target being a component")),
-      (RespoNode::Element { .. }, RespoCoord::Comp(..)) => Err(String::from("expected component, found target being an element")),
+      // match children.get(*idx as usize) {
+      //   Some((_k, child)) => load_coord_target_tree(child, &coord[1..]),
+      //   None => Err(format!("no child at index key {:?}", idx)),
+      // },
+      (RespoNode::Component(..), RespoCoord::Key(..)) => Err(String::from("expected element, found target being a component")),
+      (RespoNode::Element { .. }, RespoCoord::Comp(..)) => {
+        Err(format!("expected component at {:?}, found target being an element", coord))
+      }
     }
   }
 }
@@ -202,14 +212,14 @@ where
         }
       }
       element.set_attribute("style", &style.to_string())?;
-      for (idx, (_k, child)) in children.iter().enumerate() {
+      for (k, child) in children {
         let mut next_coord = coord.to_owned();
-        next_coord.push(RespoCoord::Idx(idx as u32));
+        next_coord.push(RespoCoord::Key(k.to_owned()));
         let handler = handle_event.clone();
         element.append_child(&build_dom_tree(child, &next_coord, handler)?)?;
       }
 
-      // util::log!("creano handler forted element: {} {:?}", name, event);
+      // util::log!("create handler for element: {} {:?}", name, event);
 
       for key in event.keys() {
         let coord = coord.to_owned();

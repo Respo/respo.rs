@@ -29,8 +29,9 @@ where
   }
 
   for op in changes {
+    // util::log!("op: {:?}", op);
     let coord = op.get_coord();
-    let target = find_coord_dom_target(&mount_target.first_child().ok_or("to get first child")?, &coord)?;
+    let target = find_coord_dom_target(&mount_target.first_child().ok_or("to get first child")?, &op.get_dom_path())?;
     match op {
       DomChange::ModifyAttrs { set, unset, .. } => {
         let el = target.dyn_ref::<Element>().expect("load as element");
@@ -108,8 +109,10 @@ where
         for op in operations {
           let handler = handle_event.clone();
           match op {
-            ChildDomOp::Append(node) => {
-              let new_element = build_dom_tree(node, &coord, handler).expect("new element");
+            ChildDomOp::Append(k, node) => {
+              let mut next_coord = coord.to_owned();
+              next_coord.push(RespoCoord::Key(k.to_owned()));
+              let new_element = build_dom_tree(node, &next_coord, handler).expect("new element");
               target
                 .dyn_ref::<Node>()
                 .expect("to node")
@@ -125,13 +128,15 @@ where
                 .ok_or_else(|| format!("child not found at {}", &idx))?;
               target.remove_child(&child).expect("child removed");
             }
-            ChildDomOp::InsertAfter(idx, node) => {
+            ChildDomOp::InsertAfter(idx, k, node) => {
               let children = target.dyn_ref::<Element>().expect("get node").children();
               if idx >= &children.length() {
                 return Err(format!("child not found at {}", &idx));
               } else {
                 let handler = handle_event.clone();
-                let new_element = build_dom_tree(node, &coord, handler).expect("new element");
+                let mut next_coord = coord.to_owned();
+                next_coord.push(RespoCoord::Key(k.to_owned()));
+                let new_element = build_dom_tree(node, &next_coord, handler).expect("new element");
                 if idx == &children.length() {
                   let child = children.item(*idx + 1).ok_or_else(|| format!("child not found at {}", &idx))?;
                   target.insert_before(&new_element, Some(&child)).expect("element inserted");
@@ -148,6 +153,7 @@ where
         coord,
         effect_type,
         skip_indexes,
+        ..
       } => {
         let target_tree = load_coord_target_tree(tree, coord)?;
         if let RespoNode::Component(_, effects, _) = target_tree {
@@ -165,16 +171,14 @@ where
   Ok(())
 }
 
-fn find_coord_dom_target(mount_target: &Node, coord: &[RespoCoord]) -> Result<Node, String> {
+fn find_coord_dom_target(mount_target: &Node, coord: &[u32]) -> Result<Node, String> {
   let mut target = mount_target.clone();
-  for digit in coord {
-    if let &RespoCoord::Idx(idx) = digit {
-      let child = target.child_nodes().item(idx);
-      if child.is_none() {
-        return Err(format!("no child at index {}", &idx));
-      }
-      target = child.ok_or_else(|| format!("does not find child at index: {}", &idx))?;
+  for idx in coord {
+    let child = target.child_nodes().item(idx.to_owned());
+    if child.is_none() {
+      return Err(format!("no child at index {}", &idx));
     }
+    target = child.ok_or_else(|| format!("does not find child at index: {}", &idx))?;
   }
   Ok(target)
 }

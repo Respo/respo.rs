@@ -9,6 +9,7 @@ pub fn diff_tree<T>(
   new_tree: &RespoNode<T>,
   old_tree: &RespoNode<T>,
   coord: Vec<RespoCoord>,
+  dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
 ) -> Result<(), String>
 where
@@ -19,7 +20,7 @@ where
       if name == name_old {
         let mut next_coord = coord.clone();
         next_coord.push(RespoCoord::Comp(String::from(name)));
-        diff_tree(new_child, old_child, next_coord, changes)?;
+        diff_tree(new_child, old_child, next_coord, dom_path, changes)?;
         let mut skipped = HashSet::new();
         for (idx, effect) in effects.iter().enumerate() {
           if let Some(old_effect) = old_effects.get(idx) {
@@ -31,35 +32,40 @@ where
         if skipped.len() < effects.len() {
           changes.push(DomChange::Effect {
             coord: coord.clone(),
+            dom_path: dom_path.to_owned(),
             effect_type: RespoEffectType::BeforeUpdate,
             skip_indexes: skipped.to_owned(),
           });
           changes.push(DomChange::Effect {
             coord: coord.clone(),
+            dom_path: dom_path.to_owned(),
             effect_type: RespoEffectType::Updated,
             skip_indexes: skipped.to_owned(),
           });
         }
       } else {
-        collect_effects_inside_out_as(old_tree, coord.to_owned(), RespoEffectType::BeforeUnmount, changes)?;
+        collect_effects_inside_out_as(old_tree, coord.to_owned(), dom_path, RespoEffectType::BeforeUnmount, changes)?;
         changes.push(DomChange::ReplaceElement {
           coord: coord.to_owned(),
+          dom_path: dom_path.to_owned(),
           node: *old_child.to_owned(),
         });
-        collect_effects_outside_in_as(new_tree, coord, RespoEffectType::Mounted, changes)?;
+        collect_effects_outside_in_as(new_tree, coord, dom_path, RespoEffectType::Mounted, changes)?;
       }
     }
     (RespoNode::Component(..), b) => {
       changes.push(DomChange::ReplaceElement {
         coord: coord.to_owned(),
+        dom_path: dom_path.to_owned(),
         node: b.to_owned(),
       });
-      collect_effects_outside_in_as(new_tree, coord.to_owned(), RespoEffectType::Mounted, changes)?;
+      collect_effects_outside_in_as(new_tree, coord.to_owned(), dom_path, RespoEffectType::Mounted, changes)?;
     }
     (_, b @ RespoNode::Component(..)) => {
-      collect_effects_inside_out_as(old_tree, coord.to_owned(), RespoEffectType::BeforeUnmount, changes)?;
+      collect_effects_inside_out_as(old_tree, coord.to_owned(), dom_path, RespoEffectType::BeforeUnmount, changes)?;
       changes.push(DomChange::ReplaceElement {
         coord: coord.to_owned(),
+        dom_path: dom_path.to_owned(),
         node: b.to_owned(),
       });
     }
@@ -82,19 +88,21 @@ where
       if name != old_name {
         changes.push(DomChange::ReplaceElement {
           coord: coord.to_owned(),
+          dom_path: dom_path.to_owned(),
           node: b.to_owned(),
         });
       } else {
-        diff_attrs(attrs, old_attrs, &coord, changes);
+        diff_attrs(attrs, old_attrs, &coord, dom_path, changes);
         diff_style(
           &HashMap::from_iter(style.0.to_owned()),
           &HashMap::from_iter(old_style.0.to_owned()),
           &coord,
+          dom_path,
           changes,
         );
 
-        diff_event(event, old_event, &coord, changes);
-        diff_children(children, old_children, coord, changes)?;
+        diff_event(event, old_event, &coord, dom_path, changes);
+        diff_children(children, old_children, coord, dom_path, changes)?;
       }
     }
   }
@@ -106,6 +114,7 @@ fn diff_attrs<T>(
   new_attrs: &HashMap<String, String>,
   old_attrs: &HashMap<String, String>,
   coord: &Vec<RespoCoord>,
+  dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
 ) where
   T: Debug + Clone,
@@ -131,6 +140,7 @@ fn diff_attrs<T>(
   if !added.is_empty() || !removed.is_empty() {
     changes.push(DomChange::ModifyAttrs {
       coord: coord.to_owned(),
+      dom_path: dom_path.to_owned(),
       set: added,
       unset: removed,
     });
@@ -141,6 +151,7 @@ fn diff_style<T>(
   new_style: &HashMap<String, String>,
   old_style: &HashMap<String, String>,
   coord: &Vec<RespoCoord>,
+  dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
 ) where
   T: Debug + Clone,
@@ -166,6 +177,7 @@ fn diff_style<T>(
   if !added.is_empty() || !removed.is_empty() {
     changes.push(DomChange::ModifyStyle {
       coord: coord.to_owned(),
+      dom_path: dom_path.to_owned(),
       set: added,
       unset: removed,
     });
@@ -176,6 +188,7 @@ fn diff_event<T, U>(
   new_event: &HashMap<String, U>,
   old_event: &HashMap<String, U>,
   coord: &Vec<RespoCoord>,
+  dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
 ) where
   T: Debug + Clone,
@@ -186,6 +199,7 @@ fn diff_event<T, U>(
   if new_keys != old_keys {
     changes.push(DomChange::ModifyEvent {
       coord: coord.to_owned(),
+      dom_path: dom_path.to_owned(),
       add: new_keys.difference(&old_keys).map(ToOwned::to_owned).collect(),
       remove: old_keys.difference(&new_keys).map(ToOwned::to_owned).collect(),
     });
@@ -196,6 +210,7 @@ fn diff_children<T>(
   new_children: &[(RespoIndexKey, RespoNode<T>)],
   old_children: &[(RespoIndexKey, RespoNode<T>)],
   coord: Vec<RespoCoord>,
+  dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
 ) -> Result<(), String>
 where
@@ -210,7 +225,11 @@ where
     if new_tracking_pointer >= new_children.len() {
       if old_tracking_pointer >= old_children.len() {
         if !operations.is_empty() {
-          changes.push(DomChange::ModifyChildren { coord, operations });
+          changes.push(DomChange::ModifyChildren {
+            coord,
+            dom_path: dom_path.to_owned(),
+            operations,
+          });
         }
 
         return Ok(());
@@ -219,15 +238,20 @@ where
         old_tracking_pointer += 1;
       }
     } else if old_tracking_pointer >= old_children.len() {
-      operations.push(ChildDomOp::Append(new_children[new_tracking_pointer].1.to_owned()));
+      operations.push(ChildDomOp::Append(
+        new_children[new_tracking_pointer].0.to_owned(),
+        new_children[new_tracking_pointer].1.to_owned(),
+      ));
       new_tracking_pointer += 1;
     } else {
       let new_entry = &new_children[new_tracking_pointer];
       let old_entry = &old_children[old_tracking_pointer];
       if new_entry.0 == old_entry.0 {
         let mut next_coord = coord.clone();
-        next_coord.push(RespoCoord::Idx(cursor));
-        diff_tree(&new_entry.1, &old_entry.1, next_coord, changes)?;
+        next_coord.push(RespoCoord::Key(new_entry.0.to_owned()));
+        let mut next_dom_path = dom_path.to_owned();
+        next_dom_path.push(cursor);
+        diff_tree(&new_entry.1, &old_entry.1, next_coord, &next_dom_path, changes)?;
         cursor += 1;
         new_tracking_pointer += 1;
         old_tracking_pointer += 1;
@@ -242,12 +266,12 @@ where
         || Some(&old_entry.0) == new_children.get(new_tracking_pointer + 2).map(fst)
         || Some(&old_entry.0) == new_children.get(new_tracking_pointer + 3).map(fst)
       {
-        operations.push(ChildDomOp::Append(new_entry.1.to_owned()));
+        operations.push(ChildDomOp::Append(new_entry.0.to_owned(), new_entry.1.to_owned()));
         cursor += 1;
         new_tracking_pointer += 1;
       } else {
         operations.push(ChildDomOp::RemoveAt(cursor));
-        operations.push(ChildDomOp::InsertAfter(cursor, new_entry.1.to_owned()));
+        operations.push(ChildDomOp::InsertAfter(cursor, new_entry.0.to_owned(), new_entry.1.to_owned()));
 
         cursor += 1;
         new_tracking_pointer += 1;
@@ -261,6 +285,7 @@ where
 pub fn collect_effects_outside_in_as<T>(
   tree: &RespoNode<T>,
   coord: Vec<RespoCoord>,
+  dom_path: &[u32],
   effect_type: RespoEffectType,
   changes: &mut Vec<DomChange<T>>,
 ) -> Result<(), String>
@@ -271,19 +296,20 @@ where
     RespoNode::Component(name, _, tree) => {
       changes.push(DomChange::Effect {
         coord: coord.to_owned(),
+        dom_path: dom_path.to_owned(),
         effect_type,
         skip_indexes: HashSet::new(),
       });
       let mut next_coord = coord;
       next_coord.push(RespoCoord::Comp(name.to_owned()));
-      collect_effects_outside_in_as(tree, next_coord, effect_type, changes)?;
+      collect_effects_outside_in_as(tree, next_coord, dom_path, effect_type, changes)?;
       Ok(())
     }
     RespoNode::Element { children, .. } => {
-      for (idx, (_, child)) in children.iter().enumerate() {
+      for (k, child) in children {
         let mut next_coord = coord.clone();
-        next_coord.push(RespoCoord::Idx(idx as u32));
-        collect_effects_outside_in_as(child, next_coord, effect_type, changes)?;
+        next_coord.push(RespoCoord::Key(k.to_owned()));
+        collect_effects_outside_in_as(child, next_coord, dom_path, effect_type, changes)?;
       }
       Ok(())
     }
@@ -294,6 +320,7 @@ where
 pub fn collect_effects_inside_out_as<T>(
   tree: &RespoNode<T>,
   coord: Vec<RespoCoord>,
+  dom_path: &[u32],
   effect_type: RespoEffectType,
   changes: &mut Vec<DomChange<T>>,
 ) -> Result<(), String>
@@ -304,19 +331,20 @@ where
     RespoNode::Component(name, _, tree) => {
       let mut next_coord = coord.to_owned();
       next_coord.push(RespoCoord::Comp(name.to_owned()));
-      collect_effects_outside_in_as(tree, next_coord, effect_type, changes)?;
+      collect_effects_inside_out_as(tree, next_coord, dom_path, effect_type, changes)?;
       changes.push(DomChange::Effect {
         coord,
+        dom_path: dom_path.to_owned(),
         effect_type,
         skip_indexes: HashSet::new(),
       });
       Ok(())
     }
     RespoNode::Element { children, .. } => {
-      for (idx, (_, child)) in children.iter().enumerate() {
+      for (k, child) in children {
         let mut next_coord = coord.clone();
-        next_coord.push(RespoCoord::Idx(idx as u32));
-        collect_effects_outside_in_as(child, next_coord, effect_type, changes)?;
+        next_coord.push(RespoCoord::Key(k.to_owned()));
+        collect_effects_inside_out_as(child, next_coord, dom_path, effect_type, changes)?;
       }
       Ok(())
     }

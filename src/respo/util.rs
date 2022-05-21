@@ -73,7 +73,7 @@ pub fn query_select_node(pattern: &str) -> Result<Node, String> {
 #[macro_export]
 macro_rules! log {
   ($($t:tt)*) => {{
-    log_1(&format!($($t)*).into());
+    web_sys::console::log_1(&format!($($t)*).into());
   }};
 }
 

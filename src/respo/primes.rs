@@ -70,6 +70,22 @@ where
     }
     self
   }
+
+  pub fn insert_attr<U, V>(&mut self, property: U, value: V) -> &mut Self
+  where
+    U: Into<String> + ToOwned,
+    V: Into<String> + ToOwned,
+  {
+    match self {
+      RespoNode::Component(_, _, node) => {
+        node.insert_attr(property, value);
+      }
+      RespoNode::Element { ref mut attrs, .. } => {
+        attrs.insert(property.into(), value.into());
+      }
+    }
+    self
+  }
   pub fn add_attrs<U, V, W>(&mut self, more: U) -> &mut Self
   where
     U: IntoIterator<Item = (V, W)>,
@@ -84,6 +100,28 @@ where
         for (k, v) in more {
           attrs.insert(k.into(), v.into());
         }
+      }
+    }
+    self
+  }
+  pub fn on_click(&mut self, handler: Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>) -> &mut Self {
+    match self {
+      RespoNode::Component(_, _, node) => {
+        node.on_click(handler);
+      }
+      RespoNode::Element { ref mut event, .. } => {
+        event.insert("click".into(), RespoEventHandler(handler));
+      }
+    }
+    self
+  }
+  pub fn on_input(&mut self, handler: Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>) -> &mut Self {
+    match self {
+      RespoNode::Component(_, _, node) => {
+        node.on_click(handler);
+      }
+      RespoNode::Element { ref mut event, .. } => {
+        event.insert("input".into(), RespoEventHandler(handler));
       }
     }
     self
@@ -133,6 +171,22 @@ where
       }
       RespoNode::Element { .. } => unreachable!("effects are on components"),
     }
+  }
+  pub fn class<U>(&mut self, name: U) -> &mut Self
+  where
+    U: Into<String>,
+  {
+    self.add_attrs([("class", name.into())])
+  }
+
+  pub fn class_list<U>(&mut self, names: &[U]) -> &mut Self
+  where
+    U: Into<String> + Clone,
+  {
+    for name in names {
+      self.insert_attr("class", name.to_owned().into());
+    }
+    self
   }
 }
 

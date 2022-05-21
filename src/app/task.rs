@@ -32,7 +32,7 @@ where
     }],
     Box::new(
       div()
-        .add_attrs([("class", style_task_container())])
+        .class(style_task_container())
         .add_children([span().add_attrs([("innerText", format!("TODO {:?}", task))]).to_owned()])
         .to_owned(),
     ),

@@ -59,7 +59,7 @@ pub fn load_demo_app() -> JsValue {
 
       Ok(
         div()
-          .add_attrs([("class", ui_global())])
+          .class(ui_global())
           .add_children([
             comp_counter(&states.pick("counter"), store.counted),
             comp_panel(&states.pick("panel"))?,

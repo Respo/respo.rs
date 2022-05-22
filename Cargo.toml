@@ -1,9 +1,9 @@
 [package]
 name = "respo"
-version = "0.0.0-a1"
+version = "0.0.1"
 edition = "2021"
 description = "a tiny virtual DOM library migrated from ClojureScript"
-license = "MIT"
+license = "Apache License 2.0"
 repository = "https://github.com/Respo/respo.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

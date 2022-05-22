@@ -14,7 +14,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::respo::{div, render_node, util::query_select_node, DispatchFn, RespoNode, StatesTree};
 use crate::ui::ui_global;
-use crate::util;
+use crate::{util, RespoStyle};
 
 use self::counter::comp_counter;
 use self::data_types::*;
@@ -55,6 +55,7 @@ pub fn load_demo_app() -> JsValue {
       Ok(
         div()
           .class(ui_global())
+          .add_style(RespoStyle::default().padding(12.0).to_owned())
           .add_children([
             comp_counter(&states.pick("counter"), store.counted),
             comp_panel(&states.pick("panel"))?,

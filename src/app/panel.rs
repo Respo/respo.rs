@@ -8,6 +8,7 @@ use crate::{
   app::data_types::ActionOp,
   button,
   respo::{div, input, span, util, RespoEffect, RespoEffectHandler, RespoEvent, RespoNode, StatesTree},
+  space,
   ui::{ui_button, ui_input},
 };
 
@@ -53,6 +54,7 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
               Ok(())
             }))
             .to_owned(),
+          space(Some(8), None),
           button()
             .class(ui_button())
             .insert_attr("innerText", "add")

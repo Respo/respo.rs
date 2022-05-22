@@ -93,7 +93,7 @@ where
   patch_tree(&tree0, &mount_target, &mount_changes, handler)?;
 
   let to_prev_tree = prev_tree.clone();
-  util::raq_loop_slow(Box::new(move || -> Result<(), String> {
+  util::raf_loop_slow(Box::new(move || -> Result<(), String> {
     if drain_rerender_status() {
       let new_tree = renderer()?;
       let mut changes: Vec<DomChange<T>> = vec![];

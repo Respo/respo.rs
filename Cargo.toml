@@ -5,6 +5,9 @@ edition = "2021"
 description = "a tiny virtual DOM library migrated from ClojureScript"
 license = "Apache-2.0"
 repository = "https://github.com/Respo/respo.rs"
+homepage = "http://respo-mvc.org"
+documentation = "https://docs.rs/crate/respo/"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

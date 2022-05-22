@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
   button, input,
   respo::{declare_static_style, div, span, CssColor, RespoEffect, RespoEffectHandler, RespoNode, RespoStyle, StatesTree},
+  space,
   ui::{ui_button, ui_center, ui_input, ui_row, ui_row_middle},
   util, CssSize, RespoEvent,
 };
@@ -127,6 +128,7 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
               Ok(())
             }))
             .to_owned(),
+          space(Some(8), None),
           button()
             .class(ui_button())
             .insert_attr("innerText", "Update")

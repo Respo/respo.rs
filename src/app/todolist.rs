@@ -1,12 +1,10 @@
-use std::rc::Rc;
-
 use serde::{Deserialize, Serialize};
 
 use crate::{
   button,
   respo::{div, span, RespoNode, StatesTree},
   ui::ui_button,
-  util,
+  util::{self, cast_from_json, cast_into_json},
 };
 
 use super::{
@@ -19,12 +17,9 @@ struct TodolistState {
   hide_done: bool,
 }
 
-pub fn comp_todolist(states: &StatesTree, tasks: &Vec<Task>) -> Result<RespoNode<ActionOp>, String> {
+pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
-  let state = match &states.data {
-    Some(v) => serde_json::from_value(v.to_owned()).map_err(|e| format!("to todolist state: {}", e))?,
-    None => TodolistState::default(),
-  };
+  let state = states.data.as_ref().map(cast_from_json::<TodolistState>).unwrap_or_default();
 
   let mut children = vec![];
   for task in tasks {
@@ -42,25 +37,22 @@ pub fn comp_todolist(states: &StatesTree, tasks: &Vec<Task>) -> Result<RespoNode
         div()
           .add_children([
             span()
-              .add_attrs([("innerText", format!("tasks size: {} ... {}", tasks.len(), state.hide_done))])
+              .inner_text(format!("tasks size: {} ... {}", tasks.len(), state.hide_done))
               .to_owned(),
             button()
               .class(ui_button())
-              .insert_attr("innerText", "hide done")
-              .on_click(Rc::new(move |e, dispatch| -> Result<(), String> {
+              .inner_text("hide done")
+              .on_click(move |e, dispatch| -> Result<(), String> {
                 util::log!("click {:?}", e);
 
                 dispatch.run(ActionOp::StatesChange(
                   cursor.to_owned(),
-                  Some(
-                    serde_json::to_value(TodolistState {
-                      hide_done: !state.hide_done,
-                    })
-                    .expect("to json"),
-                  ),
+                  Some(cast_into_json(TodolistState {
+                    hide_done: !state.hide_done,
+                  })),
                 ))?;
                 Ok(())
-              }))
+              })
               .to_owned(),
           ])
           .to_owned(),

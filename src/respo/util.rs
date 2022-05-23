@@ -1,3 +1,6 @@
+use serde::de::DeserializeOwned;
+use serde::Serialize;
+use serde_json::Value;
 use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
@@ -78,3 +81,17 @@ macro_rules! log {
 }
 
 pub(crate) use log;
+
+pub fn cast_from_json<T>(data: &Value) -> T
+where
+  T: DeserializeOwned + Clone,
+{
+  serde_json::from_value(data.to_owned()).expect("should be json")
+}
+
+pub fn cast_into_json<T>(data: T) -> Value
+where
+  T: Serialize,
+{
+  serde_json::to_value(data).expect("should be json")
+}

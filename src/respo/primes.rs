@@ -59,7 +59,7 @@ where
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
-pub struct RespoIndexKey(pub String);
+pub struct RespoIndexKey(String);
 
 impl<T> From<T> for RespoIndexKey
 where
@@ -137,24 +137,30 @@ where
     }
     self
   }
-  pub fn on_click(&mut self, handler: Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>) -> &mut Self {
+  pub fn on_click<U>(&mut self, handler: U) -> &mut Self
+  where
+    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
+  {
     match self {
       RespoNode::Component(_, _, node) => {
         node.on_click(handler);
       }
       RespoNode::Element { ref mut event, .. } => {
-        event.insert("click".into(), RespoEventHandler(handler));
+        event.insert("click".into(), RespoEventHandler::new(handler));
       }
     }
     self
   }
-  pub fn on_input(&mut self, handler: Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>) -> &mut Self {
+  pub fn on_input<U>(&mut self, handler: U) -> &mut Self
+  where
+    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
+  {
     match self {
       RespoNode::Component(_, _, node) => {
-        node.on_click(handler);
+        node.on_input(handler);
       }
       RespoNode::Element { ref mut event, .. } => {
-        event.insert("input".into(), RespoEventHandler(handler));
+        event.insert("input".into(), RespoEventHandler::new(handler));
       }
     }
     self
@@ -239,12 +245,28 @@ where
     self.insert_attr("class", class_name.join(" "));
     self
   }
+
+  pub fn inner_text<U>(&mut self, content: U) -> &mut Self
+  where
+    U: Into<String>,
+  {
+    self.insert_attr("innerText", content.into());
+    self
+  }
+
+  pub fn inner_html<U>(&mut self, content: U) -> &mut Self
+  where
+    U: Into<String>,
+  {
+    self.insert_attr("innerHTML", content.into());
+    self
+  }
 }
 
 pub type StrDict = HashMap<String, String>;
 
 #[derive(Clone)]
-pub struct RespoEventHandler<T>(pub Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>)
+pub struct RespoEventHandler<T>(Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>)
 where
   T: Debug + Clone;
 
@@ -266,6 +288,21 @@ where
 {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "RespoEventHandler(...)")
+  }
+}
+
+impl<T> RespoEventHandler<T>
+where
+  T: Debug + Clone,
+{
+  pub fn new<U>(handler: U) -> Self
+  where
+    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
+  {
+    Self(Rc::new(handler))
+  }
+  pub fn run(&self, event: RespoEvent, dispatch: DispatchFn<T>) -> Result<(), String> {
+    (self.0)(event, dispatch)
   }
 }
 
@@ -312,12 +349,13 @@ pub enum RespoEvent {
   },
 }
 
-/// TODO need a container for values
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct RespoEffect {
   pub args: Vec<Value>,
-  pub handler: RespoEffectHandler,
+  handler: Rc<RespoEffectHandler>,
 }
+
+type RespoEffectHandler = dyn Fn(Vec<Value>, RespoEffectType, &Node) -> Result<(), String>;
 
 impl PartialEq for RespoEffect {
   /// closure are not compared, changes happen in and passed via args
@@ -330,18 +368,24 @@ impl Eq for RespoEffect {}
 
 impl RespoEffect {
   pub fn run(&self, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
-    (self.handler.0)(self.args.to_owned(), effect_type, el)
+    (*self.handler)(self.args.to_owned(), effect_type, el)
+  }
+  pub fn new<U>(args: Vec<Value>, handler: U) -> Self
+  where
+    U: Fn(Vec<Value>, RespoEffectType, &Node) -> Result<(), String> + 'static,
+  {
+    Self {
+      args,
+      handler: Rc::new(handler),
+    }
   }
 }
 
-type UnitStrResult = Result<(), String>;
-
-#[derive(Clone)]
-pub struct RespoEffectHandler(pub Rc<dyn Fn(Vec<Value>, RespoEffectType, &Node) -> UnitStrResult>);
-
-impl Debug for RespoEffectHandler {
+impl Debug for RespoEffect {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "RespoEventHandler(...)")
+    write!(f, "RespoEffect(")?;
+    write!(f, "args: {:?}", self.args)?;
+    write!(f, "...)")
   }
 }
 
@@ -433,7 +477,7 @@ where
 }
 
 #[derive(Clone)]
-pub struct DispatchFn<T>(pub Rc<dyn Fn(T) -> Result<(), String>>)
+pub struct DispatchFn<T>(Rc<dyn Fn(T) -> Result<(), String>>)
 where
   T: Debug + Clone;
 
@@ -453,10 +497,16 @@ where
   pub fn run(&self, op: T) -> Result<(), String> {
     (self.0)(op)
   }
+  pub fn new<U>(f: U) -> Self
+  where
+    U: Fn(T) -> Result<(), String> + 'static,
+  {
+    Self(Rc::new(f))
+  }
 }
 
 #[derive(Clone)]
-pub struct EventHandlerFn(pub Rc<dyn Fn(RespoEventMark) -> Result<(), String>>);
+pub struct EventHandlerFn(Rc<dyn Fn(RespoEventMark) -> Result<(), String>>);
 
 impl Debug for EventHandlerFn {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -467,5 +517,17 @@ impl Debug for EventHandlerFn {
 impl EventHandlerFn {
   pub fn run(&self, e: RespoEventMark) -> Result<(), String> {
     (self.0)(e)
+  }
+  pub fn new<U>(f: U) -> Self
+  where
+    U: Fn(RespoEventMark) -> Result<(), String> + 'static,
+  {
+    Self(Rc::new(f))
+  }
+}
+
+impl From<Rc<dyn Fn(RespoEventMark) -> Result<(), String>>> for EventHandlerFn {
+  fn from(f: Rc<dyn Fn(RespoEventMark) -> Result<(), String>>) -> Self {
+    Self(f)
   }
 }

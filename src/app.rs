@@ -14,7 +14,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::respo::{div, render_node, util::query_select_node, DispatchFn, RespoNode, StatesTree};
 use crate::ui::ui_global;
-use crate::{util, RespoStyle};
+use crate::RespoStyle;
 
 use self::counter::comp_counter;
 use self::data_types::*;
@@ -64,7 +64,7 @@ pub fn load_demo_app() -> JsValue {
           .to_owned(),
       )
     }),
-    DispatchFn(Rc::new(dispatch_action)),
+    DispatchFn::new(dispatch_action),
   )
   .expect("rendering node");
 

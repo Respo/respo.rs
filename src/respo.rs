@@ -61,9 +61,9 @@ where
   let prev_tree = Rc::new(RefCell::new(tree0.clone()));
 
   let to_prev_tree = prev_tree.clone();
-  let handle_event = EventHandlerFn(Rc::new(move |mark: RespoEventMark| -> Result<(), String> {
+  let handle_event = EventHandlerFn::new(move |mark: RespoEventMark| -> Result<(), String> {
     match request_for_target_handler(&to_prev_tree.borrow(), &mark.name, &mark.coord) {
-      Ok(handler) => match (*handler.0)(mark.event_info, dispatch_action.clone()) {
+      Ok(handler) => match handler.run(mark.event_info, dispatch_action.clone()) {
         Ok(()) => {
           // util::log!("finished event: {} {:?}", mark.name, mark.coord);
           mark_need_rerender();
@@ -78,14 +78,14 @@ where
     }
 
     Ok(())
-  }));
+  });
 
   let handler = handle_event.clone();
   let element = build_dom_tree(&tree0, &[], handler)?;
 
   // collection mounted effects
   let mut mount_changes: Vec<DomChange<T>> = vec![];
-  collect_effects_outside_in_as(&tree0, vec![], &[], RespoEffectType::Mounted, &mut mount_changes)?;
+  collect_effects_outside_in_as(&tree0, &[], &[], RespoEffectType::Mounted, &mut mount_changes)?;
 
   mount_target.append_child(&element)?;
   let handler = handle_event.clone();
@@ -97,7 +97,7 @@ where
     if drain_rerender_status() {
       let new_tree = renderer()?;
       let mut changes: Vec<DomChange<T>> = vec![];
-      diff_tree(&new_tree, &to_prev_tree.borrow(), Vec::new(), &Vec::new(), &mut changes)?;
+      diff_tree(&new_tree, &to_prev_tree.borrow(), &Vec::new(), &Vec::new(), &mut changes)?;
 
       // util::log!("changes: {:?}", changes);
 

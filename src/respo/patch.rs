@@ -6,8 +6,6 @@ use web_sys::{Element, HtmlElement, HtmlInputElement, InputEvent, MouseEvent, No
 use wasm_bindgen::JsCast;
 use web_sys::console::warn_1;
 
-use crate::util;
-
 use super::{
   build_dom_tree, load_coord_target_tree, ChildDomOp, DomChange, EventHandlerFn, RespoCoord, RespoEvent, RespoEventMark, RespoNode,
 };
@@ -15,7 +13,7 @@ use super::{
 pub fn patch_tree<T>(
   tree: &RespoNode<T>,
   mount_target: &Node,
-  changes: &Vec<DomChange<T>>,
+  changes: &[DomChange<T>],
   handle_event: EventHandlerFn,
 ) -> Result<(), String>
 where
@@ -196,7 +194,7 @@ fn find_coord_dom_target(mount_target: &Node, coord: &[u32]) -> Result<Node, Str
   Ok(target)
 }
 
-pub fn attach_event(element: &Element, key: &str, coord: &Vec<RespoCoord>, handle_event: EventHandlerFn) -> Result<(), String> {
+pub fn attach_event(element: &Element, key: &str, coord: &[RespoCoord], handle_event: EventHandlerFn) -> Result<(), String> {
   let coord = coord.to_owned();
   // util::log!("attach event {}", key);
   match key {

@@ -17,7 +17,7 @@ pub fn ui_global() -> String {
           .font_family(DEFAULT_FONTS.to_owned())
           .line_height(CssLineHeight::Em(2.))
           .font_size(14.)
-          .color(CssColor::Hsla(0., 0., 20., 1.)),
+          .color(CssColor::Hsl(0, 0, 20)),
       ),
       ("$0 *", RespoStyle::default().box_sizing(CssBoxSizing::BorderBox)),
     ],
@@ -31,7 +31,7 @@ pub fn ui_input() -> String {
       (
         "$0",
         RespoStyle::default()
-          .border(Some((1., CssBorderStyle::Solid, CssColor::Hsla(0.0, 0.0, 80.0, 1.0))))
+          .border(Some((1., CssBorderStyle::Solid, CssColor::Hsl(0, 0, 80))))
           .border_radius(4.)
           .padding4(4., 8., 4., 8.)
           .min_width(CssSize::Px(120.))
@@ -42,8 +42,8 @@ pub fn ui_input() -> String {
       (
         "$0:focus",
         RespoStyle::default()
-          .border(Some((1.0, CssBorderStyle::Solid, CssColor::Hsla(200.0, 50.0, 75.0, 1.0))))
-          .box_shadow(0.0, 0.0, 4.0, 0.0, CssColor::Hsla(200.0, 70.0, 50.0, 0.2)),
+          .border(Some((1.0, CssBorderStyle::Solid, CssColor::Hsl(200, 50, 75))))
+          .box_shadow(0.0, 0.0, 4.0, 0.0, CssColor::Hsl(200, 70, 50)),
       ),
     ],
   )
@@ -58,7 +58,7 @@ pub fn ui_button() -> String {
         RespoStyle::default()
           .outline(None)
           .background_color(CssColor::White)
-          .border(Some((1., CssBorderStyle::Solid, CssColor::Hsla(200., 100., 76., 1.))))
+          .border(Some((1., CssBorderStyle::Solid, CssColor::Hsl(200, 100, 76))))
           .min_width(CssSize::Px(80.))
           .line_height(CssLineHeight::Px(24.))
           .border_radius(4.)
@@ -67,10 +67,7 @@ pub fn ui_button() -> String {
           .transition_duration(200.)
           .text_align(CssTextAlign::Center),
       ),
-      (
-        "$0:hover",
-        RespoStyle::default().background_color(CssColor::Hsla(0., 0.0, 98.0, 1.0)),
-      ),
+      ("$0:hover", RespoStyle::default().background_color(CssColor::Hsl(0, 0, 98))),
       (
         "$0:active",
         RespoStyle::default()
@@ -197,7 +194,7 @@ pub fn ui_textarea() -> String {
         .outline(None)
         .font_size(14.)
         .font_family(DEFAULT_FONTS.to_owned())
-        .border(Some((1., CssBorderStyle::Solid, CssColor::Hsla(0., 0., 20., 1.))))
+        .border(Some((1., CssBorderStyle::Solid, CssColor::Hsl(0, 0, 20))))
         .border_radius(4.)
         .padding(8.)
         .min_width(CssSize::Px(240.))
@@ -218,7 +215,7 @@ pub fn ui_link() -> String {
         .line_height(CssLineHeight::Px(24.))
         .margin(4.)
         .display(CssDisplay::InlineBlock)
-        .color(CssColor::Hsla(200., 100., 76., 1.))
+        .color(CssColor::Hsl(200, 100, 76))
         .cursor("pointer".to_owned()),
     )],
   )

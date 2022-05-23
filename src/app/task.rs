@@ -22,9 +22,7 @@ pub fn style_task_container() -> String {
     "task-comp",
     &[(
       "$0".to_owned(),
-      RespoStyle::default()
-        .margin(4.)
-        .background_color(CssColor::Hsla(200., 90., 96., 1.)),
+      RespoStyle::default().margin(4.).background_color(CssColor::Hsl(200, 90, 96)),
     )],
   )
 }
@@ -39,7 +37,7 @@ pub fn style_done_button() -> String {
         .height(CssSize::Px(24.0))
         .margin(4.)
         .cursor("pointer".to_owned())
-        .background_color(CssColor::Hsla(20., 90., 70., 1.)),
+        .background_color(CssColor::Hsl(20, 90, 70)),
     )],
   )
 }
@@ -56,9 +54,9 @@ pub fn style_remove_button() -> String {
           .margin(4.)
           .cursor("pointer".to_owned())
           .margin4(0.0, 0.0, 0.0, 16.0)
-          .color(CssColor::Hsla(0., 90., 90., 1.)),
+          .color(CssColor::Hsl(0, 90, 90)),
       ),
-      ("$0:hover".to_owned(), RespoStyle::default().color(CssColor::Hsla(0., 90., 80., 1.))),
+      ("$0:hover".to_owned(), RespoStyle::default().color(CssColor::Hsl(0, 90, 80))),
     ],
   )
 }

@@ -67,7 +67,7 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> RespoNode<ActionOp> {
           .add_attrs([("innerText", format!("value is: {}", counted))])
           .add_style(
             RespoStyle::default()
-              .color(CssColor::Blue)
+              .color(CssColor::Hsluv(270, 100, 40))
               .font_family("Menlo".to_owned())
               .font_size(10. + counted as f32)
               .to_owned(),

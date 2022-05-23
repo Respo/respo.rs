@@ -4,6 +4,8 @@ use std::{
   sync::RwLock,
 };
 
+use crate::util;
+use hsluv::hsluv_to_rgb;
 use wasm_bindgen::JsCast;
 use web_sys::Element;
 
@@ -319,11 +321,20 @@ impl Display for CssPosition {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CssColor {
+  /// 0~360, 0~100, 0~100, 0~1
   Hsla(f32, f32, f32, f32),
-  /// HCL color, to support later
-  Hcla(f32, f32, f32, f32),
-  Rgba(u8, u8, u8, u8),
-  Hex(u8),
+  /// 0~360, 0~100, 0~100
+  Hsl(u16, u16, u16),
+  /// 0~360, 0~100, 0~100, 0~1
+  Hsluva(f32, f32, f32, f32),
+  /// 0~360, 0~100, 0~100
+  Hsluv(u16, u16, u16),
+  /// 0~255, 0~255, 0~255, 0~1
+  Rgba(u16, u16, u16, f32),
+  /// 0~255, 0~255, 0~255
+  Rgb(u16, u16, u16),
+  /// 0~255, 0~255, 0~255
+  Hex(u16, u16, u16),
   Red,
   Green,
   Blue,
@@ -344,9 +355,19 @@ impl Display for CssColor {
       "{}",
       match self {
         Self::Hsla(h, s, l, a) => format!("hsla({}, {}%, {}%, {})", h, s, l, a),
-        Self::Hcla(h, c, l, a) => format!("hcla({}, {}, {}, {})", h, c, l, a), // TODO
+        Self::Hsl(h, s, l) => format!("hsl({}, {}%, {}%)", h, s, l),
+        Self::Hsluva(h, c, l, a) => {
+          let (r, g, b) = hsluv_to_rgb((*h as f64, *c as f64, *l as f64));
+          format!("rgba({}, {}, {}, {})", r * 256., g * 256., b * 256., a)
+        }
+        Self::Hsluv(h, c, l) => {
+          let (r, g, b) = hsluv_to_rgb((*h as f64, *c as f64, *l as f64));
+          util::log!("{:?}", (r, g, b));
+          format!("rgb({}, {}, {})", r * 256., g * 256., b * 256.)
+        }
         Self::Rgba(r, g, b, a) => format!("rgba({}, {}, {}, {})", r, g, b, a),
-        Self::Hex(h) => format!("#{:02x}", h),
+        Self::Rgb(r, g, b) => format!("rgb({}, {}, {})", r, g, b),
+        Self::Hex(r, g, b) => format!("#{:02x}{:02x}{:02x}", r, g, b),
         Self::Red => "red".to_string(),
         Self::Green => "green".to_string(),
         Self::Blue => "blue".to_string(),

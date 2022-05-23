@@ -105,12 +105,19 @@ dependencies = [
  "console_error_panic_hook",
  "js-sys",
  "lazy_static",
+ "rust-hsluv",
  "serde",
  "serde_json",
  "uuid",
  "wasm-bindgen",
  "web-sys",
 ]
+
+[[package]]
+name = "rust-hsluv"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "efe2374f2385cdd8755a446f80b2a646de603c9d8539ca38734879b5c71e378b"
 
 [[package]]
 name = "ryu"

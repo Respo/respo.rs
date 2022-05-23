@@ -85,7 +85,7 @@ where
 
   // collection mounted effects
   let mut mount_changes: Vec<DomChange<T>> = vec![];
-  collect_effects_outside_in_as(&tree0, vec![], &[], RespoEffectType::Mounted, &mut mount_changes)?;
+  collect_effects_outside_in_as(&tree0, &[], &[], RespoEffectType::Mounted, &mut mount_changes)?;
 
   mount_target.append_child(&element)?;
   let handler = handle_event.clone();
@@ -97,7 +97,7 @@ where
     if drain_rerender_status() {
       let new_tree = renderer()?;
       let mut changes: Vec<DomChange<T>> = vec![];
-      diff_tree(&new_tree, &to_prev_tree.borrow(), Vec::new(), &Vec::new(), &mut changes)?;
+      diff_tree(&new_tree, &to_prev_tree.borrow(), &Vec::new(), &Vec::new(), &mut changes)?;
 
       // util::log!("changes: {:?}", changes);
 

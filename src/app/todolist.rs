@@ -19,7 +19,7 @@ struct TodolistState {
   hide_done: bool,
 }
 
-pub fn comp_todolist(states: &StatesTree, tasks: &Vec<Task>) -> Result<RespoNode<ActionOp>, String> {
+pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
   let state = match &states.data {
     Some(v) => serde_json::from_value(v.to_owned()).map_err(|e| format!("to todolist state: {}", e))?,

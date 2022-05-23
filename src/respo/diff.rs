@@ -8,7 +8,7 @@ use crate::respo::util::fst;
 pub fn diff_tree<T>(
   new_tree: &RespoNode<T>,
   old_tree: &RespoNode<T>,
-  coord: Vec<RespoCoord>,
+  coord: &[RespoCoord],
   dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
 ) -> Result<(), String>
@@ -18,9 +18,9 @@ where
   match (new_tree, old_tree) {
     (RespoNode::Component(name, effects, new_child), RespoNode::Component(name_old, old_effects, old_child)) => {
       if name == name_old {
-        let mut next_coord = coord.clone();
+        let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Comp(String::from(name)));
-        diff_tree(new_child, old_child, next_coord, dom_path, changes)?;
+        diff_tree(new_child, old_child, &next_coord, dom_path, changes)?;
         let mut skipped = HashSet::new();
         for (idx, effect) in effects.iter().enumerate() {
           if let Some(old_effect) = old_effects.get(idx) {
@@ -31,20 +31,20 @@ where
         }
         if skipped.len() < effects.len() {
           changes.push(DomChange::Effect {
-            coord: coord.clone(),
+            coord: coord.to_owned(),
             dom_path: dom_path.to_owned(),
             effect_type: RespoEffectType::BeforeUpdate,
             skip_indexes: skipped.to_owned(),
           });
           changes.push(DomChange::Effect {
-            coord: coord.clone(),
+            coord: coord.to_owned(),
             dom_path: dom_path.to_owned(),
             effect_type: RespoEffectType::Updated,
             skip_indexes: skipped.to_owned(),
           });
         }
       } else {
-        collect_effects_inside_out_as(old_tree, coord.to_owned(), dom_path, RespoEffectType::BeforeUnmount, changes)?;
+        collect_effects_inside_out_as(old_tree, coord, dom_path, RespoEffectType::BeforeUnmount, changes)?;
         changes.push(DomChange::ReplaceElement {
           coord: coord.to_owned(),
           dom_path: dom_path.to_owned(),
@@ -59,10 +59,10 @@ where
         dom_path: dom_path.to_owned(),
         node: b.to_owned(),
       });
-      collect_effects_outside_in_as(new_tree, coord.to_owned(), dom_path, RespoEffectType::Mounted, changes)?;
+      collect_effects_outside_in_as(new_tree, coord, dom_path, RespoEffectType::Mounted, changes)?;
     }
     (_, b @ RespoNode::Component(..)) => {
-      collect_effects_inside_out_as(old_tree, coord.to_owned(), dom_path, RespoEffectType::BeforeUnmount, changes)?;
+      collect_effects_inside_out_as(old_tree, coord, dom_path, RespoEffectType::BeforeUnmount, changes)?;
       changes.push(DomChange::ReplaceElement {
         coord: coord.to_owned(),
         dom_path: dom_path.to_owned(),
@@ -92,16 +92,16 @@ where
           node: b.to_owned(),
         });
       } else {
-        diff_attrs(attrs, old_attrs, &coord, dom_path, changes);
+        diff_attrs(attrs, old_attrs, coord, dom_path, changes);
         diff_style(
           &HashMap::from_iter(style.0.to_owned()),
           &HashMap::from_iter(old_style.0.to_owned()),
-          &coord,
+          coord,
           dom_path,
           changes,
         );
 
-        diff_event(event, old_event, &coord, dom_path, changes);
+        diff_event(event, old_event, coord, dom_path, changes);
         diff_children(children, old_children, coord, dom_path, changes)?;
       }
     }
@@ -113,7 +113,7 @@ where
 fn diff_attrs<T>(
   new_attrs: &HashMap<String, String>,
   old_attrs: &HashMap<String, String>,
-  coord: &Vec<RespoCoord>,
+  coord: &[RespoCoord],
   dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
 ) where
@@ -150,7 +150,7 @@ fn diff_attrs<T>(
 fn diff_style<T>(
   new_style: &HashMap<String, String>,
   old_style: &HashMap<String, String>,
-  coord: &Vec<RespoCoord>,
+  coord: &[RespoCoord],
   dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
 ) where
@@ -187,7 +187,7 @@ fn diff_style<T>(
 fn diff_event<T, U>(
   new_event: &HashMap<String, U>,
   old_event: &HashMap<String, U>,
-  coord: &Vec<RespoCoord>,
+  coord: &[RespoCoord],
   dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
 ) where
@@ -209,7 +209,7 @@ fn diff_event<T, U>(
 fn diff_children<T>(
   new_children: &[(RespoIndexKey, RespoNode<T>)],
   old_children: &[(RespoIndexKey, RespoNode<T>)],
-  coord: Vec<RespoCoord>,
+  coord: &[RespoCoord],
   dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
 ) -> Result<(), String>
@@ -226,7 +226,7 @@ where
       if old_tracking_pointer >= old_children.len() {
         if !operations.is_empty() {
           changes.push(DomChange::ModifyChildren {
-            coord,
+            coord: coord.to_owned(),
             dom_path: dom_path.to_owned(),
             operations,
           });
@@ -245,11 +245,11 @@ where
       let new_entry = &new_children[new_tracking_pointer];
       let old_entry = &old_children[old_tracking_pointer];
       if new_entry.0 == old_entry.0 {
-        let mut next_coord = coord.clone();
+        let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Key(new_entry.0.to_owned()));
         let mut next_dom_path = dom_path.to_owned();
         next_dom_path.push(cursor);
-        diff_tree(&new_entry.1, &old_entry.1, next_coord, &next_dom_path, changes)?;
+        diff_tree(&new_entry.1, &old_entry.1, &next_coord, &next_dom_path, changes)?;
         cursor += 1;
         new_tracking_pointer += 1;
         old_tracking_pointer += 1;
@@ -290,7 +290,7 @@ where
 // effects at parent are collected first
 pub fn collect_effects_outside_in_as<T>(
   tree: &RespoNode<T>,
-  coord: Vec<RespoCoord>,
+  coord: &[RespoCoord],
   dom_path: &[u32],
   effect_type: RespoEffectType,
   changes: &mut Vec<DomChange<T>>,
@@ -306,16 +306,16 @@ where
         effect_type,
         skip_indexes: HashSet::new(),
       });
-      let mut next_coord = coord;
+      let mut next_coord = coord.to_owned();
       next_coord.push(RespoCoord::Comp(name.to_owned()));
-      collect_effects_outside_in_as(tree, next_coord, dom_path, effect_type, changes)?;
+      collect_effects_outside_in_as(tree, &next_coord, dom_path, effect_type, changes)?;
       Ok(())
     }
     RespoNode::Element { children, .. } => {
       for (k, child) in children {
-        let mut next_coord = coord.clone();
+        let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Key(k.to_owned()));
-        collect_effects_outside_in_as(child, next_coord, dom_path, effect_type, changes)?;
+        collect_effects_outside_in_as(child, &next_coord, dom_path, effect_type, changes)?;
       }
       Ok(())
     }
@@ -325,7 +325,7 @@ where
 // effects deeper inside children are collected first
 pub fn collect_effects_inside_out_as<T>(
   tree: &RespoNode<T>,
-  coord: Vec<RespoCoord>,
+  coord: &[RespoCoord],
   dom_path: &[u32],
   effect_type: RespoEffectType,
   changes: &mut Vec<DomChange<T>>,
@@ -337,9 +337,9 @@ where
     RespoNode::Component(name, _, tree) => {
       let mut next_coord = coord.to_owned();
       next_coord.push(RespoCoord::Comp(name.to_owned()));
-      collect_effects_inside_out_as(tree, next_coord, dom_path, effect_type, changes)?;
+      collect_effects_inside_out_as(tree, &next_coord, dom_path, effect_type, changes)?;
       changes.push(DomChange::Effect {
-        coord,
+        coord: coord.to_owned(),
         dom_path: dom_path.to_owned(),
         effect_type,
         skip_indexes: HashSet::new(),
@@ -348,9 +348,9 @@ where
     }
     RespoNode::Element { children, .. } => {
       for (k, child) in children {
-        let mut next_coord = coord.clone();
+        let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Key(k.to_owned()));
-        collect_effects_inside_out_as(child, next_coord, dom_path, effect_type, changes)?;
+        collect_effects_inside_out_as(child, &next_coord, dom_path, effect_type, changes)?;
       }
       Ok(())
     }

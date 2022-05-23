@@ -59,7 +59,7 @@ where
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
-pub struct RespoIndexKey(pub String);
+pub struct RespoIndexKey(String);
 
 impl<T> From<T> for RespoIndexKey
 where
@@ -137,24 +137,30 @@ where
     }
     self
   }
-  pub fn on_click(&mut self, handler: Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>) -> &mut Self {
+  pub fn on_click<U>(&mut self, handler: U) -> &mut Self
+  where
+    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
+  {
     match self {
       RespoNode::Component(_, _, node) => {
         node.on_click(handler);
       }
       RespoNode::Element { ref mut event, .. } => {
-        event.insert("click".into(), RespoEventHandler(handler));
+        event.insert("click".into(), RespoEventHandler::new(handler));
       }
     }
     self
   }
-  pub fn on_input(&mut self, handler: Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>) -> &mut Self {
+  pub fn on_input<U>(&mut self, handler: U) -> &mut Self
+  where
+    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
+  {
     match self {
       RespoNode::Component(_, _, node) => {
-        node.on_click(handler);
+        node.on_input(handler);
       }
       RespoNode::Element { ref mut event, .. } => {
-        event.insert("input".into(), RespoEventHandler(handler));
+        event.insert("input".into(), RespoEventHandler::new(handler));
       }
     }
     self
@@ -244,7 +250,7 @@ where
 pub type StrDict = HashMap<String, String>;
 
 #[derive(Clone)]
-pub struct RespoEventHandler<T>(pub Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>)
+pub struct RespoEventHandler<T>(Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>)
 where
   T: Debug + Clone;
 
@@ -266,6 +272,21 @@ where
 {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "RespoEventHandler(...)")
+  }
+}
+
+impl<T> RespoEventHandler<T>
+where
+  T: Debug + Clone,
+{
+  pub fn new<U>(handler: U) -> Self
+  where
+    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
+  {
+    Self(Rc::new(handler))
+  }
+  pub fn run(&self, event: RespoEvent, dispatch: DispatchFn<T>) -> Result<(), String> {
+    (self.0)(event, dispatch)
   }
 }
 
@@ -337,11 +358,20 @@ impl RespoEffect {
 type UnitStrResult = Result<(), String>;
 
 #[derive(Clone)]
-pub struct RespoEffectHandler(pub Rc<dyn Fn(Vec<Value>, RespoEffectType, &Node) -> UnitStrResult>);
+pub struct RespoEffectHandler(Rc<dyn Fn(Vec<Value>, RespoEffectType, &Node) -> UnitStrResult>);
 
 impl Debug for RespoEffectHandler {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "RespoEventHandler(...)")
+  }
+}
+
+impl RespoEffectHandler {
+  pub fn new<U>(handler: U) -> Self
+  where
+    U: Fn(Vec<Value>, RespoEffectType, &Node) -> UnitStrResult + 'static,
+  {
+    Self(Rc::new(handler))
   }
 }
 
@@ -433,7 +463,7 @@ where
 }
 
 #[derive(Clone)]
-pub struct DispatchFn<T>(pub Rc<dyn Fn(T) -> Result<(), String>>)
+pub struct DispatchFn<T>(Rc<dyn Fn(T) -> Result<(), String>>)
 where
   T: Debug + Clone;
 
@@ -453,10 +483,16 @@ where
   pub fn run(&self, op: T) -> Result<(), String> {
     (self.0)(op)
   }
+  pub fn new<U>(f: U) -> Self
+  where
+    U: Fn(T) -> Result<(), String> + 'static,
+  {
+    Self(Rc::new(f))
+  }
 }
 
 #[derive(Clone)]
-pub struct EventHandlerFn(pub Rc<dyn Fn(RespoEventMark) -> Result<(), String>>);
+pub struct EventHandlerFn(Rc<dyn Fn(RespoEventMark) -> Result<(), String>>);
 
 impl Debug for EventHandlerFn {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -467,5 +503,17 @@ impl Debug for EventHandlerFn {
 impl EventHandlerFn {
   pub fn run(&self, e: RespoEventMark) -> Result<(), String> {
     (self.0)(e)
+  }
+  pub fn new<U>(f: U) -> Self
+  where
+    U: Fn(RespoEventMark) -> Result<(), String> + 'static,
+  {
+    Self(Rc::new(f))
+  }
+}
+
+impl From<Rc<dyn Fn(RespoEventMark) -> Result<(), String>>> for EventHandlerFn {
+  fn from(f: Rc<dyn Fn(RespoEventMark) -> Result<(), String>>) -> Self {
+    Self(f)
   }
 }

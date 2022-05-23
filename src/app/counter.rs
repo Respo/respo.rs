@@ -31,7 +31,7 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> RespoNode<ActionOp> {
             .class(ui_button())
             .add_attrs([("innerText", "demo inc")])
             .add_style(RespoStyle::default().margin(4.).to_owned())
-            .on_click(Rc::new(move |e, dispatch| -> Result<(), String> {
+            .on_click(move |e, dispatch| -> Result<(), String> {
               util::log!("click {:?}", e);
               if let RespoEvent::Click { original_event, .. } = e {
                 original_event.prevent_default();
@@ -48,17 +48,17 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> RespoNode<ActionOp> {
                 ),
               ))?;
               Ok(())
-            }))
+            })
             .to_owned(),
           button()
             .class(ui_button())
             .add_attrs([("innerText", "demo dec")])
             .add_style(RespoStyle::default().margin(4.).to_owned())
-            .on_click(Rc::new(move |e, dispatch| -> Result<(), String> {
+            .on_click(move |e, dispatch| -> Result<(), String> {
               util::log!("click {:?}", e);
               dispatch.run(ActionOp::Decrement)?;
               Ok(())
-            }))
+            })
             .to_owned(),
         ])
         .to_owned(),

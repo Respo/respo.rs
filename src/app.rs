@@ -64,7 +64,7 @@ pub fn load_demo_app() -> JsValue {
           .to_owned(),
       )
     }),
-    DispatchFn(Rc::new(dispatch_action)),
+    DispatchFn::new(dispatch_action),
   )
   .expect("rendering node");
 

@@ -77,11 +77,11 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
     "tasks".to_owned(),
     vec![RespoEffect {
       args: vec![serde_json::to_value(task).expect("to json")],
-      handler: RespoEffectHandler(Rc::new(move |args, effect_type, el| -> Result<(), String> {
+      handler: RespoEffectHandler::new(move |args, effect_type, el| -> Result<(), String> {
         let t: Task = serde_json::from_value(args[0].to_owned()).expect("from json");
         // TODO
         Ok(())
-      })),
+      }),
     }],
     Box::new(
       div()
@@ -94,20 +94,20 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
             } else {
               RespoStyle::default()
             })
-            .on_click(Rc::new(move |e, dispatch| -> Result<(), String> {
+            .on_click(move |e, dispatch| -> Result<(), String> {
               dispatch.run(ActionOp::ToggleTask(task_id.clone()))?;
               Ok(())
-            }))
+            })
             .to_owned(),
           div().add_attrs([("innerText", task.content.to_owned())]).to_owned(),
           span()
             .class_list(&[ui_center(), style_remove_button()])
             .insert_attr("innerText", "✕")
-            .on_click(Rc::new(move |e, dispatch| -> Result<(), String> {
+            .on_click(move |e, dispatch| -> Result<(), String> {
               util::log!("remove button {:?}", e);
               dispatch.run(ActionOp::RemoveTask(task_id2.to_owned()))?;
               Ok(())
-            }))
+            })
             .to_owned(),
           div()
             .add_style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0).to_owned())
@@ -116,7 +116,7 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
             .class(ui_input())
             .insert_attr("value", state.draft.to_owned())
             .insert_attr("placeholder", "something to update...")
-            .on_input(Rc::new(move |e, dispatch| -> Result<(), String> {
+            .on_input(move |e, dispatch| -> Result<(), String> {
               if let RespoEvent::Input { value, .. } = e {
                 dispatch.run(ActionOp::StatesChange(
                   cursor.to_owned(),
@@ -124,17 +124,17 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
                 ))?;
               }
               Ok(())
-            }))
+            })
             .to_owned(),
           space(Some(8), None),
           button()
             .class(ui_button())
             .insert_attr("innerText", "Update")
-            .on_click(Rc::new(move |e, dispatch| -> Result<(), String> {
+            .on_click(move |e, dispatch| -> Result<(), String> {
               dispatch.run(ActionOp::UpdateTask(task_id3.to_owned(), state.draft.clone()))?;
               dispatch.run(ActionOp::StatesChange(cursor2.to_owned(), None))?;
               Ok(())
-            }))
+            })
             .to_owned(),
         ])
         .to_owned(),

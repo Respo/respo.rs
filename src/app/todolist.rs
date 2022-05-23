@@ -47,7 +47,7 @@ pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<Ac
             button()
               .class(ui_button())
               .insert_attr("innerText", "hide done")
-              .on_click(Rc::new(move |e, dispatch| -> Result<(), String> {
+              .on_click(move |e, dispatch| -> Result<(), String> {
                 util::log!("click {:?}", e);
 
                 dispatch.run(ActionOp::StatesChange(
@@ -60,7 +60,7 @@ pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<Ac
                   ),
                 ))?;
                 Ok(())
-              }))
+              })
               .to_owned(),
           ])
           .to_owned(),

@@ -31,10 +31,10 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
     "panel".to_owned(),
     vec![RespoEffect {
       args: vec![],
-      handler: RespoEffectHandler(Rc::new(move |args, action_type, el| -> Result<(), String> {
+      handler: RespoEffectHandler::new(move |args, action_type, el| -> Result<(), String> {
         util::log!("panel mounted");
         Ok(())
-      })),
+      }),
     }],
     Box::new(
       div()
@@ -43,7 +43,7 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
             .class(ui_input())
             .insert_attr("placeholder", "some content...")
             .insert_attr("value", state.content.to_owned())
-            .on_input(Rc::new(move |e, dispatch| -> _ {
+            .on_input(move |e, dispatch| -> _ {
               util::log!("input event: {:?}", e);
               if let RespoEvent::Input { value, .. } = e {
                 dispatch.run(ActionOp::StatesChange(
@@ -52,13 +52,13 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
                 ))?;
               }
               Ok(())
-            }))
+            })
             .to_owned(),
           space(Some(8), None),
           button()
             .class(ui_button())
             .insert_attr("innerText", "add")
-            .on_click(Rc::new(move |e, dispatch| -> Result<(), String> {
+            .on_click(move |e, dispatch| -> Result<(), String> {
               util::log!("add button {:?}", e);
               dispatch.run(ActionOp::AddTask(Uuid::new_v4().to_string(), state2.content.to_owned()))?;
               dispatch.run(ActionOp::StatesChange(
@@ -66,7 +66,7 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
                 Some(serde_json::to_value(PanelState { content: "".to_owned() }).expect("to json")),
               ))?;
               Ok(())
-            }))
+            })
             .to_owned(),
           span()
             .add_attrs([("innerText", format!("got panel state: {:?}", state.to_owned()))])

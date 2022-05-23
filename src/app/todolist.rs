@@ -6,7 +6,7 @@ use crate::{
   button,
   respo::{div, span, RespoNode, StatesTree},
   ui::ui_button,
-  util,
+  util::{self, cast_from_json, cast_into_json},
 };
 
 use super::{
@@ -21,10 +21,7 @@ struct TodolistState {
 
 pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
-  let state = match &states.data {
-    Some(v) => serde_json::from_value(v.to_owned()).map_err(|e| format!("to todolist state: {}", e))?,
-    None => TodolistState::default(),
-  };
+  let state = states.data.as_ref().map(cast_from_json::<TodolistState>).unwrap_or_default();
 
   let mut children = vec![];
   for task in tasks {
@@ -52,12 +49,9 @@ pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<Ac
 
                 dispatch.run(ActionOp::StatesChange(
                   cursor.to_owned(),
-                  Some(
-                    serde_json::to_value(TodolistState {
-                      hide_done: !state.hide_done,
-                    })
-                    .expect("to json"),
-                  ),
+                  Some(cast_into_json(TodolistState {
+                    hide_done: !state.hide_done,
+                  })),
                 ))?;
                 Ok(())
               })

@@ -7,7 +7,8 @@ use crate::{
   respo::{declare_static_style, div, span, CssColor, RespoEffect, RespoNode, RespoStyle, StatesTree},
   space,
   ui::{ui_button, ui_center, ui_input, ui_row, ui_row_middle},
-  util, CssSize, RespoEvent,
+  util::{self, cast_from_json, cast_into_json},
+  CssSize, RespoEvent,
 };
 
 use super::data_types::*;
@@ -68,10 +69,7 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
 
   let cursor = states.path();
   let cursor2 = cursor.clone();
-  let state = match &states.data {
-    Some(v) => serde_json::from_value(v.to_owned()).expect("to task state"),
-    None => TaskState::default(),
-  };
+  let state = states.data.as_ref().map(cast_from_json::<TaskState>).unwrap_or_default();
 
   Ok(RespoNode::Component(
     "tasks".to_owned(),
@@ -120,7 +118,7 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
               if let RespoEvent::Input { value, .. } = e {
                 dispatch.run(ActionOp::StatesChange(
                   cursor.to_owned(),
-                  Some(serde_json::to_value(TaskState { draft: value }).expect("to json")),
+                  Some(cast_into_json(TaskState { draft: value })),
                 ))?;
               }
               Ok(())

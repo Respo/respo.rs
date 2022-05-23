@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
   respo::{button, div, span, util, CssColor, RespoEvent, RespoNode, RespoStyle, StatesTree},
   ui::ui_button,
+  util::{cast_from_json, cast_into_json},
 };
 
 use super::data_types::ActionOp;
@@ -17,10 +18,7 @@ struct MainState {
 pub fn comp_counter(states: &StatesTree, counted: i32) -> RespoNode<ActionOp> {
   let cursor = states.path();
 
-  let state: MainState = match &states.data {
-    Some(v) => serde_json::from_value(v.to_owned()).expect("to main state"),
-    None => MainState::default(),
-  };
+  let state: MainState = states.data.as_ref().map(cast_from_json::<MainState>).unwrap_or_default();
 
   div()
     .add_children([
@@ -39,12 +37,9 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> RespoNode<ActionOp> {
               dispatch.run(ActionOp::Increment)?;
               dispatch.run(ActionOp::StatesChange(
                 cursor.to_owned(),
-                Some(
-                  serde_json::to_value(MainState {
-                    counted: state.counted + 2,
-                  })
-                  .expect("to json"),
-                ),
+                Some(cast_into_json(MainState {
+                  counted: state.counted + 2,
+                })),
               ))?;
               Ok(())
             })

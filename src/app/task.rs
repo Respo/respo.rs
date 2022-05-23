@@ -99,10 +99,10 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
               Ok(())
             })
             .to_owned(),
-          div().add_attrs([("innerText", task.content.to_owned())]).to_owned(),
+          div().inner_text(task.content.to_owned()).to_owned(),
           span()
             .class_list(&[ui_center(), style_remove_button()])
-            .insert_attr("innerText", "✕")
+            .inner_text("✕")
             .on_click(move |e, dispatch| -> Result<(), String> {
               util::log!("remove button {:?}", e);
               dispatch.run(ActionOp::RemoveTask(task_id2.to_owned()))?;
@@ -129,7 +129,7 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
           space(Some(8), None),
           button()
             .class(ui_button())
-            .insert_attr("innerText", "Update")
+            .inner_text("Update")
             .on_click(move |e, dispatch| -> Result<(), String> {
               dispatch.run(ActionOp::UpdateTask(task_id3.to_owned(), state.draft.clone()))?;
               dispatch.run(ActionOp::StatesChange(cursor2.to_owned(), None))?;

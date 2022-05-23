@@ -54,7 +54,7 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
           space(Some(8), None),
           button()
             .class(ui_button())
-            .insert_attr("innerText", "add")
+            .inner_text("add")
             .on_click(move |e, dispatch| -> Result<(), String> {
               util::log!("add button {:?}", e);
               dispatch.run(ActionOp::AddTask(Uuid::new_v4().to_string(), state2.content.to_owned()))?;
@@ -65,9 +65,7 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
               Ok(())
             })
             .to_owned(),
-          span()
-            .add_attrs([("innerText", format!("got panel state: {:?}", state.to_owned()))])
-            .to_owned(),
+          span().inner_text(format!("got panel state: {:?}", state)).to_owned(),
         ])
         .to_owned(),
     ),

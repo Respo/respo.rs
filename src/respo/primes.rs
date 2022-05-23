@@ -245,6 +245,22 @@ where
     self.insert_attr("class", class_name.join(" "));
     self
   }
+
+  pub fn inner_text<U>(&mut self, content: U) -> &mut Self
+  where
+    U: Into<String>,
+  {
+    self.insert_attr("innerText", content.into());
+    self
+  }
+
+  pub fn inner_html<U>(&mut self, content: U) -> &mut Self
+  where
+    U: Into<String>,
+  {
+    self.insert_attr("innerHTML", content.into());
+    self
+  }
 }
 
 pub type StrDict = HashMap<String, String>;

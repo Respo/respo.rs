@@ -1,10 +1,9 @@
-use std::{fmt::Debug, rc::Rc};
+use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
-use web_sys::console::log_1;
 
 use crate::{
-  respo::{button, div, span, util, CssColor, RespoEvent, RespoEventHandler, RespoNode, RespoStyle, StatesTree},
+  respo::{button, div, span, util, CssColor, RespoEvent, RespoNode, RespoStyle, StatesTree},
   ui::ui_button,
 };
 
@@ -29,7 +28,7 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> RespoNode<ActionOp> {
         .add_children([
           button()
             .class(ui_button())
-            .add_attrs([("innerText", "demo inc")])
+            .inner_text("demo inc")
             .add_style(RespoStyle::default().margin(4.).to_owned())
             .on_click(move |e, dispatch| -> Result<(), String> {
               util::log!("click {:?}", e);
@@ -52,7 +51,7 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> RespoNode<ActionOp> {
             .to_owned(),
           button()
             .class(ui_button())
-            .add_attrs([("innerText", "demo dec")])
+            .inner_text("demo dec")
             .add_style(RespoStyle::default().margin(4.).to_owned())
             .on_click(move |e, dispatch| -> Result<(), String> {
               util::log!("click {:?}", e);
@@ -64,7 +63,7 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> RespoNode<ActionOp> {
         .to_owned(),
       div()
         .add_children([span()
-          .add_attrs([("innerText", format!("value is: {}", counted))])
+          .inner_text(format!("value is: {}", counted))
           .add_style(
             RespoStyle::default()
               .color(CssColor::Hsluv(270, 100, 40))
@@ -75,9 +74,7 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> RespoNode<ActionOp> {
           .to_owned()])
         .to_owned(),
       div()
-        .add_children([span()
-          .add_attrs([("innerText", format!("local state: {}", state.counted))])
-          .to_owned()])
+        .add_children([span().inner_text(format!("local state: {}", state.counted)).to_owned()])
         .to_owned(),
     ])
     .to_owned()

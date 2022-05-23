@@ -42,11 +42,11 @@ pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<Ac
         div()
           .add_children([
             span()
-              .add_attrs([("innerText", format!("tasks size: {} ... {}", tasks.len(), state.hide_done))])
+              .inner_text(format!("tasks size: {} ... {}", tasks.len(), state.hide_done))
               .to_owned(),
             button()
               .class(ui_button())
-              .insert_attr("innerText", "hide done")
+              .inner_text("hide done")
               .on_click(move |e, dispatch| -> Result<(), String> {
                 util::log!("click {:?}", e);
 

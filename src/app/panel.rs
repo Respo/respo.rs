@@ -1,4 +1,4 @@
-use std::{fmt::Debug, rc::Rc};
+use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -7,7 +7,7 @@ use web_sys::console::log_1;
 use crate::{
   app::data_types::ActionOp,
   button,
-  respo::{div, input, span, util, RespoEffect, RespoEffectHandler, RespoEvent, RespoNode, StatesTree},
+  respo::{div, input, span, util, RespoEffect, RespoEvent, RespoNode, StatesTree},
   space,
   ui::{ui_button, ui_input},
 };
@@ -29,13 +29,10 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
 
   Ok(RespoNode::Component(
     "panel".to_owned(),
-    vec![RespoEffect {
-      args: vec![],
-      handler: RespoEffectHandler::new(move |args, action_type, el| -> Result<(), String> {
-        util::log!("panel mounted");
-        Ok(())
-      }),
-    }],
+    vec![RespoEffect::new(vec![], move |_, dispatch, _el| {
+      log_1(&format!("panel effect {:?}", cursor).into());
+      Ok(())
+    })],
     Box::new(
       div()
         .add_children([
@@ -47,7 +44,7 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
               util::log!("input event: {:?}", e);
               if let RespoEvent::Input { value, .. } = e {
                 dispatch.run(ActionOp::StatesChange(
-                  cursor.to_owned(),
+                  cursor2.to_owned(),
                   Some(serde_json::to_value(PanelState { content: value }).expect("to json")),
                 ))?;
               }

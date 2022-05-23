@@ -333,12 +333,13 @@ pub enum RespoEvent {
   },
 }
 
-/// TODO need a container for values
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct RespoEffect {
   pub args: Vec<Value>,
-  pub handler: RespoEffectHandler,
+  handler: Rc<RespoEffectHandler>,
 }
+
+type RespoEffectHandler = dyn Fn(Vec<Value>, RespoEffectType, &Node) -> Result<(), String>;
 
 impl PartialEq for RespoEffect {
   /// closure are not compared, changes happen in and passed via args
@@ -351,27 +352,24 @@ impl Eq for RespoEffect {}
 
 impl RespoEffect {
   pub fn run(&self, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
-    (self.handler.0)(self.args.to_owned(), effect_type, el)
+    (*self.handler)(self.args.to_owned(), effect_type, el)
   }
-}
-
-type UnitStrResult = Result<(), String>;
-
-#[derive(Clone)]
-pub struct RespoEffectHandler(Rc<dyn Fn(Vec<Value>, RespoEffectType, &Node) -> UnitStrResult>);
-
-impl Debug for RespoEffectHandler {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "RespoEventHandler(...)")
-  }
-}
-
-impl RespoEffectHandler {
-  pub fn new<U>(handler: U) -> Self
+  pub fn new<U>(args: Vec<Value>, handler: U) -> Self
   where
-    U: Fn(Vec<Value>, RespoEffectType, &Node) -> UnitStrResult + 'static,
+    U: Fn(Vec<Value>, RespoEffectType, &Node) -> Result<(), String> + 'static,
   {
-    Self(Rc::new(handler))
+    Self {
+      args,
+      handler: Rc::new(handler),
+    }
+  }
+}
+
+impl Debug for RespoEffect {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "RespoEffect(")?;
+    write!(f, "args: {:?}", self.args)?;
+    write!(f, "...)")
   }
 }
 

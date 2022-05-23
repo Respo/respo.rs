@@ -1,10 +1,10 @@
-use std::{fmt::Debug, rc::Rc};
+use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
 
 use crate::{
   button, input,
-  respo::{declare_static_style, div, span, CssColor, RespoEffect, RespoEffectHandler, RespoNode, RespoStyle, StatesTree},
+  respo::{declare_static_style, div, span, CssColor, RespoEffect, RespoNode, RespoStyle, StatesTree},
   space,
   ui::{ui_button, ui_center, ui_input, ui_row, ui_row_middle},
   util, CssSize, RespoEvent,
@@ -75,14 +75,14 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
 
   Ok(RespoNode::Component(
     "tasks".to_owned(),
-    vec![RespoEffect {
-      args: vec![serde_json::to_value(task).expect("to json")],
-      handler: RespoEffectHandler::new(move |args, effect_type, el| -> Result<(), String> {
+    vec![RespoEffect::new(
+      vec![serde_json::to_value(task).expect("to json")],
+      move |args, effect_type, el| -> Result<(), String> {
         let t: Task = serde_json::from_value(args[0].to_owned()).expect("from json");
         // TODO
         Ok(())
-      }),
-    }],
+      },
+    )],
     Box::new(
       div()
         .class_list(&[ui_row_middle(), style_task_container()])

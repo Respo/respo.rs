@@ -14,7 +14,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::respo::{div, render_node, util::query_select_node, DispatchFn, RespoNode, StatesTree};
 use crate::ui::ui_global;
-use crate::{util, RespoStyle};
+use crate::RespoStyle;
 
 use self::counter::comp_counter;
 use self::data_types::*;

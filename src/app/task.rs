@@ -6,7 +6,7 @@ use crate::{
   button, input,
   respo::{declare_static_style, div, span, CssColor, RespoEffect, RespoNode, RespoStyle, StatesTree},
   space,
-  ui::{ui_button, ui_center, ui_input, ui_row, ui_row_middle},
+  ui::{ui_button, ui_center, ui_input, ui_row_middle},
   util::{self, cast_from_json, cast_into_json},
   CssSize, DispatchFn, RespoEvent,
 };
@@ -72,7 +72,7 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
   let state = states.data.as_ref().map(cast_from_json::<TaskState>).unwrap_or_default();
   let state2 = state.clone();
 
-  let on_toggle = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+  let on_toggle = move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
     dispatch.run(ActionOp::ToggleTask(task_id.clone()))?;
     Ok(())
   };
@@ -87,7 +87,7 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
     Ok(())
   };
 
-  let on_remove = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+  let on_remove = move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
     dispatch.run(ActionOp::UpdateTask(task_id3.to_owned(), state2.draft.clone()))?;
     dispatch.run(ActionOp::StatesChange(cursor2.to_owned(), None))?;
     Ok(())
@@ -96,9 +96,10 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
   Ok(RespoNode::Component(
     "tasks".to_owned(),
     vec![RespoEffect::new(
-      vec![serde_json::to_value(task).expect("to json")],
-      move |args, effect_type, el| -> Result<(), String> {
-        let t: Task = serde_json::from_value(args[0].to_owned()).expect("from json");
+      vec![cast_into_json(task)],
+      move |args, _effect_type, _el| -> Result<(), String> {
+        let t: Task = cast_from_json(&args[0]);
+        util::log!("task {:?}", t);
         // TODO
         Ok(())
       },
@@ -131,7 +132,7 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
             .to_owned(),
           input()
             .class(ui_input())
-            .insert_attr("value", state.draft.to_owned())
+            .insert_attr("value", state.draft)
             .insert_attr("placeholder", "something to update...")
             .on_input(on_input)
             .to_owned(),

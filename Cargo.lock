@@ -99,7 +99,7 @@ dependencies = [
 
 [[package]]
 name = "respo"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "cirru_parser",
  "console_error_panic_hook",

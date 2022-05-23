@@ -6,12 +6,15 @@ use web_sys::{Element, HtmlElement, HtmlInputElement, InputEvent, MouseEvent, No
 use wasm_bindgen::JsCast;
 use web_sys::console::warn_1;
 
+use crate::RespoEffectType;
+
 use super::{
   build_dom_tree, load_coord_target_tree, ChildDomOp, DomChange, EventHandlerFn, RespoCoord, RespoEvent, RespoEventMark, RespoNode,
 };
 
 pub fn patch_tree<T>(
   tree: &RespoNode<T>,
+  old_tree: &RespoNode<T>,
   mount_target: &Node,
   changes: &[DomChange<T>],
   handle_event: EventHandlerFn,
@@ -29,7 +32,7 @@ where
   }
 
   for op in changes {
-    // util::log!("op: {:?}", op);
+    // crate::util::log!("op: {:?}", op);
     let coord = op.get_coord();
     let target = find_coord_dom_target(&mount_target.first_child().ok_or("to get first child")?, &op.get_dom_path())?;
     match op {
@@ -105,7 +108,9 @@ where
           .expect("element inserted");
         target.dyn_ref::<Element>().expect("get node").remove();
       }
-      DomChange::ModifyChildren { operations, .. } => {
+      DomChange::ModifyChildren { operations, coord, .. } => {
+        let base_tree = load_coord_target_tree(tree, coord)?;
+        let old_base_tree = load_coord_target_tree(old_tree, coord)?;
         for op in operations {
           let handler = handle_event.clone();
           match op {
@@ -156,6 +161,28 @@ where
                 }
               }
             }
+            ChildDomOp::NestedEffect {
+              nested_coord,
+              nested_dom_path: nesteed_dom_path,
+              effect_type,
+              skip_indexes,
+            } => {
+              let target_tree = if effect_type == &RespoEffectType::BeforeUnmount {
+                load_coord_target_tree(&old_base_tree, nested_coord)?
+              } else {
+                load_coord_target_tree(&base_tree, nested_coord)?
+              };
+              let nested_el = find_coord_dom_target(&target, nesteed_dom_path)?;
+              if let RespoNode::Component(_, effects, _) = target_tree {
+                for (idx, effect) in effects.iter().enumerate() {
+                  if !skip_indexes.contains(&(idx as u32)) {
+                    effect.run(effect_type.to_owned(), &nested_el)?;
+                  }
+                }
+              } else {
+                crate::util::log!("expected component for effects, got: {}", target_tree);
+              }
+            }
           }
         }
       }
@@ -166,7 +193,11 @@ where
         skip_indexes,
         ..
       } => {
-        let target_tree = load_coord_target_tree(tree, coord)?;
+        let target_tree = if effect_type == &RespoEffectType::BeforeUnmount {
+          load_coord_target_tree(old_tree, coord)?
+        } else {
+          load_coord_target_tree(tree, coord)?
+        };
         if let RespoNode::Component(_, effects, _) = target_tree {
           for (idx, effect) in effects.iter().enumerate() {
             if !skip_indexes.contains(&(idx as u32)) {
@@ -174,7 +205,7 @@ where
             }
           }
         } else {
-          warn_1(&format!("expected component for effects, got: {:?}", target_tree).into());
+          crate::util::log!("expected component for effects, got: {}", target_tree);
         }
       }
     }

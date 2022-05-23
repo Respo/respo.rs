@@ -89,8 +89,8 @@ where
 
   mount_target.append_child(&element)?;
   let handler = handle_event.clone();
-  util::log!("mounted changed: {:?}", mount_changes);
-  patch_tree(&tree0, &mount_target, &mount_changes, handler)?;
+  // util::log!("mounted changed: {:?}", mount_changes);
+  patch_tree(&tree0, &prev_tree.borrow(), &mount_target, &mount_changes, handler)?;
 
   let to_prev_tree = prev_tree.clone();
   util::raf_loop_slow(Box::new(move || -> Result<(), String> {
@@ -101,25 +101,8 @@ where
 
       // util::log!("changes: {:?}", changes);
 
-      // changes to prev_tree should be distinguished from changes to new_tree
-      let mut before_changes = vec![];
-      let mut after_changes = vec![];
-      for change in changes {
-        match &change {
-          DomChange::Effect { effect_type, .. } => {
-            if effect_type == &RespoEffectType::BeforeUnmount || effect_type == &RespoEffectType::BeforeUpdate {
-              before_changes.push(change.to_owned());
-            } else {
-              after_changes.push(change.to_owned())
-            }
-          }
-          _ => after_changes.push(change.to_owned()),
-        }
-      }
       let handler = handle_event.clone();
-      patch_tree(&prev_tree.borrow(), &mount_target, &before_changes, handler)?;
-      let handler = handle_event.clone();
-      patch_tree(&new_tree, &mount_target, &after_changes, handler)?;
+      patch_tree(&new_tree, &prev_tree.borrow(), &mount_target, &changes, handler)?;
       prev_tree.replace(new_tree);
     }
 

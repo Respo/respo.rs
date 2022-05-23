@@ -73,7 +73,7 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
   let state2 = state.clone();
 
   let on_toggle = move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
-    dispatch.run(ActionOp::ToggleTask(task_id.clone()))?;
+    dispatch.run(ActionOp::ToggleTask(task_id.to_owned()))?;
     Ok(())
   };
 
@@ -97,9 +97,9 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
     "tasks".to_owned(),
     vec![RespoEffect::new(
       vec![cast_into_json(task)],
-      move |args, _effect_type, _el| -> Result<(), String> {
+      move |args, effect_type, _el| -> Result<(), String> {
         let t: Task = cast_from_json(&args[0]);
-        util::log!("task {:?}", t);
+        util::log!("effect {:?} task: {:?}", effect_type, t);
         // TODO
         Ok(())
       },

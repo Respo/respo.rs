@@ -245,11 +245,11 @@ impl RespoStyle {
     self
   }
   pub fn transition_duration(&mut self, duration: f32) -> &mut Self {
-    self.insert("transition-duration", format!("{}s", duration));
+    self.insert("transition-duration", format!("{}ms", duration));
     self
   }
   pub fn transition_delay(&mut self, delay: f32) -> &mut Self {
-    self.insert("transition-delay", format!("{}s", delay));
+    self.insert("transition-delay", format!("{}ms", delay));
     self
   }
   pub fn transform_timing_function(&mut self, function: CssTimingFunction) -> &mut Self {

@@ -4,7 +4,7 @@ use wasm_bindgen::JsCast;
 use web_sys::Node;
 
 #[allow(dead_code)]
-pub fn raq_loop(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
+pub fn raf_loop(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
   let f_ = Rc::new(RefCell::new(None));
   let g = f_.clone();
 
@@ -30,7 +30,7 @@ fn window() -> web_sys::Window {
 
 /// this API is used for development, prefer `req_loop` for fast response
 #[allow(dead_code)]
-pub fn raq_loop_slow(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
+pub fn raf_loop_slow(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
   let f = Rc::new(RefCell::new(None));
   let g = f.clone();
 
@@ -73,7 +73,7 @@ pub fn query_select_node(pattern: &str) -> Result<Node, String> {
 #[macro_export]
 macro_rules! log {
   ($($t:tt)*) => {{
-    log_1(&format!($($t)*).into());
+    web_sys::console::log_1(&format!($($t)*).into());
   }};
 }
 

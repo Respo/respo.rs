@@ -27,32 +27,57 @@ pub fn ui_global() -> String {
 pub fn ui_input() -> String {
   declare_static_style(
     "ui-input",
-    &[(
-      "$0",
-      RespoStyle::default()
-        .border(None)
-        .border_radius(4.)
-        .padding4(4., 8., 4., 8.)
-        .min_width(CssSize::Px(120.))
-        .line_height(CssLineHeight::Em(1.5))
-        .font_family(DEFAULT_FONTS.to_owned())
-        .vertical_align(CssVerticalAlign::Middle),
-    )],
+    &[
+      (
+        "$0",
+        RespoStyle::default()
+          .border(Some((1., CssBorderStyle::Solid, CssColor::Hsla(0.0, 0.0, 80.0, 1.0))))
+          .border_radius(4.)
+          .padding4(4., 8., 4., 8.)
+          .min_width(CssSize::Px(120.))
+          .line_height(CssLineHeight::Em(1.5))
+          .font_family(DEFAULT_FONTS.to_owned())
+          .vertical_align(CssVerticalAlign::Middle),
+      ),
+      (
+        "$0:focus",
+        RespoStyle::default()
+          .border(Some((1.0, CssBorderStyle::Solid, CssColor::Hsla(200.0, 50.0, 75.0, 1.0))))
+          .box_shadow(0.0, 0.0, 4.0, 0.0, CssColor::Hsla(200.0, 70.0, 50.0, 0.2)),
+      ),
+    ],
   )
 }
 
 pub fn ui_button() -> String {
   declare_static_style(
     "ui-button",
-    &[(
-      "$0",
-      RespoStyle::default()
-        .min_width(CssSize::Px(80.))
-        .line_height(CssLineHeight::Px(24.))
-        .border_radius(4.)
-        .font_size(14.)
-        .text_align(CssTextAlign::Center),
-    )],
+    &[
+      (
+        "$0",
+        RespoStyle::default()
+          .outline(None)
+          .background_color(CssColor::White)
+          .border(Some((1., CssBorderStyle::Solid, CssColor::Hsla(200., 100., 76., 1.))))
+          .min_width(CssSize::Px(80.))
+          .line_height(CssLineHeight::Px(24.))
+          .border_radius(4.)
+          .font_size(14.)
+          .cursor("pointer".to_owned())
+          .transition_duration(200.)
+          .text_align(CssTextAlign::Center),
+      ),
+      (
+        "$0:hover",
+        RespoStyle::default().background_color(CssColor::Hsla(0., 0.0, 98.0, 1.0)),
+      ),
+      (
+        "$0:active",
+        RespoStyle::default()
+          .transform(CssTransform::Scale(1.04, 1.04))
+          .transition_duration(0.0),
+      ),
+    ],
   )
 }
 

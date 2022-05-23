@@ -3,7 +3,10 @@ use std::{fmt::Debug, rc::Rc};
 use serde::{Deserialize, Serialize};
 use web_sys::console::log_1;
 
-use crate::respo::{button, div, span, util, CssColor, RespoEvent, RespoEventHandler, RespoNode, RespoStyle, StatesTree};
+use crate::{
+  respo::{button, div, span, util, CssColor, RespoEvent, RespoEventHandler, RespoNode, RespoStyle, StatesTree},
+  ui::ui_button,
+};
 
 use super::data_types::ActionOp;
 
@@ -25,41 +28,37 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> RespoNode<ActionOp> {
       div()
         .add_children([
           button()
-            .add_attrs([("innerText", "demo inc"), ("class", "my-button")])
+            .class(ui_button())
+            .add_attrs([("innerText", "demo inc")])
             .add_style(RespoStyle::default().margin(4.).to_owned())
-            .add_event([(
-              "click",
-              RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
-                util::log!("click {:?}", e);
-                if let RespoEvent::Click { original_event, .. } = e {
-                  original_event.prevent_default();
-                }
+            .on_click(Rc::new(move |e, dispatch| -> Result<(), String> {
+              util::log!("click {:?}", e);
+              if let RespoEvent::Click { original_event, .. } = e {
+                original_event.prevent_default();
+              }
 
-                dispatch.run(ActionOp::Increment)?;
-                dispatch.run(ActionOp::StatesChange(
-                  cursor.to_owned(),
-                  Some(
-                    serde_json::to_value(MainState {
-                      counted: state.counted + 2,
-                    })
-                    .expect("to json"),
-                  ),
-                ))?;
-                Ok(())
-              })),
-            )])
+              dispatch.run(ActionOp::Increment)?;
+              dispatch.run(ActionOp::StatesChange(
+                cursor.to_owned(),
+                Some(
+                  serde_json::to_value(MainState {
+                    counted: state.counted + 2,
+                  })
+                  .expect("to json"),
+                ),
+              ))?;
+              Ok(())
+            }))
             .to_owned(),
           button()
-            .add_attrs([("innerText", "demo dec"), ("class", "my-button")])
+            .class(ui_button())
+            .add_attrs([("innerText", "demo dec")])
             .add_style(RespoStyle::default().margin(4.).to_owned())
-            .add_event([(
-              "click",
-              RespoEventHandler(Rc::new(move |e, dispatch| -> Result<(), String> {
-                util::log!("click {:?}", e);
-                dispatch.run(ActionOp::Decrement)?;
-                Ok(())
-              })),
-            )])
+            .on_click(Rc::new(move |e, dispatch| -> Result<(), String> {
+              util::log!("click {:?}", e);
+              dispatch.run(ActionOp::Decrement)?;
+              Ok(())
+            }))
             .to_owned(),
         ])
         .to_owned(),

@@ -1,0 +1,40 @@
+on:
+  release:
+    types: [created]
+
+name: Publish to crate
+
+jobs:
+  publish:
+    name: Publish to cargo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - uses: jetli/wasm-pack-action@v0.3.0
+        with:
+          version: "latest"
+
+      - name: Get yarn cache
+        id: yarn-cache
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - uses: actions/cache@v2
+        name: Cache node modules of yarn
+        with:
+          path: ${{ steps.yarn-cache.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - run: wasm-pack build -t web
+
+      - run: yarn && yarn vite build --base=./
+
+      - uses: katyo/publish-crates@v1
+        with:
+          registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}

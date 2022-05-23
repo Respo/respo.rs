@@ -4,6 +4,7 @@ use std::fmt::Display;
 use std::rc::Rc;
 use std::{collections::HashMap, fmt::Debug};
 
+use cirru_parser::{Cirru, CirruWriterOptions};
 use serde_json::Value;
 use web_sys::{InputEvent, KeyboardEvent, MouseEvent, Node};
 
@@ -25,8 +26,40 @@ where
   },
 }
 
+impl<T> From<RespoNode<T>> for Cirru
+where
+  T: Debug + Clone,
+{
+  fn from(value: RespoNode<T>) -> Self {
+    match value {
+      RespoNode::Component(name, _eff, tree) => Cirru::List(vec![Cirru::Leaf(name.into()), (*tree).into()]),
+      RespoNode::Element { name, children, .. } => Cirru::List(vec![
+        Cirru::Leaf(name.into()),
+        Cirru::List(
+          children
+            .iter()
+            .map(|(k, child)| Cirru::List(vec![Cirru::Leaf(k.0.to_owned().into()), (*child).to_owned().into()]))
+            .collect(),
+        ),
+      ]),
+    }
+  }
+}
+
+impl<T> Display for RespoNode<T>
+where
+  T: Debug + Clone,
+{
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match cirru_parser::format(&[self.to_owned().into()], CirruWriterOptions { use_inline: true }) {
+      Ok(s) => write!(f, "{}", s),
+      Err(e) => write!(f, "{}", e),
+    }
+  }
+}
+
 #[derive(PartialEq, Eq, Debug, Clone)]
-pub struct RespoIndexKey(String);
+pub struct RespoIndexKey(pub String);
 
 impl<T> From<T> for RespoIndexKey
 where
@@ -70,6 +103,22 @@ where
     }
     self
   }
+
+  pub fn insert_attr<U, V>(&mut self, property: U, value: V) -> &mut Self
+  where
+    U: Into<String> + ToOwned,
+    V: Into<String> + ToOwned,
+  {
+    match self {
+      RespoNode::Component(_, _, node) => {
+        node.insert_attr(property, value);
+      }
+      RespoNode::Element { ref mut attrs, .. } => {
+        attrs.insert(property.into(), value.into());
+      }
+    }
+    self
+  }
   pub fn add_attrs<U, V, W>(&mut self, more: U) -> &mut Self
   where
     U: IntoIterator<Item = (V, W)>,
@@ -84,6 +133,28 @@ where
         for (k, v) in more {
           attrs.insert(k.into(), v.into());
         }
+      }
+    }
+    self
+  }
+  pub fn on_click(&mut self, handler: Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>) -> &mut Self {
+    match self {
+      RespoNode::Component(_, _, node) => {
+        node.on_click(handler);
+      }
+      RespoNode::Element { ref mut event, .. } => {
+        event.insert("click".into(), RespoEventHandler(handler));
+      }
+    }
+    self
+  }
+  pub fn on_input(&mut self, handler: Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>) -> &mut Self {
+    match self {
+      RespoNode::Component(_, _, node) => {
+        node.on_click(handler);
+      }
+      RespoNode::Element { ref mut event, .. } => {
+        event.insert("input".into(), RespoEventHandler(handler));
       }
     }
     self
@@ -121,6 +192,22 @@ where
     }
     self
   }
+  pub fn add_children_indexed<U>(&mut self, more: U) -> &mut Self
+  where
+    U: IntoIterator<Item = (RespoIndexKey, RespoNode<T>)>,
+  {
+    match self {
+      RespoNode::Component(_, _, node) => {
+        node.add_children_indexed(more);
+      }
+      RespoNode::Element { ref mut children, .. } => {
+        for (idx, v) in more {
+          children.push((idx, v));
+        }
+      }
+    }
+    self
+  }
 
   pub fn add_effects<U>(&mut self, more: U) -> &mut Self
   where
@@ -133,6 +220,24 @@ where
       }
       RespoNode::Element { .. } => unreachable!("effects are on components"),
     }
+  }
+  pub fn class<U>(&mut self, name: U) -> &mut Self
+  where
+    U: Into<String>,
+  {
+    self.add_attrs([("class", name.into())])
+  }
+
+  pub fn class_list<U>(&mut self, names: &[U]) -> &mut Self
+  where
+    U: Into<String> + Clone,
+  {
+    let mut class_name: Vec<String> = vec![];
+    for name in names {
+      class_name.push((*name).to_owned().into());
+    }
+    self.insert_attr("class", class_name.join(" "));
+    self
   }
 }
 
@@ -166,7 +271,7 @@ where
 
 #[derive(Debug, Clone)]
 pub enum RespoCoord {
-  Idx(u32),
+  Key(RespoIndexKey),
   /// for indexing by component name, even though there's only one of that
   Comp(String),
 }
@@ -255,29 +360,35 @@ where
 {
   ReplaceElement {
     coord: Vec<RespoCoord>,
+    dom_path: Vec<u32>,
     node: RespoNode<T>,
   },
   ModifyChildren {
     coord: Vec<RespoCoord>,
+    dom_path: Vec<u32>,
     operations: Vec<ChildDomOp<T>>,
   },
   ModifyAttrs {
     coord: Vec<RespoCoord>,
+    dom_path: Vec<u32>,
     set: StrDict,
     unset: HashSet<String>,
   },
   ModifyStyle {
     coord: Vec<RespoCoord>,
+    dom_path: Vec<u32>,
     set: StrDict,
     unset: HashSet<String>,
   },
   ModifyEvent {
     coord: Vec<RespoCoord>,
+    dom_path: Vec<u32>,
     add: HashSet<String>,
     remove: HashSet<String>,
   },
   Effect {
     coord: Vec<RespoCoord>,
+    dom_path: Vec<u32>,
     effect_type: RespoEffectType,
     // when args not changed in update, that effects are not re-run
     skip_indexes: HashSet<u32>,
@@ -298,6 +409,16 @@ where
       DomChange::Effect { coord, .. } => coord.clone(),
     }
   }
+  pub fn get_dom_path(&self) -> Vec<u32> {
+    match self {
+      DomChange::ReplaceElement { dom_path, .. } => dom_path.clone(),
+      DomChange::ModifyChildren { dom_path, .. } => dom_path.clone(),
+      DomChange::ModifyAttrs { dom_path, .. } => dom_path.clone(),
+      DomChange::ModifyStyle { dom_path, .. } => dom_path.clone(),
+      DomChange::ModifyEvent { dom_path, .. } => dom_path.clone(),
+      DomChange::Effect { dom_path, .. } => dom_path.clone(),
+    }
+  }
 }
 
 #[derive(Debug, Clone)]
@@ -305,9 +426,10 @@ pub enum ChildDomOp<T>
 where
   T: Debug + Clone,
 {
-  InsertAfter(u32, RespoNode<T>),
+  InsertAfter(u32, RespoIndexKey, RespoNode<T>),
   RemoveAt(u32),
-  Append(RespoNode<T>),
+  Append(RespoIndexKey, RespoNode<T>),
+  Prepend(RespoIndexKey, RespoNode<T>),
 }
 
 #[derive(Clone)]

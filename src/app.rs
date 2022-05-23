@@ -14,6 +14,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::respo::{div, render_node, util::query_select_node, DispatchFn, RespoNode, StatesTree};
 use crate::ui::ui_global;
+use crate::{util, RespoStyle};
 
 use self::counter::comp_counter;
 use self::data_types::*;
@@ -35,19 +36,11 @@ pub fn load_demo_app() -> JsValue {
 
   let store_to_action = global_store.clone();
   let dispatch_action = move |op: ActionOp| -> Result<(), String> {
-    // util::log!("action {:?}", op);
+    // util::log!("action {:?} store, {:?}", op, store_to_action.borrow());
     let mut store = store_to_action.borrow_mut();
-    match op {
-      ActionOp::Increment => {
-        store.counted += 1;
-      }
-      ActionOp::Decrement => {
-        store.counted -= 1;
-      }
-      ActionOp::StatesChange(path, new_state) => {
-        store.states = store.states.set_in(&path, new_state);
-      }
-    }
+    apply_action(&mut store, op)?;
+
+    // util::log!("store after action {:?}", store);
     Ok(())
   };
 
@@ -57,13 +50,16 @@ pub fn load_demo_app() -> JsValue {
       let store = global_store.borrow();
       let states = store.states.clone();
 
+      // util::log!("global store: {:?}", store);
+
       Ok(
         div()
-          .add_attrs([("class", ui_global())])
+          .class(ui_global())
+          .add_style(RespoStyle::default().padding(12.0).to_owned())
           .add_children([
             comp_counter(&states.pick("counter"), store.counted),
             comp_panel(&states.pick("panel"))?,
-            comp_todolist(&states.pick("todolist"), &vec![])?,
+            comp_todolist(&states.pick("todolist"), &store.tasks)?,
           ])
           .to_owned(),
       )

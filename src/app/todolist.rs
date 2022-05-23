@@ -1,25 +1,70 @@
-use std::fmt::Debug;
+use std::rc::Rc;
 
-use crate::respo::{div, span, RespoNode, StatesTree};
+use serde::{Deserialize, Serialize};
 
-use super::{data_types::Task, task::comp_task};
+use crate::{
+  button,
+  respo::{div, span, RespoNode, StatesTree},
+  ui::ui_button,
+  util,
+};
 
-pub fn comp_todolist<T>(states: &StatesTree, tasks: &Vec<Task>) -> Result<RespoNode<T>, String>
-where
-  T: Debug + Clone,
-{
+use super::{
+  data_types::{ActionOp, Task},
+  task::comp_task,
+};
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+struct TodolistState {
+  hide_done: bool,
+}
+
+pub fn comp_todolist(states: &StatesTree, tasks: &Vec<Task>) -> Result<RespoNode<ActionOp>, String> {
+  let cursor = states.path();
+  let state = match &states.data {
+    Some(v) => serde_json::from_value(v.to_owned()).map_err(|e| format!("to todolist state: {}", e))?,
+    None => TodolistState::default(),
+  };
+
+  let mut children = vec![];
+  for task in tasks {
+    if state.hide_done && task.done {
+      continue;
+    }
+    children.push((task.id.to_owned().into(), comp_task(&states.pick(&task.id), task)?));
+  }
+
+  // util::log!("{:?}", &tasks);
+
   Ok(
     div()
       .add_children([
-        span().add_attrs([("innerText", format!("TODO {:?}", tasks))]).to_owned(),
-        comp_task(
-          &states.pick("task"),
-          &Task {
-            done: false,
-            content: String::from("task 1"),
-            time: 0.0,
-          },
-        )?,
+        div()
+          .add_children([
+            span()
+              .add_attrs([("innerText", format!("tasks size: {} ... {}", tasks.len(), state.hide_done))])
+              .to_owned(),
+            button()
+              .class(ui_button())
+              .insert_attr("innerText", "hide done")
+              .on_click(Rc::new(move |e, dispatch| -> Result<(), String> {
+                util::log!("click {:?}", e);
+
+                dispatch.run(ActionOp::StatesChange(
+                  cursor.to_owned(),
+                  Some(
+                    serde_json::to_value(TodolistState {
+                      hide_done: !state.hide_done,
+                    })
+                    .expect("to json"),
+                  ),
+                ))?;
+                Ok(())
+              }))
+              .to_owned(),
+          ])
+          .to_owned(),
+        div().add_children_indexed(children).to_owned(),
       ])
       .to_owned(),
   )

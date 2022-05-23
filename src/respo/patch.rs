@@ -6,6 +6,8 @@ use web_sys::{Element, HtmlElement, HtmlInputElement, InputEvent, MouseEvent, No
 use wasm_bindgen::JsCast;
 use web_sys::console::warn_1;
 
+use crate::util;
+
 use super::{
   build_dom_tree, load_coord_target_tree, ChildDomOp, DomChange, EventHandlerFn, RespoCoord, RespoEvent, RespoEventMark, RespoNode,
 };
@@ -29,8 +31,9 @@ where
   }
 
   for op in changes {
+    // util::log!("op: {:?}", op);
     let coord = op.get_coord();
-    let target = find_coord_dom_target(&mount_target.first_child().ok_or("to get first child")?, &coord)?;
+    let target = find_coord_dom_target(&mount_target.first_child().ok_or("to get first child")?, &op.get_dom_path())?;
     match op {
       DomChange::ModifyAttrs { set, unset, .. } => {
         let el = target.dyn_ref::<Element>().expect("load as element");
@@ -39,6 +42,12 @@ where
             el.dyn_ref::<HtmlElement>().ok_or("to html element")?.set_inner_text(v);
           } else if k == "innerHTML" {
             el.set_inner_html(v);
+          } else if k == "value" {
+            let input_el = el.dyn_ref::<HtmlInputElement>().expect("to input");
+            let prev_value = input_el.value();
+            if &prev_value != v {
+              input_el.set_value(v);
+            }
           } else {
             el.set_attribute(k, v).expect("to set attribute");
           }
@@ -48,6 +57,12 @@ where
             el.dyn_ref::<HtmlElement>().ok_or("to html element")?.set_inner_text("");
           } else if k == "innerHTML" {
             el.set_inner_html("");
+          } else if k == "value" {
+            let input_el = el.dyn_ref::<HtmlInputElement>().expect("to input");
+            let prev_value = input_el.value();
+            if !prev_value.is_empty() {
+              input_el.set_value("");
+            }
           } else {
             el.remove_attribute(k).expect("to remove attribute");
           }
@@ -96,12 +111,25 @@ where
         for op in operations {
           let handler = handle_event.clone();
           match op {
-            ChildDomOp::Append(node) => {
-              let new_element = build_dom_tree(node, &coord, handler).expect("new element");
+            ChildDomOp::Append(k, node) => {
+              let mut next_coord = coord.to_owned();
+              next_coord.push(RespoCoord::Key(k.to_owned()));
+              let new_element = build_dom_tree(node, &next_coord, handler).expect("new element");
               target
                 .dyn_ref::<Node>()
                 .expect("to node")
                 .append_child(&new_element)
+                .expect("element appended");
+            }
+            ChildDomOp::Prepend(k, node) => {
+              let mut next_coord = coord.to_owned();
+              next_coord.push(RespoCoord::Key(k.to_owned()));
+              let new_element = build_dom_tree(node, &next_coord, handler).expect("new element");
+              let base = target.dyn_ref::<Node>().expect("to node").first_child().expect("to first child");
+              target
+                .dyn_ref::<Node>()
+                .expect("to node")
+                .insert_before(&new_element, Some(&base))
                 .expect("element appended");
             }
             ChildDomOp::RemoveAt(idx) => {
@@ -110,21 +138,23 @@ where
                 .expect("get node")
                 .children()
                 .item(*idx)
-                .ok_or_else(|| format!("child not found at {}", &idx))?;
+                .ok_or_else(|| format!("child to remove not found at {}", &idx))?;
               target.remove_child(&child).expect("child removed");
             }
-            ChildDomOp::InsertAfter(idx, node) => {
+            ChildDomOp::InsertAfter(idx, k, node) => {
               let children = target.dyn_ref::<Element>().expect("get node").children();
               if idx >= &children.length() {
-                return Err(format!("child not found at {}", &idx));
+                return Err(format!("child to insert not found at {}", &idx));
               } else {
                 let handler = handle_event.clone();
-                let new_element = build_dom_tree(node, &coord, handler).expect("new element");
+                let mut next_coord = coord.to_owned();
+                next_coord.push(RespoCoord::Key(k.to_owned()));
+                let new_element = build_dom_tree(node, &next_coord, handler).expect("new element");
                 if idx == &children.length() {
+                  target.append_child(&new_element).expect("element appended");
+                } else {
                   let child = children.item(*idx + 1).ok_or_else(|| format!("child not found at {}", &idx))?;
                   target.insert_before(&new_element, Some(&child)).expect("element inserted");
-                } else {
-                  target.append_child(&new_element).expect("element appended");
                 }
               }
             }
@@ -136,6 +166,7 @@ where
         coord,
         effect_type,
         skip_indexes,
+        ..
       } => {
         let target_tree = load_coord_target_tree(tree, coord)?;
         if let RespoNode::Component(_, effects, _) = target_tree {
@@ -153,16 +184,14 @@ where
   Ok(())
 }
 
-fn find_coord_dom_target(mount_target: &Node, coord: &[RespoCoord]) -> Result<Node, String> {
+fn find_coord_dom_target(mount_target: &Node, coord: &[u32]) -> Result<Node, String> {
   let mut target = mount_target.clone();
-  for digit in coord {
-    if let &RespoCoord::Idx(idx) = digit {
-      let child = target.child_nodes().item(idx);
-      if child.is_none() {
-        return Err(format!("no child at index {}", &idx));
-      }
-      target = child.ok_or_else(|| format!("does not find child at index: {}", &idx))?;
+  for idx in coord {
+    let child = target.child_nodes().item(idx.to_owned());
+    if child.is_none() {
+      return Err(format!("no child at index {}", &idx));
     }
+    target = child.ok_or_else(|| format!("does not find child at index: {}", &idx))?;
   }
   Ok(target)
 }

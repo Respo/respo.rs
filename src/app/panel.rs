@@ -10,6 +10,7 @@ use crate::{
   respo::{div, input, span, util, RespoEffect, RespoEvent, RespoNode, StatesTree},
   space,
   ui::{ui_button, ui_input},
+  DispatchFn,
 };
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -27,6 +28,27 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
   };
   let state2 = state.clone();
 
+  let on_input = move |e, dispatch: DispatchFn<_>| -> _ {
+    util::log!("input event: {:?}", e);
+    if let RespoEvent::Input { value, .. } = e {
+      dispatch.run(ActionOp::StatesChange(
+        cursor2.to_owned(),
+        Some(serde_json::to_value(PanelState { content: value }).expect("to json")),
+      ))?;
+    }
+    Ok(())
+  };
+
+  let on_submit = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+    util::log!("add button {:?}", e);
+    dispatch.run(ActionOp::AddTask(Uuid::new_v4().to_string(), state2.content.to_owned()))?;
+    dispatch.run(ActionOp::StatesChange(
+      cursor3.clone(),
+      Some(serde_json::to_value(PanelState { content: "".to_owned() }).expect("to json")),
+    ))?;
+    Ok(())
+  };
+
   Ok(RespoNode::Component(
     "panel".to_owned(),
     vec![RespoEffect::new(vec![], move |_, dispatch, _el| {
@@ -40,31 +62,10 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
             .class(ui_input())
             .insert_attr("placeholder", "some content...")
             .insert_attr("value", state.content.to_owned())
-            .on_input(move |e, dispatch| -> _ {
-              util::log!("input event: {:?}", e);
-              if let RespoEvent::Input { value, .. } = e {
-                dispatch.run(ActionOp::StatesChange(
-                  cursor2.to_owned(),
-                  Some(serde_json::to_value(PanelState { content: value }).expect("to json")),
-                ))?;
-              }
-              Ok(())
-            })
+            .on_input(on_input)
             .to_owned(),
           space(Some(8), None),
-          button()
-            .class(ui_button())
-            .inner_text("add")
-            .on_click(move |e, dispatch| -> Result<(), String> {
-              util::log!("add button {:?}", e);
-              dispatch.run(ActionOp::AddTask(Uuid::new_v4().to_string(), state2.content.to_owned()))?;
-              dispatch.run(ActionOp::StatesChange(
-                cursor3.clone(),
-                Some(serde_json::to_value(PanelState { content: "".to_owned() }).expect("to json")),
-              ))?;
-              Ok(())
-            })
-            .to_owned(),
+          button().class(ui_button()).inner_text("add").on_click(on_submit).to_owned(),
           span().inner_text(format!("got panel state: {:?}", state)).to_owned(),
         ])
         .to_owned(),

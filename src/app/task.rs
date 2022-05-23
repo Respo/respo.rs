@@ -8,7 +8,7 @@ use crate::{
   space,
   ui::{ui_button, ui_center, ui_input, ui_row, ui_row_middle},
   util::{self, cast_from_json, cast_into_json},
-  CssSize, RespoEvent,
+  CssSize, DispatchFn, RespoEvent,
 };
 
 use super::data_types::*;
@@ -70,6 +70,28 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
   let cursor = states.path();
   let cursor2 = cursor.clone();
   let state = states.data.as_ref().map(cast_from_json::<TaskState>).unwrap_or_default();
+  let state2 = state.clone();
+
+  let on_toggle = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+    dispatch.run(ActionOp::ToggleTask(task_id.clone()))?;
+    Ok(())
+  };
+
+  let on_input = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+    if let RespoEvent::Input { value, .. } = e {
+      dispatch.run(ActionOp::StatesChange(
+        cursor.to_owned(),
+        Some(cast_into_json(TaskState { draft: value })),
+      ))?;
+    }
+    Ok(())
+  };
+
+  let on_remove = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+    dispatch.run(ActionOp::UpdateTask(task_id3.to_owned(), state2.draft.clone()))?;
+    dispatch.run(ActionOp::StatesChange(cursor2.to_owned(), None))?;
+    Ok(())
+  };
 
   Ok(RespoNode::Component(
     "tasks".to_owned(),
@@ -92,10 +114,7 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
             } else {
               RespoStyle::default()
             })
-            .on_click(move |e, dispatch| -> Result<(), String> {
-              dispatch.run(ActionOp::ToggleTask(task_id.clone()))?;
-              Ok(())
-            })
+            .on_click(on_toggle)
             .to_owned(),
           div().inner_text(task.content.to_owned()).to_owned(),
           span()
@@ -114,26 +133,10 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
             .class(ui_input())
             .insert_attr("value", state.draft.to_owned())
             .insert_attr("placeholder", "something to update...")
-            .on_input(move |e, dispatch| -> Result<(), String> {
-              if let RespoEvent::Input { value, .. } = e {
-                dispatch.run(ActionOp::StatesChange(
-                  cursor.to_owned(),
-                  Some(cast_into_json(TaskState { draft: value })),
-                ))?;
-              }
-              Ok(())
-            })
+            .on_input(on_input)
             .to_owned(),
           space(Some(8), None),
-          button()
-            .class(ui_button())
-            .inner_text("Update")
-            .on_click(move |e, dispatch| -> Result<(), String> {
-              dispatch.run(ActionOp::UpdateTask(task_id3.to_owned(), state.draft.clone()))?;
-              dispatch.run(ActionOp::StatesChange(cursor2.to_owned(), None))?;
-              Ok(())
-            })
-            .to_owned(),
+          button().class(ui_button()).inner_text("Update").on_click(on_remove).to_owned(),
         ])
         .to_owned(),
     ),

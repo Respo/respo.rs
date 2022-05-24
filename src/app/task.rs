@@ -73,7 +73,7 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
   let state2 = state.clone();
 
   let on_toggle = move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
-    dispatch.run(ActionOp::ToggleTask(task_id.clone()))?;
+    dispatch.run(ActionOp::ToggleTask(task_id.to_owned()))?;
     Ok(())
   };
 
@@ -87,7 +87,13 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
     Ok(())
   };
 
-  let on_remove = move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
+  let on_remove = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+    util::log!("remove button {:?}", e);
+    dispatch.run(ActionOp::RemoveTask(task_id2.to_owned()))?;
+    Ok(())
+  };
+
+  let on_update = move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
     dispatch.run(ActionOp::UpdateTask(task_id3.to_owned(), state2.draft.clone()))?;
     dispatch.run(ActionOp::StatesChange(cursor2.to_owned(), None))?;
     Ok(())
@@ -97,9 +103,9 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
     "tasks".to_owned(),
     vec![RespoEffect::new(
       vec![cast_into_json(task)],
-      move |args, _effect_type, _el| -> Result<(), String> {
+      move |args, effect_type, _el| -> Result<(), String> {
         let t: Task = cast_from_json(&args[0]);
-        util::log!("task {:?}", t);
+        util::log!("effect {:?} task: {:?}", effect_type, t);
         // TODO
         Ok(())
       },
@@ -121,11 +127,7 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
           span()
             .class_list(&[ui_center(), style_remove_button()])
             .inner_text("✕")
-            .on_click(move |e, dispatch| -> Result<(), String> {
-              util::log!("remove button {:?}", e);
-              dispatch.run(ActionOp::RemoveTask(task_id2.to_owned()))?;
-              Ok(())
-            })
+            .on_click(on_remove)
             .to_owned(),
           div()
             .add_style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0).to_owned())
@@ -137,7 +139,7 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
             .on_input(on_input)
             .to_owned(),
           space(Some(8), None),
-          button().class(ui_button()).inner_text("Update").on_click(on_remove).to_owned(),
+          button().class(ui_button()).inner_text("Update").on_click(on_update).to_owned(),
         ])
         .to_owned(),
     ),

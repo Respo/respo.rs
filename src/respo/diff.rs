@@ -54,6 +54,7 @@ where
       }
     }
     (RespoNode::Component(..), b) => {
+      collect_effects_inside_out_as(old_tree, coord, dom_path, RespoEffectType::BeforeUnmount, changes)?;
       changes.push(DomChange::ReplaceElement {
         coord: coord.to_owned(),
         dom_path: dom_path.to_owned(),
@@ -68,6 +69,7 @@ where
         dom_path: dom_path.to_owned(),
         node: b.to_owned(),
       });
+      collect_effects_outside_in_as(new_tree, coord, dom_path, RespoEffectType::Mounted, changes)?;
     }
     (
       RespoNode::Element {
@@ -86,11 +88,13 @@ where
       },
     ) => {
       if name != old_name {
+        collect_effects_inside_out_as(old_tree, coord, dom_path, RespoEffectType::BeforeUnmount, changes)?;
         changes.push(DomChange::ReplaceElement {
           coord: coord.to_owned(),
           dom_path: dom_path.to_owned(),
           node: b.to_owned(),
         });
+        collect_effects_outside_in_as(new_tree, coord, dom_path, RespoEffectType::Mounted, changes)?;
       } else {
         diff_attrs(attrs, old_attrs, coord, dom_path, changes);
         diff_style(
@@ -234,12 +238,28 @@ where
 
         return Ok(());
       } else {
+        let old_entry = &old_children[old_tracking_pointer];
+        let child_coord = vec![RespoCoord::Key(old_entry.0.to_owned())];
+        let child_dom_path = vec![cursor];
+        nested_effects_inside_out_as(
+          &old_entry.1,
+          &child_coord,
+          &child_dom_path,
+          RespoEffectType::BeforeUnmount,
+          &mut operations,
+        )?;
+
         operations.push(ChildDomOp::RemoveAt(cursor));
         old_tracking_pointer += 1;
       }
     } else if old_tracking_pointer >= old_children.len() {
       let (new_key, new_child) = &new_children[new_tracking_pointer];
       operations.push(ChildDomOp::Append(new_key.to_owned(), new_child.to_owned()));
+
+      let child_coord = vec![RespoCoord::Key(new_key.to_owned())];
+      let child_dom_path = vec![cursor];
+      nested_effects_outside_in_as(new_child, &child_coord, &child_dom_path, RespoEffectType::Mounted, &mut operations)?;
+
       new_tracking_pointer += 1;
     } else {
       let new_entry = &new_children[new_tracking_pointer];
@@ -258,6 +278,15 @@ where
         || Some(&new_entry.0) == old_children.get(old_tracking_pointer + 3).map(fst)
       {
         // look ahead for 3 entries, if still not found, regards this as a remove
+        let child_coord = vec![RespoCoord::Key(old_entry.0.to_owned())];
+        let child_dom_path = vec![cursor];
+        nested_effects_inside_out_as(
+          &old_entry.1,
+          &child_coord,
+          &child_dom_path,
+          RespoEffectType::BeforeUnmount,
+          &mut operations,
+        )?;
         operations.push(ChildDomOp::RemoveAt(cursor));
         old_tracking_pointer += 1;
       } else if Some(&old_entry.0) == new_children.get(new_tracking_pointer + 1).map(fst)
@@ -269,15 +298,45 @@ where
         } else {
           operations.push(ChildDomOp::InsertAfter(cursor - 1, new_entry.0.to_owned(), new_entry.1.to_owned()));
         }
+        let child_coord = vec![RespoCoord::Key(new_entry.0.to_owned())];
+        let child_dom_path = vec![cursor];
+        nested_effects_outside_in_as(
+          &new_entry.1,
+          &child_coord,
+          &child_dom_path,
+          RespoEffectType::Mounted,
+          &mut operations,
+        )?;
+
         cursor += 1;
         new_tracking_pointer += 1;
       } else {
+        let child_coord = vec![RespoCoord::Key(old_entry.0.to_owned())];
+        let child_dom_path = vec![cursor];
+        nested_effects_inside_out_as(
+          &old_entry.1,
+          &child_coord,
+          &child_dom_path,
+          RespoEffectType::BeforeUnmount,
+          &mut operations,
+        )?;
+
         operations.push(ChildDomOp::RemoveAt(cursor));
         if cursor == 0 {
           operations.push(ChildDomOp::Prepend(new_entry.0.to_owned(), new_entry.1.to_owned()))
         } else {
           operations.push(ChildDomOp::InsertAfter(cursor - 1, new_entry.0.to_owned(), new_entry.1.to_owned()));
         }
+
+        let child_coord = vec![RespoCoord::Key(new_entry.0.to_owned())];
+        let child_dom_path = vec![cursor];
+        nested_effects_outside_in_as(
+          &new_entry.1,
+          &child_coord,
+          &child_dom_path,
+          RespoEffectType::Mounted,
+          &mut operations,
+        )?;
 
         cursor += 1;
         new_tracking_pointer += 1;
@@ -351,6 +410,76 @@ where
         let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Key(k.to_owned()));
         collect_effects_inside_out_as(child, &next_coord, dom_path, effect_type, changes)?;
+      }
+      Ok(())
+    }
+  }
+}
+
+// effects at parent are collected first
+pub fn nested_effects_outside_in_as<T>(
+  tree: &RespoNode<T>,
+  coord: &[RespoCoord],
+  dom_path: &[u32],
+  effect_type: RespoEffectType,
+  operations: &mut Vec<ChildDomOp<T>>,
+) -> Result<(), String>
+where
+  T: Debug + Clone,
+{
+  match tree {
+    RespoNode::Component(name, _, tree) => {
+      operations.push(ChildDomOp::NestedEffect {
+        nested_coord: coord.to_owned(),
+        nested_dom_path: dom_path.to_owned(),
+        effect_type,
+        skip_indexes: HashSet::new(),
+      });
+      let mut next_coord = coord.to_owned();
+      next_coord.push(RespoCoord::Comp(name.to_owned()));
+      nested_effects_outside_in_as(tree, &next_coord, dom_path, effect_type, operations)?;
+      Ok(())
+    }
+    RespoNode::Element { children, .. } => {
+      for (k, child) in children {
+        let mut next_coord = coord.to_owned();
+        next_coord.push(RespoCoord::Key(k.to_owned()));
+        nested_effects_outside_in_as(child, &next_coord, dom_path, effect_type, operations)?;
+      }
+      Ok(())
+    }
+  }
+}
+
+// effects deeper inside children are collected first
+pub fn nested_effects_inside_out_as<T>(
+  tree: &RespoNode<T>,
+  coord: &[RespoCoord],
+  dom_path: &[u32],
+  effect_type: RespoEffectType,
+  operations: &mut Vec<ChildDomOp<T>>,
+) -> Result<(), String>
+where
+  T: Debug + Clone,
+{
+  match tree {
+    RespoNode::Component(name, _, tree) => {
+      let mut next_coord = coord.to_owned();
+      next_coord.push(RespoCoord::Comp(name.to_owned()));
+      nested_effects_inside_out_as(tree, &next_coord, dom_path, effect_type, operations)?;
+      operations.push(ChildDomOp::NestedEffect {
+        nested_coord: coord.to_owned(),
+        nested_dom_path: dom_path.to_owned(),
+        effect_type,
+        skip_indexes: HashSet::new(),
+      });
+      Ok(())
+    }
+    RespoNode::Element { children, .. } => {
+      for (k, child) in children {
+        let mut next_coord = coord.to_owned();
+        next_coord.push(RespoCoord::Key(k.to_owned()));
+        nested_effects_inside_out_as(child, &next_coord, dom_path, effect_type, operations)?;
       }
       Ok(())
     }

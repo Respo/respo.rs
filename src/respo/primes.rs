@@ -397,6 +397,9 @@ pub enum RespoEffectType {
   BeforeUpdate,
 }
 
+/// DOM operations used for diff/patching
+/// performance is not optimial since looking up the DOM via dom_path has repetitive operations,
+/// might need to fix in future is overhead observed.
 #[derive(Debug, Clone)]
 pub enum DomChange<T>
 where
@@ -430,6 +433,8 @@ where
     add: HashSet<String>,
     remove: HashSet<String>,
   },
+  /// this is only part of effects.
+  /// effects that collected while diffing children are nested inside
   Effect {
     coord: Vec<RespoCoord>,
     dom_path: Vec<u32>,
@@ -474,6 +479,14 @@ where
   RemoveAt(u32),
   Append(RespoIndexKey, RespoNode<T>),
   Prepend(RespoIndexKey, RespoNode<T>),
+  /// order is required in operating children elements, so put effect inside
+  NestedEffect {
+    nested_coord: Vec<RespoCoord>,
+    nested_dom_path: Vec<u32>,
+    effect_type: RespoEffectType,
+    // when args not changed in update, that effects are not re-run
+    skip_indexes: HashSet<u32>,
+  },
 }
 
 #[derive(Clone)]

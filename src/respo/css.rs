@@ -4,7 +4,6 @@ use std::{
   sync::RwLock,
 };
 
-use crate::util;
 use hsluv::hsluv_to_rgb;
 use wasm_bindgen::JsCast;
 use web_sys::Element;
@@ -362,7 +361,6 @@ impl Display for CssColor {
         }
         Self::Hsluv(h, c, l) => {
           let (r, g, b) = hsluv_to_rgb((*h as f64, *c as f64, *l as f64));
-          util::log!("{:?}", (r, g, b));
           format!("rgb({}, {}, {})", r * 256., g * 256., b * 256.)
         }
         Self::Rgba(r, g, b, a) => format!("rgba({}, {}, {}, {})", r, g, b, a),

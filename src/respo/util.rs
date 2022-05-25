@@ -56,7 +56,7 @@ pub fn raf_loop_slow(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
 }
 
 // just get first of tuple
-pub fn fst<T, U>(pair: &(T, U)) -> &T {
+pub(crate) fn fst<T, U>(pair: &(T, U)) -> &T {
   &pair.0
 }
 
@@ -73,6 +73,10 @@ pub fn query_select_node(pattern: &str) -> Result<Node, String> {
   }
 }
 
+/// wraps on top of `web_sys::console.log_1`, use it like:
+/// ```ignore
+/// util::log!("a is {}", a);
+/// ```
 #[macro_export]
 macro_rules! log {
   ($($t:tt)*) => {{

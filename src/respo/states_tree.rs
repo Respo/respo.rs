@@ -6,17 +6,21 @@ use serde_json::Value;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct StatesTree {
+  /// local data
   pub data: Option<Value>,
-  cursor: Vec<String>,
-  branches: HashMap<String, Box<StatesTree>>,
+  /// the path to the current state in the tree, use in updating
+  pub cursor: Vec<String>,
+  /// holding children states
+  pub branches: HashMap<String, Box<StatesTree>>,
 }
 
 impl StatesTree {
+  /// get cursor
   pub fn path(&self) -> Vec<String> {
     self.cursor.clone()
   }
 
-  // pick a child branch as new cursor
+  /// pick a child branch as new cursor
   pub fn pick(&self, name: &str) -> StatesTree {
     let mut next_cursor = self.cursor.clone();
     next_cursor.push(name.to_owned());

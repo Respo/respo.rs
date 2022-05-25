@@ -10,18 +10,24 @@ use web_sys::{InputEvent, KeyboardEvent, MouseEvent, Node};
 
 use super::css::RespoStyle;
 
+/// an `Element` or a `Component`
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RespoNode<T>
 where
   T: Debug + Clone,
 {
   Component(String, Vec<RespoEffect>, Box<RespoNode<T>>),
+  /// corresponding to DOM elements
   Element {
     /// tagName
     name: String,
     attrs: HashMap<String, String>,
     event: HashMap<String, RespoEventHandler<T>>,
+    /// inlines styles, partially typed.
+    /// there's also a macro called `static_styles` for inserting CSS rules
     style: RespoStyle,
+    /// each child as a key like a string, by default generated from index,
+    /// they are used in diffing, so it's better to be distinct, although not required to be.
     children: Vec<(RespoIndexKey, RespoNode<T>)>,
   },
 }
@@ -182,6 +188,7 @@ where
     }
     self
   }
+  /// index key are generated from index number
   pub fn add_children<U>(&mut self, more: U) -> &mut Self
   where
     U: IntoIterator<Item = RespoNode<T>>,
@@ -227,13 +234,14 @@ where
       RespoNode::Element { .. } => unreachable!("effects are on components"),
     }
   }
+  /// attach a class name for adding styles
   pub fn class<U>(&mut self, name: U) -> &mut Self
   where
     U: Into<String>,
   {
     self.add_attrs([("class", name.into())])
   }
-
+  /// attach a list of class names for adding styles
   pub fn class_list<U>(&mut self, names: &[U]) -> &mut Self
   where
     U: Into<String> + Clone,
@@ -245,7 +253,7 @@ where
     self.insert_attr("class", class_name.join(" "));
     self
   }
-
+  /// writes `innerText`
   pub fn inner_text<U>(&mut self, content: U) -> &mut Self
   where
     U: Into<String>,
@@ -253,7 +261,7 @@ where
     self.insert_attr("innerText", content.into());
     self
   }
-
+  /// writes `innerHTML`
   pub fn inner_html<U>(&mut self, content: U) -> &mut Self
   where
     U: Into<String>,
@@ -263,7 +271,7 @@ where
   }
 }
 
-pub type StrDict = HashMap<String, String>;
+pub(crate) type StrDict = HashMap<String, String>;
 
 #[derive(Clone)]
 pub struct RespoEventHandler<T>(Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>)
@@ -306,6 +314,7 @@ where
   }
 }
 
+/// coordinate system on RespoNode, to lookup among elements and components
 #[derive(Debug, Clone)]
 pub enum RespoCoord {
   Key(RespoIndexKey),
@@ -314,6 +323,7 @@ pub enum RespoCoord {
 }
 
 /// marks on virtual DOM to declare that there's an event
+/// event handler is HIDDEN from this mark.
 #[derive(Debug, Clone)]
 pub struct RespoEventMark {
   /// location of element in the tree
@@ -325,8 +335,8 @@ pub struct RespoEventMark {
   pub event_info: RespoEvent,
 }
 
-#[derive(Debug, Clone)]
 /// event wraps on top of DOM events
+#[derive(Debug, Clone)]
 pub enum RespoEvent {
   Click {
     client_x: f64,
@@ -349,6 +359,7 @@ pub enum RespoEvent {
   },
 }
 
+/// effects that attached to components
 #[derive(Clone)]
 pub struct RespoEffect {
   pub args: Vec<Value>,
@@ -391,10 +402,14 @@ impl Debug for RespoEffect {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RespoEffectType {
+  /// called after mounting happened, use effect handlers from new trees
   Mounted,
-  BeforeUnmount,
-  Updated,
+  /// called before effect arguments changed, use effect hanles from new trees
   BeforeUpdate,
+  /// called after effect arguments changed, use effect handles from new trees
+  Updated,
+  /// called before unmounting, use effect handles from **old** trees
+  BeforeUnmount,
 }
 
 /// DOM operations used for diff/patching
@@ -470,6 +485,7 @@ where
   }
 }
 
+/// used in list diffing, this is still part of `DomChange`
 #[derive(Debug, Clone)]
 pub enum ChildDomOp<T>
 where
@@ -489,6 +505,8 @@ where
   },
 }
 
+/// dispatch function passed from root of renderer,
+/// call it like `dispatch.run(op)`
 #[derive(Clone)]
 pub struct DispatchFn<T>(Rc<dyn Fn(T) -> Result<(), String>>)
 where

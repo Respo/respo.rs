@@ -31,7 +31,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
 
-      - run: wasm-pack build -t web
+      - run: cargo test && wasm-pack build -t web
 
       - run: yarn && yarn vite build --base=./
 

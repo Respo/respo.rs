@@ -21,11 +21,12 @@ use self::data_types::*;
 use self::panel::comp_panel;
 use self::todolist::comp_todolist;
 
+/// a demo Respo node that mounts target element for dev/debug purposes
 #[wasm_bindgen(js_name = loadDemoApp)]
-pub fn load_demo_app() -> JsValue {
+pub fn load_demo_app(query: &str) -> JsValue {
   panic::set_hook(Box::new(console_error_panic_hook::hook));
 
-  let mount_target = query_select_node(".app").expect("found mount target");
+  let mount_target = query_select_node(query).expect("found mount target");
 
   // need to push store inside function to keep all in one thread
   let global_store = Rc::new(RefCell::new(Store {

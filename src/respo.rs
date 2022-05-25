@@ -39,7 +39,7 @@ fn drain_rerender_status() -> bool {
   ret
 }
 
-pub fn mark_need_rerender() {
+pub(crate) fn mark_need_rerender() {
   let ret = { *NEED_TO_ERENDER.read().expect("to drain rerender status") };
 
   if !ret {
@@ -163,6 +163,7 @@ where
   }
 }
 
+/// creates a DOM tree from virtual DOM with proxied event handler attached
 pub fn build_dom_tree<T>(tree: &RespoNode<T>, coord: &[RespoCoord], handle_event: EventHandlerFn) -> Result<Node, JsValue>
 where
   T: Debug + Clone,

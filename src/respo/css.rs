@@ -760,7 +760,7 @@ where
   }
 }
 
-/// turns `src/a/b.rs` into `a_b`
+/// turns `src/a/b.rs` into `a_b`, used inside macro
 pub fn css_name_from_path(p: &str) -> String {
   let mut s = p.to_owned();
   if let Some(x) = s.strip_prefix("src/") {
@@ -775,7 +775,7 @@ pub fn css_name_from_path(p: &str) -> String {
 
 /// macro to create a public function of CSS rules with a slice at current file scope,
 /// ```rust
-/// respo::css::static_style_seq!(the_name,
+/// respo::static_style_seq!(the_name,
 ///   &[
 ///     ("$0", &respo::RespoStyle::default())
 ///   ]
@@ -798,7 +798,7 @@ pub use static_style_seq;
 
 /// macro to create a public function of CSS rules(up to 5 tuples) at current file scope,
 /// ```rust
-/// respo::css::static_styles!(the_name,
+/// respo::static_styles!(the_name,
 ///   ("$0", &respo::RespoStyle::default())
 /// );
 /// ```

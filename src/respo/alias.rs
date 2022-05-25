@@ -7,6 +7,10 @@ use crate::{CssSize, RespoStyle};
 
 use super::primes::RespoNode;
 
+/// a macro for creating a function with a named node
+/// ```ignore
+/// declare_tag!(div);
+/// ```
 #[macro_export]
 macro_rules! declare_tag {
   ( $name:ident ) => {
@@ -15,7 +19,7 @@ macro_rules! declare_tag {
     where
       T: Debug + Clone,
     {
-      RespoNode::make_tag(stringify!($name))
+      crate::respo::RespoNode::make_tag(stringify!($name))
     }
   };
 }

@@ -417,7 +417,7 @@ where
 }
 
 // effects at parent are collected first
-pub fn nested_effects_outside_in_as<T>(
+pub(crate) fn nested_effects_outside_in_as<T>(
   tree: &RespoNode<T>,
   coord: &[RespoCoord],
   dom_path: &[u32],
@@ -452,7 +452,7 @@ where
 }
 
 // effects deeper inside children are collected first
-pub fn nested_effects_inside_out_as<T>(
+pub(crate) fn nested_effects_inside_out_as<T>(
   tree: &RespoNode<T>,
   coord: &[RespoCoord],
   dom_path: &[u32],

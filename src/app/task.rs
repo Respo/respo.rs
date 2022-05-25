@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
   button, input,
-  respo::{div, span, static_style, CssColor, RespoEffect, RespoNode, RespoStyle, StatesTree},
-  space,
+  respo::{div, span, CssColor, RespoEffect, RespoNode, RespoStyle, StatesTree},
+  space, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
   util::{self, cast_from_json, cast_into_json},
   CssSize, DispatchFn, RespoEvent,
@@ -102,17 +102,17 @@ struct TaskState {
   draft: String,
 }
 
-static_style!(
+static_styles!(
   style_task_container,
-  &[(
+  (
     "$0".to_owned(),
     RespoStyle::default().margin(4.).background_color(CssColor::Hsl(200, 90, 96)),
-  )]
+  )
 );
 
-static_style!(
+static_styles!(
   style_done_button,
-  &[(
+  (
     "$0".to_owned(),
     RespoStyle::default()
       .width(CssSize::Px(24.0))
@@ -120,22 +120,20 @@ static_style!(
       .margin(4.)
       .cursor("pointer".to_owned())
       .background_color(CssColor::Hsl(20, 90, 70)),
-  )]
+  )
 );
 
-static_style!(
+static_styles!(
   style_remove_button,
-  &[
-    (
-      "$0".to_owned(),
-      RespoStyle::default()
-        .width(CssSize::Px(16.0))
-        .height(CssSize::Px(16.0))
-        .margin(4.)
-        .cursor("pointer".to_owned())
-        .margin4(0.0, 0.0, 0.0, 16.0)
-        .color(CssColor::Hsl(0, 90, 90)),
-    ),
-    ("$0:hover".to_owned(), RespoStyle::default().color(CssColor::Hsl(0, 90, 80))),
-  ]
+  (
+    "$0".to_owned(),
+    RespoStyle::default()
+      .width(CssSize::Px(16.0))
+      .height(CssSize::Px(16.0))
+      .margin(4.)
+      .cursor("pointer".to_owned())
+      .margin4(0.0, 0.0, 0.0, 16.0)
+      .color(CssColor::Hsl(0, 90, 90)),
+  ),
+  ("$0:hover".to_owned(), RespoStyle::default().color(CssColor::Hsl(0, 90, 80))),
 );

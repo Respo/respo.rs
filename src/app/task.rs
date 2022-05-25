@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
   button, input,
-  respo::{declare_static_style, div, span, CssColor, RespoEffect, RespoNode, RespoStyle, StatesTree},
+  respo::{div, span, static_style, CssColor, RespoEffect, RespoNode, RespoStyle, StatesTree},
   space,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
   util::{self, cast_from_json, cast_into_json},
@@ -12,55 +12,6 @@ use crate::{
 };
 
 use super::data_types::*;
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-struct TaskState {
-  draft: String,
-}
-
-pub fn style_task_container() -> String {
-  declare_static_style(
-    "task-comp",
-    &[(
-      "$0".to_owned(),
-      RespoStyle::default().margin(4.).background_color(CssColor::Hsl(200, 90, 96)),
-    )],
-  )
-}
-
-pub fn style_done_button() -> String {
-  declare_static_style(
-    "task-done-button",
-    &[(
-      "$0".to_owned(),
-      RespoStyle::default()
-        .width(CssSize::Px(24.0))
-        .height(CssSize::Px(24.0))
-        .margin(4.)
-        .cursor("pointer".to_owned())
-        .background_color(CssColor::Hsl(20, 90, 70)),
-    )],
-  )
-}
-
-pub fn style_remove_button() -> String {
-  declare_static_style(
-    "task-remove-button",
-    &[
-      (
-        "$0".to_owned(),
-        RespoStyle::default()
-          .width(CssSize::Px(16.0))
-          .height(CssSize::Px(16.0))
-          .margin(4.)
-          .cursor("pointer".to_owned())
-          .margin4(0.0, 0.0, 0.0, 16.0)
-          .color(CssColor::Hsl(0, 90, 90)),
-      ),
-      ("$0:hover".to_owned(), RespoStyle::default().color(CssColor::Hsl(0, 90, 80))),
-    ],
-  )
-}
 
 pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>, String> {
   let task_id = task.id.to_owned();
@@ -145,3 +96,46 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
     ),
   ))
 }
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+struct TaskState {
+  draft: String,
+}
+
+static_style!(
+  style_task_container,
+  &[(
+    "$0".to_owned(),
+    RespoStyle::default().margin(4.).background_color(CssColor::Hsl(200, 90, 96)),
+  )]
+);
+
+static_style!(
+  style_done_button,
+  &[(
+    "$0".to_owned(),
+    RespoStyle::default()
+      .width(CssSize::Px(24.0))
+      .height(CssSize::Px(24.0))
+      .margin(4.)
+      .cursor("pointer".to_owned())
+      .background_color(CssColor::Hsl(20, 90, 70)),
+  )]
+);
+
+static_style!(
+  style_remove_button,
+  &[
+    (
+      "$0".to_owned(),
+      RespoStyle::default()
+        .width(CssSize::Px(16.0))
+        .height(CssSize::Px(16.0))
+        .margin(4.)
+        .cursor("pointer".to_owned())
+        .margin4(0.0, 0.0, 0.0, 16.0)
+        .color(CssColor::Hsl(0, 90, 90)),
+    ),
+    ("$0:hover".to_owned(), RespoStyle::default().color(CssColor::Hsl(0, 90, 80))),
+  ]
+);

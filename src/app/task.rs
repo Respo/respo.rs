@@ -13,6 +13,11 @@ use crate::{
 
 use super::data_types::*;
 
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+struct TaskState {
+  draft: String,
+}
+
 pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>, String> {
   let task_id = task.id.to_owned();
   let task_id2 = task_id.clone();
@@ -95,11 +100,6 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
         .to_owned(),
     ),
   ))
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-struct TaskState {
-  draft: String,
 }
 
 static_styles!(

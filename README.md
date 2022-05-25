@@ -2,11 +2,11 @@
 
 [![Respo Crate](https://img.shields.io/crates/v/respo?style=flat-square)](https://crates.io/crates/respo)
 
-> Reimagine [Respo.cljs](http://respo-mvc.org/) in Rust.
+> tiny toy virtual DOM based framework for Rust.
 >
-> Status: experiment
+> Status: experimenting, unhappy without HMR.
 >
-> Respo was initially designed to work in a dynamic language with persistent data and hot code swapping, which is dramatically different from Rust. So this is more like an experiment.
+> Respo was initially designed to work in a dynamic language with persistent data and HMR(hot code replacement), which is dramatically different from Rust. So this is more like an experiment.
 
 Docs https://docs.rs/respo
 
@@ -146,21 +146,19 @@ pub fn load_demo_app() -> JsValue {
 CSS-in-Rust:
 
 ```rust
-static_style!(
+static_styles!(
   style_remove_button,
-  &[
-    (
-      "$0".to_owned(),
-      RespoStyle::default()
-        .width(CssSize::Px(16.0))
-        .height(CssSize::Px(16.0))
-        .margin(4.)
-        .cursor("pointer".to_owned())
-        .margin4(0.0, 0.0, 0.0, 16.0)
-        .color(CssColor::Hsl(0, 90, 90)),
-    ),
-    ("$0:hover".to_owned(), RespoStyle::default().color(CssColor::Hsl(0, 90, 80))),
-  ]
+  (
+    "$0".to_owned(),
+    RespoStyle::default()
+      .width(CssSize::Px(16.0))
+      .height(CssSize::Px(16.0))
+      .margin(4.)
+      .cursor("pointer".to_owned())
+      .margin4(0.0, 0.0, 0.0, 16.0)
+      .color(CssColor::Hsl(0, 90, 90)),
+  ),
+  ("$0:hover".to_owned(), RespoStyle::default().color(CssColor::Hsl(0, 90, 80))),
 );
 ```
 

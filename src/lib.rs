@@ -1,4 +1,4 @@
-//! A tiny frameworkd around a Virtual DOM library, migrated from Respo.cljs .
+//! A tiny framework around a Virtual DOM library, migrated from [Respo.cljs](http://respo-mvc.org/) .
 
 mod app;
 mod respo;

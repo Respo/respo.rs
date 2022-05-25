@@ -2,9 +2,13 @@
 
 [![Respo Crate](https://img.shields.io/crates/v/respo?style=flat-square)](https://crates.io/crates/respo)
 
-Docs(TODO) https://docs.rs/respo
-
 > Reimagine [Respo.cljs](http://respo-mvc.org/) in Rust.
+>
+> Status: experiment
+>
+> Respo was initially designed to work in a dynamic language with persistent data and hot code swapping, which is dramatically different from Rust. So this is more like an experiment.
+
+Docs https://docs.rs/respo
 
 ### Usage
 
@@ -137,6 +141,27 @@ pub fn load_demo_app() -> JsValue {
 
   JsValue::NULL
 }
+```
+
+CSS-in-Rust:
+
+```rust
+static_style!(
+  style_remove_button,
+  &[
+    (
+      "$0".to_owned(),
+      RespoStyle::default()
+        .width(CssSize::Px(16.0))
+        .height(CssSize::Px(16.0))
+        .margin(4.)
+        .cursor("pointer".to_owned())
+        .margin4(0.0, 0.0, 0.0, 16.0)
+        .color(CssColor::Hsl(0, 90, 90)),
+    ),
+    ("$0:hover".to_owned(), RespoStyle::default().color(CssColor::Hsl(0, 90, 80))),
+  ]
+);
 ```
 
 ### License

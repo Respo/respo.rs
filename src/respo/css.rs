@@ -722,8 +722,10 @@ impl Display for CssTextDecoration {
   }
 }
 
+/// does internal work inside the macro `static_style!(name, &styles)`.
 /// inserts CSS as `<style .. />` under `<head ... />` element
 /// notice that the code only generats once and being cached as DOM states,
+///
 /// NOT working for dynamic styles that changes over time, use inline styles instead.
 pub fn declare_static_style<T, U>(name: T, rules: &[(U, &RespoStyle)]) -> String
 where
@@ -757,3 +759,40 @@ where
     name.into()
   }
 }
+
+/// turns `src/a/b.rs` into `a_b`
+pub fn css_name_from_path(p: &str) -> String {
+  let mut s = p.to_owned();
+  if let Some(x) = s.strip_prefix("src/") {
+    s = x.to_owned();
+  }
+  if let Some(x) = s.strip_suffix(".rs") {
+    s = x.to_owned();
+  }
+  s = s.replace(&"/", "_");
+  s
+}
+
+/// macro to create a public function of CSS rules at current file scope,
+/// ```rust
+/// respo::css::static_style!(the_name,
+///   &[
+///     ("$0", &respo::RespoStyle::default())
+///   ]
+/// );
+/// ```
+/// gets a function like:
+/// ```ignore
+/// pub fn the_name() -> String
+/// ```
+#[macro_export]
+macro_rules! static_style {
+  ($a:ident, $b:expr) => {
+    pub fn $a() -> String {
+      let name = crate::respo::css_name_from_path(std::file!());
+      crate::respo::declare_static_style(format!("{}__{}", name, stringify!($a)), $b)
+    }
+  };
+}
+
+pub use static_style;

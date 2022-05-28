@@ -30,6 +30,7 @@ where
     /// they are used in diffing, so it's better to be distinct, although not required to be.
     children: Vec<(RespoIndexKey, RespoNode<T>)>,
   },
+  Referenced(Rc<RespoNode<T>>),
 }
 
 impl<T> From<RespoNode<T>> for Cirru
@@ -48,6 +49,7 @@ where
             .collect(),
         ),
       ]),
+      RespoNode::Referenced(cell) => (*cell).to_owned().into(),
     }
   }
 }
@@ -106,6 +108,9 @@ where
           style.0.push((k.to_owned(), v.to_owned()));
         }
       }
+      RespoNode::Referenced(_) => {
+        unreachable!("should not be called on a referenced node");
+      }
     }
     self
   }
@@ -121,6 +126,9 @@ where
       }
       RespoNode::Element { ref mut attrs, .. } => {
         attrs.insert(property.into(), value.into());
+      }
+      RespoNode::Referenced(_) => {
+        unreachable!("should not be called on a referenced node");
       }
     }
     self
@@ -140,6 +148,9 @@ where
           attrs.insert(k.into(), v.into());
         }
       }
+      RespoNode::Referenced(_) => {
+        unreachable!("should not be called on a referenced node");
+      }
     }
     self
   }
@@ -154,6 +165,9 @@ where
       RespoNode::Element { ref mut event, .. } => {
         event.insert("click".into(), RespoEventHandler::new(handler));
       }
+      RespoNode::Referenced(_) => {
+        unreachable!("should not be called on a referenced node");
+      }
     }
     self
   }
@@ -167,6 +181,9 @@ where
       }
       RespoNode::Element { ref mut event, .. } => {
         event.insert("input".into(), RespoEventHandler::new(handler));
+      }
+      RespoNode::Referenced(_) => {
+        unreachable!("should not be called on a referenced node");
       }
     }
     self
@@ -185,6 +202,9 @@ where
           event.insert(k.into(), v.to_owned());
         }
       }
+      RespoNode::Referenced(_) => {
+        unreachable!("should not be called on a referenced node");
+      }
     }
     self
   }
@@ -202,6 +222,9 @@ where
           children.push((idx.into(), v));
         }
       }
+      RespoNode::Referenced(_) => {
+        unreachable!("should not be called on a referenced node");
+      }
     }
     self
   }
@@ -218,6 +241,9 @@ where
           children.push((idx, v));
         }
       }
+      RespoNode::Referenced(_) => {
+        unreachable!("should not be called on a referenced node");
+      }
     }
     self
   }
@@ -232,6 +258,9 @@ where
         self
       }
       RespoNode::Element { .. } => unreachable!("effects are on components"),
+      RespoNode::Referenced(_) => {
+        unreachable!("should not be called on a referenced node");
+      }
     }
   }
   /// attach a class name for adding styles
@@ -268,6 +297,10 @@ where
   {
     self.insert_attr("innerHTML", content.into());
     self
+  }
+  /// wrap with a `Rc<RefCell<T>>` to enable memory reuse and skipping in diff
+  pub fn share_with_ref(&self) -> Self {
+    Self::Referenced(Rc::new(self.clone()))
   }
 }
 

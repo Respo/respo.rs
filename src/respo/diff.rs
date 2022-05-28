@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
+use std::rc::Rc;
 
 use crate::respo::primes::*;
 
@@ -108,6 +109,20 @@ where
         diff_event(event, old_event, coord, dom_path, changes);
         diff_children(children, old_children, coord, dom_path, changes)?;
       }
+    }
+    (RespoNode::Referenced(new_cell), RespoNode::Referenced(old_cell)) => {
+      // pointer compare https://stackoverflow.com/a/60241585/883571
+      if Rc::ptr_eq(new_cell, old_cell) {
+        return Ok(());
+      } else {
+        diff_tree(new_cell, old_cell, coord, dom_path, changes)?;
+      }
+    }
+    (RespoNode::Referenced(new_cell), b) => {
+      diff_tree(new_cell, b, coord, dom_path, changes)?;
+    }
+    (a, RespoNode::Referenced(old_cell)) => {
+      diff_tree(a, old_cell, coord, dom_path, changes)?;
     }
   }
 
@@ -378,6 +393,10 @@ where
       }
       Ok(())
     }
+    RespoNode::Referenced(cell) => {
+      collect_effects_outside_in_as(cell, coord, dom_path, effect_type, changes)?;
+      Ok(())
+    }
   }
 }
 
@@ -411,6 +430,11 @@ where
         next_coord.push(RespoCoord::Key(k.to_owned()));
         collect_effects_inside_out_as(child, &next_coord, dom_path, effect_type, changes)?;
       }
+      Ok(())
+    }
+
+    RespoNode::Referenced(cell) => {
+      collect_effects_inside_out_as(cell, coord, dom_path, effect_type, changes)?;
       Ok(())
     }
   }
@@ -448,6 +472,10 @@ where
       }
       Ok(())
     }
+    RespoNode::Referenced(cell) => {
+      nested_effects_outside_in_as(cell, coord, dom_path, effect_type, operations)?;
+      Ok(())
+    }
   }
 }
 
@@ -481,6 +509,10 @@ where
         next_coord.push(RespoCoord::Key(k.to_owned()));
         nested_effects_inside_out_as(child, &next_coord, dom_path, effect_type, operations)?;
       }
+      Ok(())
+    }
+    RespoNode::Referenced(cell) => {
+      nested_effects_inside_out_as(cell, coord, dom_path, effect_type, operations)?;
       Ok(())
     }
   }

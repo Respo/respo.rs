@@ -118,7 +118,10 @@ where
 {
   // util::log!("looking for {:?}\n  {}", coord, &tree);
   if coord.is_empty() {
-    Ok(tree.to_owned())
+    match tree {
+      RespoNode::Referenced(cell) => Ok((**cell).clone()),
+      _ => Ok(tree.clone()),
+    }
   } else {
     let branch = coord.first().ok_or("to get first branch of coord")?;
     match (tree, branch) {
@@ -144,6 +147,7 @@ where
       (RespoNode::Element { .. }, RespoCoord::Comp(..)) => {
         Err(format!("expected component at {:?}, found target being an element", coord))
       }
+      (RespoNode::Referenced(cell), _) => load_coord_target_tree(cell, coord),
     }
   }
 }
@@ -160,6 +164,7 @@ where
       Some(v) => Ok((*v).to_owned()),
       None => Err(format!("no handler for event:{} on {} {:?}", &event_name, tag_name, event,)),
     },
+    RespoNode::Referenced(cell) => request_for_target_handler(&cell, event_name, coord),
   }
 }
 
@@ -214,5 +219,6 @@ where
 
       Ok(element.dyn_ref::<Node>().expect("converting to Node").clone())
     }
+    RespoNode::Referenced(cell) => build_dom_tree(cell, coord, handle_event),
   }
 }

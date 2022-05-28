@@ -14,9 +14,10 @@ use wasm_bindgen::prelude::*;
 
 use crate::respo::{div, render_node, util::query_select_node, DispatchFn, RespoNode, StatesTree};
 use crate::ui::ui_global;
-use crate::RespoStyle;
+use crate::{init_memo_cache, RespoStyle};
 
 use self::counter::comp_counter;
+pub use self::data_types::ActionOp;
 use self::data_types::*;
 use self::panel::comp_panel;
 use self::todolist::comp_todolist;
@@ -34,6 +35,8 @@ pub fn load_demo_app(query: &str) -> JsValue {
     states: StatesTree::default(),
     tasks: vec![],
   }));
+
+  let memo_caches = init_memo_cache();
 
   let store_to_action = global_store.clone();
   let dispatch_action = move |op: ActionOp| -> Result<(), String> {
@@ -60,7 +63,7 @@ pub fn load_demo_app(query: &str) -> JsValue {
           .add_children([
             comp_counter(&states.pick("counter"), store.counted),
             comp_panel(&states.pick("panel"))?,
-            comp_todolist(&states.pick("todolist"), &store.tasks)?,
+            comp_todolist(memo_caches.to_owned(), &states.pick("todolist"), &store.tasks)?,
           ])
           .to_owned(),
       )

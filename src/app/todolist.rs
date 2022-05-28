@@ -1,10 +1,13 @@
+use std::{cell::RefCell, rc::Rc};
+
 use serde::{Deserialize, Serialize};
 
 use crate::{
-  button,
+  button, memo1_call_by,
   respo::{div, span, RespoNode, StatesTree},
   ui::ui_button,
   util::{self, cast_from_json, cast_into_json},
+  MemoCache, RespoIndexKey,
 };
 
 use super::{
@@ -17,16 +20,42 @@ struct TodolistState {
   hide_done: bool,
 }
 
-pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<ActionOp>, String> {
+pub fn comp_todolist(
+  memo_caches: Rc<RefCell<MemoCache<RespoNode<ActionOp>>>>,
+  states: &StatesTree,
+  tasks: &[Task],
+) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
   let state = states.data.as_ref().map(cast_from_json::<TodolistState>).unwrap_or_default();
 
-  let mut children = vec![];
+  let mut children: Vec<(RespoIndexKey, RespoNode<_>)> = vec![];
   for task in tasks {
     if state.hide_done && task.done {
       continue;
     }
-    children.push((task.id.to_owned().into(), comp_task(&states.pick(&task.id), task)?));
+    // children.push((
+    //   task.id.to_owned().into(),
+    //   comp_task(memo_caches.to_owned(), &states.pick(&task.id), task)?,
+    // ));
+
+    let m = memo_caches.to_owned();
+
+    // children.push((
+    //   task.id.to_owned().into(),
+    //   internal_memof1_call_by(
+    //     memo_caches.to_owned(),
+    //     comp_task as usize,
+    //     task.id.to_owned(),
+    //     vec![cast_into_json(states.pick(&task.id)), cast_into_json(task)],
+    //     move || comp_task(m.to_owned(), &states.pick(&task.id), task),
+    //   )?,
+    // ));
+
+    children.push((
+      task.id.to_owned().into(),
+      // comp_task(memo_caches.to_owned(), &states.pick(&task.id), task)?,
+      memo1_call_by!(comp_task, m.to_owned(), task.id.to_owned(), &states.pick(&task.id), task)?,
+    ));
   }
 
   // util::log!("{:?}", &tasks);

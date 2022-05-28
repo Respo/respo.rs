@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{cell::RefCell, fmt::Debug, rc::Rc};
 
 use serde::{Deserialize, Serialize};
 
@@ -8,7 +8,7 @@ use crate::{
   space, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
   util::{self, cast_from_json, cast_into_json},
-  CssSize, DispatchFn, RespoEvent,
+  CssSize, DispatchFn, MemoCache, RespoEvent,
 };
 
 use super::data_types::*;
@@ -18,7 +18,13 @@ struct TaskState {
   draft: String,
 }
 
-pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>, String> {
+pub fn comp_task(
+  _memo_caches: Rc<RefCell<MemoCache<RespoNode<ActionOp>>>>,
+  states: &StatesTree,
+  task: &Task,
+) -> Result<RespoNode<ActionOp>, String> {
+  crate::util::log!("calling task function");
+
   let task_id = task.id.to_owned();
   let task_id2 = task_id.clone();
   let task_id3 = task_id.clone();

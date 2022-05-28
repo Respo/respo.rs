@@ -41,30 +41,19 @@ impl StatesTree {
     }
   }
 
-  /// returns a new tree
-  pub fn set_in(&self, path: &[String], new_state: Option<Value>) -> Self {
+  /// in-place mutation of state tree
+  pub fn set_in_mut(&mut self, path: &[String], new_state: Option<Value>) {
     if path.is_empty() {
-      Self {
-        data: new_state,
-        cursor: self.cursor.clone(),
-        branches: self.branches.clone(),
-      }
+      (*self).data = new_state;
     } else {
       let (p_head, p_rest) = path.split_at(1);
       let p0 = p_head[0].to_owned();
-      if self.branches.contains_key(&p0) {
-        let branch = self.branches[&p0].clone();
-        let next_branch = branch.set_in(p_rest, new_state);
-
-        let mut next = self.clone();
-        next.branches.insert(p0, Box::new(next_branch));
-        next
+      if let Some(branch) = self.branches.get_mut(&p0) {
+        branch.set_in_mut(p_rest, new_state);
       } else {
-        let mut next = self.clone();
-        let mut branch = StatesTree::pick(&next, &p0);
-        branch = branch.set_in(p_rest, new_state);
-        next.branches.insert(p0, Box::new(branch));
-        next
+        let mut branch = self.pick(&p0);
+        branch.set_in_mut(p_rest, new_state);
+        self.branches.insert(p0, Box::new(branch));
       }
     }
   }

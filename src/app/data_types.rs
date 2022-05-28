@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::{respo::StatesTree, util};
+use crate::{respo::StatesTree, util, ActionWithState};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Store {
@@ -29,6 +29,12 @@ pub enum ActionOp {
   ToggleTask(String),
 }
 
+impl ActionWithState for ActionOp {
+  fn wrap_state_change(cursor: &[String], a: Option<Value>) -> Self {
+    Self::StatesChange(cursor.to_vec(), a)
+  }
+}
+
 pub fn apply_action(store: &mut Store, op: ActionOp) -> Result<(), String> {
   match op {
     ActionOp::Increment => {
@@ -38,7 +44,7 @@ pub fn apply_action(store: &mut Store, op: ActionOp) -> Result<(), String> {
       store.counted -= 1;
     }
     ActionOp::StatesChange(path, new_state) => {
-      store.states = store.states.set_in(&path, new_state);
+      store.states.set_in_mut(&path, new_state);
     }
     ActionOp::AddTask(id, content) => store.tasks.push(Task {
       id,

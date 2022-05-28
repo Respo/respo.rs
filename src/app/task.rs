@@ -35,10 +35,7 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
 
   let on_input = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
     if let RespoEvent::Input { value, .. } = e {
-      dispatch.run(ActionOp::StatesChange(
-        cursor.to_owned(),
-        Some(cast_into_json(TaskState { draft: value })),
-      ))?;
+      dispatch.run_state(&cursor, cast_into_json(TaskState { draft: value }))?;
     }
     Ok(())
   };
@@ -51,7 +48,7 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
 
   let on_update = move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
     dispatch.run(ActionOp::UpdateTask(task_id3.to_owned(), state2.draft.clone()))?;
-    dispatch.run(ActionOp::StatesChange(cursor2.to_owned(), None))?;
+    dispatch.run_empty_state(&cursor2)?;
     Ok(())
   };
 

@@ -45,12 +45,12 @@ pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<Ac
               .on_click(move |e, dispatch| -> Result<(), String> {
                 util::log!("click {:?}", e);
 
-                dispatch.run(ActionOp::StatesChange(
-                  cursor.to_owned(),
-                  Some(cast_into_json(TodolistState {
+                dispatch.run_state(
+                  &cursor,
+                  cast_into_json(TodolistState {
                     hide_done: !state.hide_done,
-                  })),
-                ))?;
+                  }),
+                )?;
                 Ok(())
               })
               .to_owned(),

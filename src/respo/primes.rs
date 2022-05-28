@@ -521,12 +521,26 @@ where
   }
 }
 
+pub trait ActionWithState {
+  /// to provide syntax sugar to dispatch.run_state
+  fn wrap_state_change(cursor: &[String], a: Option<Value>) -> Self;
+}
+
 impl<T> DispatchFn<T>
 where
-  T: Debug + Clone,
+  T: Debug + Clone + ActionWithState,
 {
+  /// dispatch an action
   pub fn run(&self, op: T) -> Result<(), String> {
     (self.0)(op)
+  }
+  /// dispatch to update local state
+  pub fn run_state(&self, cursor: &[String], data: Value) -> Result<(), String> {
+    (self.0)(T::wrap_state_change(cursor, Some(data)))
+  }
+  /// reset state to empty
+  pub fn run_empty_state(&self, cursor: &[String]) -> Result<(), String> {
+    (self.0)(T::wrap_state_change(cursor, None))
   }
   pub fn new<U>(f: U) -> Self
   where

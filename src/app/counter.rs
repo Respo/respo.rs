@@ -28,12 +28,12 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> RespoNode<ActionOp> {
     }
 
     dispatch.run(ActionOp::Increment)?;
-    dispatch.run(ActionOp::StatesChange(
-      cursor.to_owned(),
-      Some(cast_into_json(MainState {
+    dispatch.run_state(
+      &cursor,
+      cast_into_json(MainState {
         counted: state.counted + 2,
-      })),
-    ))?;
+      }),
+    )?;
     Ok(())
   };
 

@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{cell::RefCell, fmt::Debug, rc::Rc};
 
 use serde::{Deserialize, Serialize};
 
@@ -8,7 +8,7 @@ use crate::{
   space, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
   util::{self, cast_from_json, cast_into_json},
-  CssSize, DispatchFn, RespoEvent,
+  CssSize, DispatchFn, MemoCache, RespoEvent,
 };
 
 use super::data_types::*;
@@ -18,7 +18,13 @@ struct TaskState {
   draft: String,
 }
 
-pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>, String> {
+pub fn comp_task(
+  _memo_caches: Rc<RefCell<MemoCache<RespoNode<ActionOp>>>>,
+  states: &StatesTree,
+  task: &Task,
+) -> Result<RespoNode<ActionOp>, String> {
+  crate::util::log!("calling task function");
+
   let task_id = task.id.to_owned();
   let task_id2 = task_id.clone();
   let task_id3 = task_id.clone();
@@ -35,10 +41,7 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
 
   let on_input = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
     if let RespoEvent::Input { value, .. } = e {
-      dispatch.run(ActionOp::StatesChange(
-        cursor.to_owned(),
-        Some(cast_into_json(TaskState { draft: value })),
-      ))?;
+      dispatch.run_state(&cursor, cast_into_json(TaskState { draft: value }))?;
     }
     Ok(())
   };
@@ -51,55 +54,58 @@ pub fn comp_task(states: &StatesTree, task: &Task) -> Result<RespoNode<ActionOp>
 
   let on_update = move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
     dispatch.run(ActionOp::UpdateTask(task_id3.to_owned(), state2.draft.clone()))?;
-    dispatch.run(ActionOp::StatesChange(cursor2.to_owned(), None))?;
+    dispatch.run_empty_state(&cursor2)?;
     Ok(())
   };
 
-  Ok(RespoNode::Component(
-    "tasks".to_owned(),
-    vec![RespoEffect::new(
-      vec![cast_into_json(task)],
-      move |args, effect_type, _el| -> Result<(), String> {
-        let t: Task = cast_from_json(&args[0]);
-        util::log!("effect {:?} task: {:?}", effect_type, t);
-        // TODO
-        Ok(())
-      },
-    )],
-    Box::new(
-      div()
-        .class_list(&[ui_row_middle(), style_task_container()])
-        .add_children([
-          div()
-            .class(style_done_button())
-            .add_style(if task.done {
-              RespoStyle::default().background_color(CssColor::Blue).to_owned()
-            } else {
-              RespoStyle::default()
-            })
-            .on_click(on_toggle)
-            .to_owned(),
-          div().inner_text(task.content.to_owned()).to_owned(),
-          span()
-            .class_list(&[ui_center(), style_remove_button()])
-            .inner_text("✕")
-            .on_click(on_remove)
-            .to_owned(),
-          div()
-            .add_style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0).to_owned())
-            .to_owned(),
-          input()
-            .class(ui_input())
-            .insert_attr("value", state.draft)
-            .insert_attr("placeholder", "something to update...")
-            .on_input(on_input)
-            .to_owned(),
-          space(Some(8), None),
-          button().class(ui_button()).inner_text("Update").on_click(on_update).to_owned(),
-        ])
-        .to_owned(),
-    ),
-  ))
+  Ok(
+    RespoNode::Component(
+      "tasks".to_owned(),
+      vec![RespoEffect::new(
+        vec![cast_into_json(task)],
+        move |args, effect_type, _el| -> Result<(), String> {
+          let t: Task = cast_from_json(&args[0]);
+          util::log!("effect {:?} task: {:?}", effect_type, t);
+          // TODO
+          Ok(())
+        },
+      )],
+      Box::new(
+        div()
+          .class_list(&[ui_row_middle(), style_task_container()])
+          .add_children([
+            div()
+              .class(style_done_button())
+              .add_style(if task.done {
+                RespoStyle::default().background_color(CssColor::Blue).to_owned()
+              } else {
+                RespoStyle::default()
+              })
+              .on_click(on_toggle)
+              .to_owned(),
+            div().inner_text(task.content.to_owned()).to_owned(),
+            span()
+              .class_list(&[ui_center(), style_remove_button()])
+              .inner_text("✕")
+              .on_click(on_remove)
+              .to_owned(),
+            div()
+              .add_style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0).to_owned())
+              .to_owned(),
+            input()
+              .class(ui_input())
+              .insert_attr("value", state.draft)
+              .insert_attr("placeholder", "something to update...")
+              .on_input(on_input)
+              .to_owned(),
+            space(Some(8), None),
+            button().class(ui_button()).inner_text("Update").on_click(on_update).to_owned(),
+          ])
+          .to_owned(),
+      ),
+    )
+    .share_with_ref(),
+  )
 }
 
 static_styles!(

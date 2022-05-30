@@ -61,7 +61,7 @@ pub fn load_demo_app(query: &str) -> JsValue {
           .class(ui_global())
           .add_style(RespoStyle::default().padding(12.0).to_owned())
           .add_children([
-            comp_counter(&states.pick("counter"), store.counted),
+            comp_counter(&states.pick("counter"), store.counted)?,
             comp_panel(&states.pick("panel"))?,
             comp_todolist(memo_caches.to_owned(), &states.pick("todolist"), &store.tasks)?,
           ])

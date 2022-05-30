@@ -5,8 +5,12 @@ use std::rc::Rc;
 use std::{collections::HashMap, fmt::Debug};
 
 use cirru_parser::{Cirru, CirruWriterOptions};
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use web_sys::{InputEvent, KeyboardEvent, MouseEvent, Node};
+
+use crate::MaybeState;
 
 use super::css::RespoStyle;
 
@@ -395,11 +399,11 @@ pub enum RespoEvent {
 /// effects that attached to components
 #[derive(Clone)]
 pub struct RespoEffect {
-  pub args: Vec<Value>,
+  pub args: Vec<EffectArg>,
   handler: Rc<RespoEffectHandler>,
 }
 
-type RespoEffectHandler = dyn Fn(Vec<Value>, RespoEffectType, &Node) -> Result<(), String>;
+type RespoEffectHandler = dyn Fn(Vec<EffectArg>, RespoEffectType, &Node) -> Result<(), String>;
 
 impl PartialEq for RespoEffect {
   /// closure are not compared, changes happen in and passed via args
@@ -414,12 +418,27 @@ impl RespoEffect {
   pub fn run(&self, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
     (*self.handler)(self.args.to_owned(), effect_type, el)
   }
-  pub fn new<U>(args: Vec<Value>, handler: U) -> Self
+  pub fn new<U, V>(args: Vec<&V>, handler: U) -> Self
   where
-    U: Fn(Vec<Value>, RespoEffectType, &Node) -> Result<(), String> + 'static,
+    U: Fn(Vec<EffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
+    V: Serialize,
   {
     Self {
-      args,
+      args: args
+        .iter()
+        .map(|v| EffectArg::new(serde_json::to_value(v).expect("to json")))
+        .collect(),
+      handler: Rc::new(handler),
+    }
+  }
+
+  /// no need to have args, only handler
+  pub fn new_insular<U>(handler: U) -> Self
+  where
+    U: Fn(Vec<EffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
+  {
+    Self {
+      args: vec![],
       handler: Rc::new(handler),
     }
   }
@@ -556,7 +575,7 @@ where
 
 pub trait ActionWithState {
   /// to provide syntax sugar to dispatch.run_state
-  fn wrap_state_change(cursor: &[String], a: Option<Value>) -> Self;
+  fn wrap_state_change(cursor: &[String], a: MaybeState) -> Self;
 }
 
 impl<T> DispatchFn<T>
@@ -568,12 +587,18 @@ where
     (self.0)(op)
   }
   /// dispatch to update local state
-  pub fn run_state(&self, cursor: &[String], data: Value) -> Result<(), String> {
-    (self.0)(T::wrap_state_change(cursor, Some(data)))
+  pub fn run_state<U>(&self, cursor: &[String], data: U) -> Result<(), String>
+  where
+    U: Serialize,
+  {
+    (self.0)(T::wrap_state_change(
+      cursor,
+      MaybeState::new(Some(serde_json::to_value(data).map_err(|e| e.to_string())?)),
+    ))
   }
   /// reset state to empty
   pub fn run_empty_state(&self, cursor: &[String]) -> Result<(), String> {
-    (self.0)(T::wrap_state_change(cursor, None))
+    (self.0)(T::wrap_state_change(cursor, MaybeState::new(None)))
   }
   pub fn new<U>(f: U) -> Self
   where
@@ -607,5 +632,21 @@ impl EventHandlerFn {
 impl From<Rc<dyn Fn(RespoEventMark) -> Result<(), String>>> for EventHandlerFn {
   fn from(f: Rc<dyn Fn(RespoEventMark) -> Result<(), String>>) -> Self {
     Self(f)
+  }
+}
+
+// abstraction on efffect argument
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EffectArg(Value);
+
+impl EffectArg {
+  pub fn new(v: Value) -> Self {
+    Self(v)
+  }
+  pub fn cast_into<U>(&self) -> Result<U, String>
+  where
+    U: DeserializeOwned,
+  {
+    serde_json::from_value(self.0.clone()).map_err(|e| e.to_string())
   }
 }

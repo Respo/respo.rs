@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct StatesTree {
   /// local data
-  pub data: Option<Value>,
+  pub data: MaybeState,
   /// the path to the current state in the tree, use in updating
   pub cursor: Vec<String>,
   /// holding children states
@@ -34,7 +34,7 @@ impl StatesTree {
       }
     } else {
       Self {
-        data: None,
+        data: MaybeState::new(None),
         cursor: next_cursor,
         branches: HashMap::new(),
       }
@@ -42,7 +42,7 @@ impl StatesTree {
   }
 
   /// in-place mutation of state tree
-  pub fn set_in_mut(&mut self, path: &[String], new_state: Option<Value>) {
+  pub fn set_in_mut(&mut self, path: &[String], new_state: MaybeState) {
     if path.is_empty() {
       (*self).data = new_state;
     } else {
@@ -55,6 +55,26 @@ impl StatesTree {
         branch.set_in_mut(p_rest, new_state);
         self.branches.insert(p0, Box::new(branch));
       }
+    }
+  }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+/// local state in component could be None according to the tree structure
+pub struct MaybeState(Option<Value>);
+
+impl MaybeState {
+  pub fn new(state: Option<Value>) -> Self {
+    Self(state)
+  }
+
+  pub fn cast_or_default<T>(&self) -> Result<T, String>
+  where
+    T: DeserializeOwned + Default,
+  {
+    match &self.0 {
+      Some(v) => serde_json::from_value(v.to_owned()).map_err(|e| e.to_string()),
+      None => Ok(T::default()),
     }
   }
 }

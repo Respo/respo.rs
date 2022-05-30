@@ -10,7 +10,6 @@ use crate::{
   respo::{div, input, span, util, RespoEffect, RespoEvent, RespoNode, StatesTree},
   space,
   ui::{ui_button, ui_input},
-  util::{cast_from_json, cast_into_json},
   DispatchFn,
 };
 
@@ -23,13 +22,13 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
   let cursor2 = cursor.clone();
   let cursor3 = cursor.clone();
-  let state = states.data.as_ref().map(cast_from_json::<PanelState>).unwrap_or_default();
+  let state: PanelState = states.data.cast_or_default()?;
   let state2 = state.clone();
 
   let on_input = move |e, dispatch: DispatchFn<_>| -> _ {
     util::log!("input event: {:?}", e);
     if let RespoEvent::Input { value, .. } = e {
-      dispatch.run_state(&cursor2, cast_into_json(PanelState { content: value }))?;
+      dispatch.run_state(&cursor2, PanelState { content: value })?;
     }
     Ok(())
   };
@@ -37,13 +36,13 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
   let on_submit = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
     util::log!("add button {:?}", e);
     dispatch.run(ActionOp::AddTask(Uuid::new_v4().to_string(), state2.content.to_owned()))?;
-    dispatch.run_state(&cursor3, cast_into_json(PanelState { content: "".to_owned() }))?;
+    dispatch.run_state(&cursor3, PanelState { content: "".to_owned() })?;
     Ok(())
   };
 
   Ok(RespoNode::Component(
     "panel".to_owned(),
-    vec![RespoEffect::new(vec![], move |_, _dispatch, _el| {
+    vec![RespoEffect::new_insular(move |_, _dispatch, _el| {
       log_1(&format!("panel effect {:?}", cursor).into());
       Ok(())
     })],

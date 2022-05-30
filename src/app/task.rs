@@ -7,7 +7,7 @@ use crate::{
   respo::{div, span, CssColor, RespoEffect, RespoNode, RespoStyle, StatesTree},
   space, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
-  util::{self, cast_from_json, cast_into_json},
+  util::{self},
   CssSize, DispatchFn, MemoCache, RespoEvent,
 };
 
@@ -31,7 +31,7 @@ pub fn comp_task(
 
   let cursor = states.path();
   let cursor2 = cursor.clone();
-  let state = states.data.as_ref().map(cast_from_json::<TaskState>).unwrap_or_default();
+  let state: TaskState = states.data.cast_or_default()?;
   let state2 = state.clone();
 
   let on_toggle = move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
@@ -41,7 +41,7 @@ pub fn comp_task(
 
   let on_input = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
     if let RespoEvent::Input { value, .. } = e {
-      dispatch.run_state(&cursor, cast_into_json(TaskState { draft: value }))?;
+      dispatch.run_state(&cursor, TaskState { draft: value })?;
     }
     Ok(())
   };
@@ -61,15 +61,12 @@ pub fn comp_task(
   Ok(
     RespoNode::Component(
       "tasks".to_owned(),
-      vec![RespoEffect::new(
-        vec![cast_into_json(task)],
-        move |args, effect_type, _el| -> Result<(), String> {
-          let t: Task = cast_from_json(&args[0]);
-          util::log!("effect {:?} task: {:?}", effect_type, t);
-          // TODO
-          Ok(())
-        },
-      )],
+      vec![RespoEffect::new(vec![&task], move |args, effect_type, _el| -> Result<(), String> {
+        let t: Task = args[0].cast_into()?;
+        util::log!("effect {:?} task: {:?}", effect_type, t);
+        // TODO
+        Ok(())
+      })],
       Box::new(
         div()
           .class_list(&[ui_row_middle(), style_task_container()])

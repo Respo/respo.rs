@@ -740,6 +740,9 @@ where
     let document = window.document().expect("load document");
     let head = document.head().expect("head");
     let style_tag = document.create_element("style").expect("create style tag");
+    style_tag
+      .set_attribute("id", &format!("def__{}", name.to_owned().into()))
+      .expect("name tag");
 
     let mut styles = String::from("");
     for (query, properties) in rules {

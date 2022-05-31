@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
-use crate::{respo::StatesTree, util, ActionWithState};
+use crate::{respo::StatesTree, util, ActionWithState, MaybeState};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Store {
@@ -22,7 +21,7 @@ pub struct Task {
 pub enum ActionOp {
   Increment,
   Decrement,
-  StatesChange(Vec<String>, Option<Value>),
+  StatesChange(Vec<String>, MaybeState),
   AddTask(String, String),
   RemoveTask(String),
   UpdateTask(String, String),
@@ -30,7 +29,7 @@ pub enum ActionOp {
 }
 
 impl ActionWithState for ActionOp {
-  fn wrap_state_change(cursor: &[String], a: Option<Value>) -> Self {
+  fn wrap_state_change(cursor: &[String], a: MaybeState) -> Self {
     Self::StatesChange(cursor.to_vec(), a)
   }
 }

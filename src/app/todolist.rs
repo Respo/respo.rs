@@ -6,8 +6,7 @@ use crate::{
   button, memo1_call_by,
   respo::{div, span, RespoNode, StatesTree},
   ui::ui_button,
-  util::{self, cast_from_json, cast_into_json},
-  MemoCache, RespoIndexKey,
+  util, MemoCache, RespoIndexKey,
 };
 
 use super::{
@@ -26,7 +25,7 @@ pub fn comp_todolist(
   tasks: &[Task],
 ) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
-  let state = states.data.as_ref().map(cast_from_json::<TodolistState>).unwrap_or_default();
+  let state: TodolistState = states.data.cast_or_default()?;
 
   let mut children: Vec<(RespoIndexKey, RespoNode<_>)> = vec![];
   for task in tasks {
@@ -76,9 +75,9 @@ pub fn comp_todolist(
 
                 dispatch.run_state(
                   &cursor,
-                  cast_into_json(TodolistState {
+                  TodolistState {
                     hide_done: !state.hide_done,
-                  }),
+                  },
                 )?;
                 Ok(())
               })

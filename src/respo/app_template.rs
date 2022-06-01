@@ -1,0 +1,59 @@
+use std::{
+  cell::{Ref, RefCell, RefMut},
+  fmt::Debug,
+  rc::Rc,
+};
+
+use web_sys::Node;
+
+use crate::{render_node, DispatchFn, MemoCache, RespoAction, RespoNode, RespoStore};
+
+/// A template for a Respo app
+pub trait RespoApp {
+  /// a type of the store, with a place for states tree
+  type Model: RespoStore + 'static;
+  /// actions should include one for updating states tree
+  type Action: Debug + Clone + RespoAction + 'static;
+
+  /// simulating pure function updates to the model, but actually it's mutations
+  fn dispatch(store: &mut RefMut<Self::Model>, action: Self::Action) -> Result<(), String>;
+
+  /// bridge to mount target
+  fn get_mount_target(&self) -> &Node;
+  /// bridge to store
+  fn get_store(&self) -> Rc<RefCell<Self::Model>>;
+  /// bridge to memo caches
+  fn get_memo_caches(&self) -> MemoCache<RespoNode<Self::Action>>;
+
+  /// DSL for building a view
+  fn view(store: Ref<Self::Model>, memo_caches: MemoCache<RespoNode<Self::Action>>) -> Result<RespoNode<Self::Action>, String>;
+  /// start a requestAnimationFrame loop for rendering updated store
+  fn render_loop(&self) -> Result<(), String> {
+    let mount_target = self.get_mount_target();
+    let global_store = self.get_store();
+    let memo_caches = self.get_memo_caches();
+
+    let store_to_action = global_store.clone();
+    let dispatch_action = move |op: Self::Action| -> Result<(), String> {
+      // util::log!("action {:?} store, {:?}", op, store_to_action.borrow());
+      let mut store = store_to_action.borrow_mut();
+
+      Self::dispatch(&mut store, op)?;
+      // util::log!("store after action {:?}", store);
+      Ok(())
+    };
+
+    render_node(
+      mount_target.to_owned(),
+      Box::new(move || -> Result<RespoNode<Self::Action>, String> {
+        // util::log!("global store: {:?}", store);
+
+        Self::view(global_store.borrow(), memo_caches.clone())
+      }),
+      DispatchFn::new(dispatch_action),
+    )
+    .expect("rendering node");
+
+    Ok(())
+  }
+}

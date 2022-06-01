@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use web_sys::{InputEvent, KeyboardEvent, MouseEvent, Node};
 
-use crate::MaybeState;
+use crate::{MaybeState, StatesTree};
 
 use super::css::RespoStyle;
 
@@ -573,14 +573,15 @@ where
   }
 }
 
-pub trait ActionWithState {
+/// it has special support for states
+pub trait RespoAction {
   /// to provide syntax sugar to dispatch.run_state
-  fn wrap_state_change(cursor: &[String], a: MaybeState) -> Self;
+  fn wrap_states_action(cursor: &[String], a: MaybeState) -> Self;
 }
 
 impl<T> DispatchFn<T>
 where
-  T: Debug + Clone + ActionWithState,
+  T: Debug + Clone + RespoAction,
 {
   /// dispatch an action
   pub fn run(&self, op: T) -> Result<(), String> {
@@ -591,14 +592,14 @@ where
   where
     U: Serialize,
   {
-    (self.0)(T::wrap_state_change(
+    (self.0)(T::wrap_states_action(
       cursor,
       MaybeState::new(Some(serde_json::to_value(data).map_err(|e| e.to_string())?)),
     ))
   }
   /// reset state to empty
   pub fn run_empty_state(&self, cursor: &[String]) -> Result<(), String> {
-    (self.0)(T::wrap_state_change(cursor, MaybeState::new(None)))
+    (self.0)(T::wrap_states_action(cursor, MaybeState::new(None)))
   }
   pub fn new<U>(f: U) -> Self
   where
@@ -649,4 +650,11 @@ impl EffectArg {
   {
     serde_json::from_value(self.0.clone()).map_err(|e| e.to_string())
   }
+}
+
+/// it has a states tree inside, and it does update itself
+pub trait RespoStore {
+  type Action: Debug + Clone + RespoAction;
+  fn get_states(&self) -> StatesTree;
+  fn update(&mut self, op: Self::Action) -> Result<(), String>;
 }

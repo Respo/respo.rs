@@ -1,5 +1,3 @@
-use std::{cell::RefCell, rc::Rc};
-
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -10,7 +8,7 @@ use crate::{
 };
 
 use super::{
-  data_types::{ActionOp, Task},
+  store::{ActionOp, Task},
   task::comp_task,
 };
 
@@ -20,7 +18,7 @@ struct TodolistState {
 }
 
 pub fn comp_todolist(
-  memo_caches: Rc<RefCell<MemoCache<RespoNode<ActionOp>>>>,
+  memo_caches: MemoCache<RespoNode<ActionOp>>,
   states: &StatesTree,
   tasks: &[Task],
 ) -> Result<RespoNode<ActionOp>, String> {

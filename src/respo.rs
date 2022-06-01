@@ -1,4 +1,5 @@
 mod alias;
+mod app_template;
 mod css;
 mod diff;
 mod patch;
@@ -16,6 +17,7 @@ use web_sys::console::{error_1, warn_1};
 use web_sys::{HtmlElement, Node};
 
 pub use alias::*;
+pub use app_template::RespoApp;
 pub use css::*;
 pub use primes::*;
 pub use states_tree::*;

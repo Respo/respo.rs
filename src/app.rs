@@ -6,15 +6,16 @@ mod panel;
 mod task;
 mod todolist;
 
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell, RefMut};
 use std::rc::Rc;
 use std::{panic, vec};
 
 use wasm_bindgen::prelude::*;
+use web_sys::Node;
 
-use crate::respo::{div, render_node, util::query_select_node, DispatchFn, RespoNode, StatesTree};
+use crate::respo::{div, util::query_select_node, StatesTree};
 use crate::ui::ui_global;
-use crate::{init_memo_cache, RespoStyle};
+use crate::{MemoCache, RespoApp, RespoNode, RespoStyle, StoreWithStates};
 
 use self::counter::comp_counter;
 pub use self::data_types::ActionOp;
@@ -22,55 +23,62 @@ use self::data_types::*;
 use self::panel::comp_panel;
 use self::todolist::comp_todolist;
 
+struct App {
+  mount_target: Node,
+}
+
+impl RespoApp for App {
+  type Model = Store;
+  type Action = ActionOp;
+
+  fn initial_model() -> Self::Model {
+    Store {
+      counted: 0,
+      states: StatesTree::default(),
+      tasks: vec![],
+    }
+  }
+
+  fn dispatch(store: &mut RefMut<Self::Model>, op: Self::Action) -> Result<(), String> {
+    store.update(op)
+  }
+
+  fn get_mount_target(&self) -> &web_sys::Node {
+    &self.mount_target
+  }
+
+  fn render_app(
+    store: Ref<Self::Model>,
+    memo_caches: Rc<RefCell<MemoCache<RespoNode<Self::Action>>>>,
+  ) -> Result<RespoNode<Self::Action>, String> {
+    let states = &store.states;
+
+    // util::log!("global store: {:?}", store);
+
+    Ok(
+      div()
+        .class(ui_global())
+        .add_style(RespoStyle::default().padding(12.0).to_owned())
+        .add_children([
+          comp_counter(&states.pick("counter"), store.counted)?,
+          comp_panel(&states.pick("panel"))?,
+          comp_todolist(memo_caches, &states.pick("todolist"), &store.tasks)?,
+        ])
+        .to_owned(),
+    )
+  }
+}
+
 /// a demo Respo node that mounts target element for dev/debug purposes
 #[wasm_bindgen(js_name = loadDemoApp)]
 pub fn load_demo_app(query: &str) -> JsValue {
   panic::set_hook(Box::new(console_error_panic_hook::hook));
 
-  let mount_target = query_select_node(query).expect("found mount target");
-
-  // need to push store inside function to keep all in one thread
-  let global_store = Rc::new(RefCell::new(Store {
-    counted: 0,
-    states: StatesTree::default(),
-    tasks: vec![],
-  }));
-
-  let memo_caches = init_memo_cache();
-
-  let store_to_action = global_store.clone();
-  let dispatch_action = move |op: ActionOp| -> Result<(), String> {
-    // util::log!("action {:?} store, {:?}", op, store_to_action.borrow());
-    let mut store = store_to_action.borrow_mut();
-    apply_action(&mut store, op)?;
-
-    // util::log!("store after action {:?}", store);
-    Ok(())
+  let app = App {
+    mount_target: query_select_node(query).expect("mount target"),
   };
 
-  render_node(
-    mount_target,
-    Box::new(move || -> Result<RespoNode<ActionOp>, String> {
-      let store = global_store.borrow();
-      let states = store.states.clone();
-
-      // util::log!("global store: {:?}", store);
-
-      Ok(
-        div()
-          .class(ui_global())
-          .add_style(RespoStyle::default().padding(12.0).to_owned())
-          .add_children([
-            comp_counter(&states.pick("counter"), store.counted)?,
-            comp_panel(&states.pick("panel"))?,
-            comp_todolist(memo_caches.to_owned(), &states.pick("todolist"), &store.tasks)?,
-          ])
-          .to_owned(),
-      )
-    }),
-    DispatchFn::new(dispatch_action),
-  )
-  .expect("rendering node");
+  app.render_loop().expect("app render");
 
   JsValue::NULL
 }

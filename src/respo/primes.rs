@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use web_sys::{InputEvent, KeyboardEvent, MouseEvent, Node};
 
-use crate::MaybeState;
+use crate::{MaybeState, StatesTree};
 
 use super::css::RespoStyle;
 
@@ -576,6 +576,7 @@ where
 pub trait ActionWithState {
   /// to provide syntax sugar to dispatch.run_state
   fn wrap_state_change(cursor: &[String], a: MaybeState) -> Self;
+  // fn update_store(&self, store: &mut S) -> Result<&S, String>;
 }
 
 impl<T> DispatchFn<T>
@@ -649,4 +650,10 @@ impl EffectArg {
   {
     serde_json::from_value(self.0.clone()).map_err(|e| e.to_string())
   }
+}
+
+pub trait StoreWithStates {
+  type Action: Debug + Clone + ActionWithState;
+  fn get_states(&self) -> StatesTree;
+  fn update(&mut self, op: Self::Action) -> Result<(), String>;
 }

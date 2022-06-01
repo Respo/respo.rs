@@ -1,12 +1,68 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{respo::StatesTree, util, ActionWithState, MaybeState};
+use crate::{respo::StatesTree, util, ActionWithState, MaybeState, StoreWithStates};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Store {
   pub counted: i32,
   pub tasks: Vec<Task>,
   pub states: StatesTree,
+}
+
+impl StoreWithStates for Store {
+  type Action = ActionOp;
+
+  fn get_states(&self) -> StatesTree {
+    self.states.to_owned()
+  }
+  fn update(&mut self, op: Self::Action) -> Result<(), String> {
+    match op {
+      ActionOp::Increment => {
+        self.counted += 1;
+      }
+      ActionOp::Decrement => {
+        self.counted -= 1;
+      }
+      ActionOp::StatesChange(path, new_state) => {
+        self.states.set_in_mut(&path, new_state);
+      }
+      ActionOp::AddTask(id, content) => self.tasks.push(Task {
+        id,
+        content,
+        time: 0.0,
+        done: false,
+      }),
+      ActionOp::RemoveTask(id) => {
+        self.tasks.retain(|task| task.id != id);
+      }
+      ActionOp::UpdateTask(id, content) => {
+        let mut found = false;
+        for task in &mut self.tasks {
+          if task.id == id {
+            task.content = content.to_owned();
+            found = true;
+          }
+        }
+        if !found {
+          return Err(format!("task {} not found", id));
+        }
+      }
+      ActionOp::ToggleTask(id) => {
+        let mut found = false;
+        for task in &mut self.tasks {
+          if task.id == id {
+            util::log!("change task {:?}", task);
+            task.done = !task.done;
+            found = true;
+          }
+        }
+        if !found {
+          return Err(format!("task {} not found", id));
+        }
+      }
+    }
+    Ok(())
+  }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -32,53 +88,4 @@ impl ActionWithState for ActionOp {
   fn wrap_state_change(cursor: &[String], a: MaybeState) -> Self {
     Self::StatesChange(cursor.to_vec(), a)
   }
-}
-
-pub fn apply_action(store: &mut Store, op: ActionOp) -> Result<(), String> {
-  match op {
-    ActionOp::Increment => {
-      store.counted += 1;
-    }
-    ActionOp::Decrement => {
-      store.counted -= 1;
-    }
-    ActionOp::StatesChange(path, new_state) => {
-      store.states.set_in_mut(&path, new_state);
-    }
-    ActionOp::AddTask(id, content) => store.tasks.push(Task {
-      id,
-      content,
-      time: 0.0,
-      done: false,
-    }),
-    ActionOp::RemoveTask(id) => {
-      store.tasks.retain(|task| task.id != id);
-    }
-    ActionOp::UpdateTask(id, content) => {
-      let mut found = false;
-      for task in &mut store.tasks {
-        if task.id == id {
-          task.content = content.to_owned();
-          found = true;
-        }
-      }
-      if !found {
-        return Err(format!("task {} not found", id));
-      }
-    }
-    ActionOp::ToggleTask(id) => {
-      let mut found = false;
-      for task in &mut store.tasks {
-        if task.id == id {
-          util::log!("change task {:?}", task);
-          task.done = !task.done;
-          found = true;
-        }
-      }
-      if !found {
-        return Err(format!("task {} not found", id));
-      }
-    }
-  }
-  Ok(())
 }

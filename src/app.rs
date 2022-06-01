@@ -24,33 +24,30 @@ use self::panel::comp_panel;
 use self::todolist::comp_todolist;
 
 struct App {
+  store: Rc<RefCell<Store>>,
   mount_target: Node,
+  memo_caches: MemoCache<RespoNode<ActionOp>>,
 }
 
 impl RespoApp for App {
   type Model = Store;
   type Action = ActionOp;
 
-  fn initial_model() -> Self::Model {
-    Store {
-      counted: 0,
-      states: StatesTree::default(),
-      tasks: vec![],
-    }
+  fn get_store(&self) -> Rc<RefCell<Self::Model>> {
+    self.store.clone()
+  }
+  fn get_mount_target(&self) -> &web_sys::Node {
+    &self.mount_target
+  }
+  fn get_memo_caches(&self) -> MemoCache<RespoNode<Self::Action>> {
+    self.memo_caches.to_owned()
   }
 
   fn dispatch(store: &mut RefMut<Self::Model>, op: Self::Action) -> Result<(), String> {
     store.update(op)
   }
 
-  fn get_mount_target(&self) -> &web_sys::Node {
-    &self.mount_target
-  }
-
-  fn render_app(
-    store: Ref<Self::Model>,
-    memo_caches: Rc<RefCell<MemoCache<RespoNode<Self::Action>>>>,
-  ) -> Result<RespoNode<Self::Action>, String> {
+  fn render_app(store: Ref<Self::Model>, memo_caches: MemoCache<RespoNode<Self::Action>>) -> Result<RespoNode<Self::Action>, String> {
     let states = &store.states;
 
     // util::log!("global store: {:?}", store);
@@ -76,6 +73,12 @@ pub fn load_demo_app(query: &str) -> JsValue {
 
   let app = App {
     mount_target: query_select_node(query).expect("mount target"),
+    store: Rc::new(RefCell::new(Store {
+      counted: 0,
+      states: StatesTree::default(),
+      tasks: vec![],
+    })),
+    memo_caches: MemoCache::default(),
   };
 
   app.render_loop().expect("app render");

@@ -6,29 +6,25 @@ use std::{
 
 use web_sys::Node;
 
-use crate::{init_memo_cache, render_node, ActionWithState, DispatchFn, MemoCache, RespoNode, StoreWithStates};
+use crate::{render_node, ActionWithState, DispatchFn, MemoCache, RespoNode, StoreWithStates};
 
 pub trait RespoApp {
   type Model: StoreWithStates + 'static;
   type Action: Debug + Clone + ActionWithState + 'static;
-  fn initial_model() -> Self::Model;
+
   /// simulating pure function updates to the model, but actually it's mutations
   fn dispatch(store: &mut RefMut<Self::Model>, action: Self::Action) -> Result<(), String>;
 
   fn get_mount_target(&self) -> &Node;
+  fn get_store(&self) -> Rc<RefCell<Self::Model>>;
+  fn get_memo_caches(&self) -> MemoCache<RespoNode<Self::Action>>;
 
-  fn render_app(
-    store: Ref<Self::Model>,
-    memo_caches: Rc<RefCell<MemoCache<RespoNode<Self::Action>>>>,
-  ) -> Result<RespoNode<Self::Action>, String>;
+  fn render_app(store: Ref<Self::Model>, memo_caches: MemoCache<RespoNode<Self::Action>>) -> Result<RespoNode<Self::Action>, String>;
   /// raq loop
   fn render_loop(&self) -> Result<(), String> {
     let mount_target = self.get_mount_target();
-
-    // need to push store inside function to keep all in one thread
-    let global_store = Rc::new(RefCell::new(Self::initial_model()));
-
-    let memo_caches = init_memo_cache();
+    let global_store = self.get_store();
+    let memo_caches = self.get_memo_caches();
 
     let store_to_action = global_store.clone();
     let dispatch_action = move |op: Self::Action| -> Result<(), String> {
@@ -52,9 +48,5 @@ pub trait RespoApp {
     .expect("rendering node");
 
     Ok(())
-  }
-  /// init cache for memoization
-  fn init_memo_cache(&self) -> Rc<RefCell<MemoCache<RespoNode<Self::Action>>>> {
-    init_memo_cache::<RespoNode<Self::Action>>()
   }
 }

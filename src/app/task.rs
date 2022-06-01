@@ -1,4 +1,4 @@
-use std::{cell::RefCell, fmt::Debug, rc::Rc};
+use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
 
@@ -19,7 +19,7 @@ struct TaskState {
 }
 
 pub fn comp_task(
-  _memo_caches: Rc<RefCell<MemoCache<RespoNode<ActionOp>>>>,
+  _memo_caches: MemoCache<RespoNode<ActionOp>>,
   states: &StatesTree,
   task: &Task,
 ) -> Result<RespoNode<ActionOp>, String> {

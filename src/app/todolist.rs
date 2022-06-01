@@ -8,7 +8,7 @@ use crate::{
 };
 
 use super::{
-  data_types::{ActionOp, Task},
+  store::{ActionOp, Task},
   task::comp_task,
 };
 

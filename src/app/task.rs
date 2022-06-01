@@ -11,7 +11,7 @@ use crate::{
   CssSize, DispatchFn, MemoCache, RespoEvent,
 };
 
-use super::data_types::*;
+use super::store::*;
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 struct TaskState {

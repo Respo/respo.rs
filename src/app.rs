@@ -1,8 +1,8 @@
 extern crate console_error_panic_hook;
 
 mod counter;
-mod data_types;
 mod panel;
+mod store;
 mod task;
 mod todolist;
 
@@ -15,12 +15,12 @@ use web_sys::Node;
 
 use crate::respo::{div, util::query_select_node, StatesTree};
 use crate::ui::ui_global;
-use crate::{MemoCache, RespoApp, RespoNode, RespoStyle, StoreWithStates};
+use crate::{MemoCache, RespoApp, RespoNode, RespoStore, RespoStyle};
 
 use self::counter::comp_counter;
-pub use self::data_types::ActionOp;
-use self::data_types::*;
 use self::panel::comp_panel;
+pub use self::store::ActionOp;
+use self::store::*;
 use self::todolist::comp_todolist;
 
 struct App {
@@ -47,9 +47,8 @@ impl RespoApp for App {
     store.update(op)
   }
 
-  fn render_app(store: Ref<Self::Model>, memo_caches: MemoCache<RespoNode<Self::Action>>) -> Result<RespoNode<Self::Action>, String> {
+  fn view(store: Ref<Self::Model>, memo_caches: MemoCache<RespoNode<Self::Action>>) -> Result<RespoNode<Self::Action>, String> {
     let states = &store.states;
-
     // util::log!("global store: {:?}", store);
 
     Ok(

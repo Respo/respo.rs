@@ -8,7 +8,7 @@ use crate::{
   DispatchFn,
 };
 
-use super::data_types::ActionOp;
+use super::store::ActionOp;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 struct MainState {

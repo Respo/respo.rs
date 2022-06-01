@@ -6,21 +6,28 @@ use std::{
 
 use web_sys::Node;
 
-use crate::{render_node, ActionWithState, DispatchFn, MemoCache, RespoNode, StoreWithStates};
+use crate::{render_node, DispatchFn, MemoCache, RespoAction, RespoNode, RespoStore};
 
+/// A template for a Respo app
 pub trait RespoApp {
-  type Model: StoreWithStates + 'static;
-  type Action: Debug + Clone + ActionWithState + 'static;
+  /// a type of the store, with a place for states tree
+  type Model: RespoStore + 'static;
+  /// actions should include one for updating states tree
+  type Action: Debug + Clone + RespoAction + 'static;
 
   /// simulating pure function updates to the model, but actually it's mutations
   fn dispatch(store: &mut RefMut<Self::Model>, action: Self::Action) -> Result<(), String>;
 
+  /// bridge to mount target
   fn get_mount_target(&self) -> &Node;
+  /// bridge to store
   fn get_store(&self) -> Rc<RefCell<Self::Model>>;
+  /// bridge to memo caches
   fn get_memo_caches(&self) -> MemoCache<RespoNode<Self::Action>>;
 
-  fn render_app(store: Ref<Self::Model>, memo_caches: MemoCache<RespoNode<Self::Action>>) -> Result<RespoNode<Self::Action>, String>;
-  /// raq loop
+  /// DSL for building a view
+  fn view(store: Ref<Self::Model>, memo_caches: MemoCache<RespoNode<Self::Action>>) -> Result<RespoNode<Self::Action>, String>;
+  /// start a requestAnimationFrame loop for rendering updated store
   fn render_loop(&self) -> Result<(), String> {
     let mount_target = self.get_mount_target();
     let global_store = self.get_store();
@@ -41,7 +48,7 @@ pub trait RespoApp {
       Box::new(move || -> Result<RespoNode<Self::Action>, String> {
         // util::log!("global store: {:?}", store);
 
-        Self::render_app(global_store.borrow(), memo_caches.clone())
+        Self::view(global_store.borrow(), memo_caches.clone())
       }),
       DispatchFn::new(dispatch_action),
     )

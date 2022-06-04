@@ -84,7 +84,7 @@ macro_rules! log {
   }};
 }
 
-pub(crate) use log;
+pub use log;
 
 pub fn cast_from_json<T>(data: &Value) -> T
 where

@@ -772,7 +772,8 @@ pub fn css_name_from_path(p: &str) -> String {
   if let Some(x) = s.strip_suffix(".rs") {
     s = x.to_owned();
   }
-  s = s.replace(&"/", "_");
+  s = s.replace('/', "_");
+  s = s.replace('.', "_");
   s
 }
 
@@ -792,7 +793,8 @@ pub fn css_name_from_path(p: &str) -> String {
 macro_rules! static_style_seq {
   ($a:ident, $b:expr) => {
     pub fn $a() -> String {
-      let name = $crate::css_name_from_path(std::file!());
+      // let name = $crate::css_name_from_path(std::file!());
+      let name = $crate::css_name_from_path(std::module_path!());
       $crate::declare_static_style(format!("{}__{}", name, stringify!($a)), $b)
     }
   };

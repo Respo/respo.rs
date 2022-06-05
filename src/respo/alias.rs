@@ -13,7 +13,8 @@ use super::primes::RespoNode;
 /// ```
 #[macro_export]
 macro_rules! declare_tag {
-  ( $name:ident ) => {
+  ( $name:ident, $doc: expr) => {
+    #[doc=$doc]
     #[allow(dead_code)]
     pub fn $name<T>() -> RespoNode<T>
     where
@@ -24,25 +25,26 @@ macro_rules! declare_tag {
   };
 }
 
-declare_tag!(div);
-declare_tag!(header);
-declare_tag!(section);
-declare_tag!(footer);
-declare_tag!(span);
-declare_tag!(input);
-declare_tag!(link);
-declare_tag!(button);
-declare_tag!(pre);
-declare_tag!(img);
-declare_tag!(video);
-declare_tag!(code);
-declare_tag!(a);
-declare_tag!(h1);
-declare_tag!(h2);
-declare_tag!(h3);
-declare_tag!(h4);
-declare_tag!(blockquote);
+declare_tag!(div, "`<div/>`");
+declare_tag!(header, "`<header/>`");
+declare_tag!(section, "`<section/>`");
+declare_tag!(footer, "`<footer/>`");
+declare_tag!(span, "`<span/>`");
+declare_tag!(input, "`<input/>`");
+declare_tag!(link, "`<link/>`");
+declare_tag!(button, "`<button/>`");
+declare_tag!(pre, "`<pre/>`");
+declare_tag!(img, "`<img/>`");
+declare_tag!(video, "`<video/>`");
+declare_tag!(code, "`<code/>`");
+declare_tag!(a, "`<a/>`");
+declare_tag!(h1, "`<h1/>`");
+declare_tag!(h2, "`<h2/>`");
+declare_tag!(h3, "`<h3/>`");
+declare_tag!(h4, "`<h4/>`");
+declare_tag!(blockquote, "`<blockquote/>`");
 
+/// special function to return `<div/>` with width/height that can be used as a space
 pub fn space<T>(w: Option<i32>, h: Option<i32>) -> RespoNode<T>
 where
   T: Clone + Debug,

@@ -63,7 +63,7 @@ where
   let prev_tree = Rc::new(RefCell::new(tree0.clone()));
 
   let to_prev_tree = prev_tree.clone();
-  let handle_event = EventHandlerFn::new(move |mark: RespoEventMark| -> Result<(), String> {
+  let handle_event = RespoEventMarkFn::new(move |mark: RespoEventMark| -> Result<(), String> {
     match request_for_target_handler(&to_prev_tree.borrow(), &mark.name, &mark.coord) {
       Ok(handler) => match handler.run(mark.event_info, dispatch_action.clone()) {
         Ok(()) => {
@@ -154,7 +154,7 @@ where
   }
 }
 
-fn request_for_target_handler<T>(tree: &RespoNode<T>, event_name: &str, coord: &[RespoCoord]) -> Result<RespoEventHandler<T>, String>
+fn request_for_target_handler<T>(tree: &RespoNode<T>, event_name: &str, coord: &[RespoCoord]) -> Result<RespoListenerFn<T>, String>
 where
   T: Debug + Clone,
 {
@@ -171,7 +171,7 @@ where
 }
 
 /// creates a DOM tree from virtual DOM with proxied event handler attached
-pub fn build_dom_tree<T>(tree: &RespoNode<T>, coord: &[RespoCoord], handle_event: EventHandlerFn) -> Result<Node, JsValue>
+pub fn build_dom_tree<T>(tree: &RespoNode<T>, coord: &[RespoCoord], handle_event: RespoEventMarkFn) -> Result<Node, JsValue>
 where
   T: Debug + Clone,
 {

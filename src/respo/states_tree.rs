@@ -4,6 +4,9 @@ use std::fmt::Debug;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
 
+/// Respo maintains states in a tree structure, where the keys are strings,
+/// each child component "picks" a key to attach its own state to the tree,
+/// and it dispatches events to global store to update the state.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct StatesTree {
   /// local data
@@ -60,7 +63,7 @@ impl StatesTree {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
-/// local state in component could be None according to the tree structure
+/// local state in component could be `None` according to the tree structure
 pub struct MaybeState(Option<Value>);
 
 impl MaybeState {

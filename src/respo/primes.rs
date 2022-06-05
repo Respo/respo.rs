@@ -26,7 +26,7 @@ where
     /// tagName
     name: String,
     attrs: HashMap<String, String>,
-    event: HashMap<String, RespoEventHandler<T>>,
+    event: HashMap<String, RespoListenerFn<T>>,
     /// inlines styles, partially typed.
     /// there's also a macro called `static_styles` for inserting CSS rules
     style: RespoStyle,
@@ -70,6 +70,7 @@ where
   }
 }
 
+/// a key for referencing a child node, use a value that can be converted to string
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub struct RespoIndexKey(String);
 
@@ -167,7 +168,7 @@ where
         node.on_click(handler);
       }
       RespoNode::Element { ref mut event, .. } => {
-        event.insert("click".into(), RespoEventHandler::new(handler));
+        event.insert("click".into(), RespoListenerFn::new(handler));
       }
       RespoNode::Referenced(_) => {
         unreachable!("should not be called on a referenced node");
@@ -184,7 +185,7 @@ where
         node.on_input(handler);
       }
       RespoNode::Element { ref mut event, .. } => {
-        event.insert("input".into(), RespoEventHandler::new(handler));
+        event.insert("input".into(), RespoListenerFn::new(handler));
       }
       RespoNode::Referenced(_) => {
         unreachable!("should not be called on a referenced node");
@@ -194,7 +195,7 @@ where
   }
   pub fn add_event<U, V>(&mut self, more: U) -> &mut Self
   where
-    U: IntoIterator<Item = (V, RespoEventHandler<T>)>,
+    U: IntoIterator<Item = (V, RespoListenerFn<T>)>,
     V: Into<String> + ToOwned,
   {
     match self {
@@ -310,12 +311,13 @@ where
 
 pub(crate) type StrDict = HashMap<String, String>;
 
+/// (internal) struct to store event handler function on the tree
 #[derive(Clone)]
-pub struct RespoEventHandler<T>(Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>)
+pub struct RespoListenerFn<T>(Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>)
 where
   T: Debug + Clone;
 
-impl<T> PartialEq for RespoEventHandler<T>
+impl<T> PartialEq for RespoListenerFn<T>
 where
   T: Debug + Clone,
 {
@@ -325,9 +327,9 @@ where
   }
 }
 
-impl<T> Eq for RespoEventHandler<T> where T: Debug + Clone {}
+impl<T> Eq for RespoListenerFn<T> where T: Debug + Clone {}
 
-impl<T> Debug for RespoEventHandler<T>
+impl<T> Debug for RespoListenerFn<T>
 where
   T: Debug + Clone,
 {
@@ -336,7 +338,7 @@ where
   }
 }
 
-impl<T> RespoEventHandler<T>
+impl<T> RespoListenerFn<T>
 where
   T: Debug + Clone,
 {
@@ -399,11 +401,13 @@ pub enum RespoEvent {
 /// effects that attached to components
 #[derive(Clone)]
 pub struct RespoEffect {
-  pub args: Vec<EffectArg>,
+  /// arguments passed to this effect.
+  /// the events `WillUpdate` and `Updated` are triggered when these arguments are changed
+  pub args: Vec<RespoEffectArg>,
   handler: Rc<RespoEffectHandler>,
 }
 
-type RespoEffectHandler = dyn Fn(Vec<EffectArg>, RespoEffectType, &Node) -> Result<(), String>;
+type RespoEffectHandler = dyn Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String>;
 
 impl PartialEq for RespoEffect {
   /// closure are not compared, changes happen in and passed via args
@@ -420,13 +424,13 @@ impl RespoEffect {
   }
   pub fn new<U, V>(args: Vec<&V>, handler: U) -> Self
   where
-    U: Fn(Vec<EffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
+    U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
     V: Serialize,
   {
     Self {
       args: args
         .iter()
-        .map(|v| EffectArg::new(serde_json::to_value(v).expect("to json")))
+        .map(|v| RespoEffectArg::new(serde_json::to_value(v).expect("to json")))
         .collect(),
       handler: Rc::new(handler),
     }
@@ -435,7 +439,7 @@ impl RespoEffect {
   /// no need to have args, only handler
   pub fn new_insular<U>(handler: U) -> Self
   where
-    U: Fn(Vec<EffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
+    U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
   {
     Self {
       args: vec![],
@@ -609,16 +613,17 @@ where
   }
 }
 
+/// (internal) function to handle event marks at first phase of event handling
 #[derive(Clone)]
-pub struct EventHandlerFn(Rc<dyn Fn(RespoEventMark) -> Result<(), String>>);
+pub struct RespoEventMarkFn(Rc<dyn Fn(RespoEventMark) -> Result<(), String>>);
 
-impl Debug for EventHandlerFn {
+impl Debug for RespoEventMarkFn {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.write_str("[EventHandlerFn]")
+    f.write_str("[EventMarkFn ...]")
   }
 }
 
-impl EventHandlerFn {
+impl RespoEventMarkFn {
   pub fn run(&self, e: RespoEventMark) -> Result<(), String> {
     (self.0)(e)
   }
@@ -630,17 +635,17 @@ impl EventHandlerFn {
   }
 }
 
-impl From<Rc<dyn Fn(RespoEventMark) -> Result<(), String>>> for EventHandlerFn {
+impl From<Rc<dyn Fn(RespoEventMark) -> Result<(), String>>> for RespoEventMarkFn {
   fn from(f: Rc<dyn Fn(RespoEventMark) -> Result<(), String>>) -> Self {
     Self(f)
   }
 }
 
-// abstraction on efffect argument
+/// (internal) abstraction on effect argument
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct EffectArg(Value);
+pub struct RespoEffectArg(Value);
 
-impl EffectArg {
+impl RespoEffectArg {
   pub fn new(v: Value) -> Self {
     Self(v)
   }

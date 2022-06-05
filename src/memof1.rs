@@ -2,15 +2,10 @@ use std::{cell::RefCell, collections::HashMap, fmt::Debug, rc::Rc};
 
 use serde_json::Value;
 
+/// dictionary of memoized functions
 pub type MemoCache<T> = Rc<RefCell<HashMap<usize, HashMap<String, (Vec<Value>, T)>>>>;
 
-pub fn init_memo_cache<T>() -> MemoCache<T>
-where
-  T: Debug + Clone,
-{
-  Rc::new(RefCell::new(HashMap::new()))
-}
-
+/// internal function for handling `memo1_call_by`
 pub fn internal_memof1_call_by<F, T>(caches: MemoCache<T>, address: usize, key: String, args: Vec<Value>, f: F) -> Result<T, String>
 where
   T: Debug + Clone,

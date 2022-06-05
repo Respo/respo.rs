@@ -1,7 +1,7 @@
 //! A tiny framework around a **virtual DOM** library, compiles to WebAssembly, runs in the browser, declarative UI for building interactive web apps.
 //!
 //! Original design was [Respo.cljs](http://respo-mvc.org/), which is heavily influenced by React.js and ClojureScript.
-//! And this module is still "experimental" since lack of hot reloading in WebAssembly.
+//! And this module is still "experimental" since WebAssembly lacks of hot reloading.
 //!
 //! It features:
 //!
@@ -13,12 +13,12 @@
 //! - basic component effects of `Mounted, WillUpdate, Updated, WillUnmount`
 //! - macros to memoize component functions(although look clumsy)
 //!
-//! Meanwhile it does not include things like:
+//! Meanwhile it does not include features like:
 //!
 //! - ❌ macros for JSX syntax. Respo prefer types over tags
 //! - ❌ updating component states in lifecycle. Respo enforces "unidirectional data flow"
-//! - ❌ React-like hooks. Respo uses functions without tricky side-effects
-//! - ❌ Hot reloading. It does not work in WebAssembly so far
+//! - ❌ React-like hooks. Respo uses plain functions without tricky internal states
+//! - ❌ Hot reloading. Not working in WebAssembly so far
 
 mod app;
 mod memof1;

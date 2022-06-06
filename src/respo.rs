@@ -203,7 +203,9 @@ where
           element.set_attribute(key, value)?;
         }
       }
-      element.set_attribute("style", &style.to_string())?;
+      if !style.is_empty() {
+        element.set_attribute("style", &style.to_string())?;
+      }
       for (k, child) in children {
         let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Key(k.to_owned()));

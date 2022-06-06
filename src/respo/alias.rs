@@ -43,6 +43,8 @@ declare_tag!(h2, "`<h2/>`");
 declare_tag!(h3, "`<h3/>`");
 declare_tag!(h4, "`<h4/>`");
 declare_tag!(blockquote, "`<blockquote/>`");
+declare_tag!(ul, "`<ul/>`");
+declare_tag!(li, "`<li/>`");
 
 /// special function to return `<div/>` with width/height that can be used as a space
 pub fn space<T>(w: Option<i32>, h: Option<i32>) -> RespoNode<T>

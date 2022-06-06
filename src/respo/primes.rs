@@ -374,6 +374,16 @@ pub struct RespoEventMark {
   pub event_info: RespoEvent,
 }
 
+impl RespoEventMark {
+  pub fn new(name: &str, coord: &[RespoCoord], event: RespoEvent) -> Self {
+    Self {
+      name: name.to_owned(),
+      coord: coord.to_vec(),
+      event_info: event,
+    }
+  }
+}
+
 /// event wraps on top of DOM events
 #[derive(Debug, Clone)]
 pub enum RespoEvent {

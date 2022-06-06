@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use wasm_bindgen::prelude::Closure;
-use web_sys::{Element, HtmlElement, HtmlInputElement, InputEvent, MouseEvent, Node};
+use web_sys::{Element, HtmlElement, HtmlInputElement, InputEvent, KeyboardEvent, MouseEvent, Node};
 
 use wasm_bindgen::JsCast;
 use web_sys::console::warn_1;
@@ -104,7 +104,7 @@ where
         parent
           .dyn_ref::<Node>()
           .expect("to node")
-          .insert_before(&target, Some(&new_element))
+          .insert_before(&new_element, Some(&target))
           .expect("element inserted");
         target.dyn_ref::<Element>().expect("get node").remove();
       }
@@ -231,16 +231,13 @@ pub fn attach_event(element: &Element, key: &str, coord: &[RespoCoord], handle_e
   match key {
     "click" => {
       let handler = Closure::wrap(Box::new(move |e: MouseEvent| {
+        let wrap_event = RespoEvent::Click {
+          client_x: e.client_x() as f64,
+          client_y: e.client_y() as f64,
+          original_event: e,
+        };
         handle_event
-          .run(RespoEventMark {
-            name: "click".to_owned(),
-            coord: coord.to_owned(),
-            event_info: RespoEvent::Click {
-              client_x: e.client_x() as f64,
-              client_y: e.client_y() as f64,
-              original_event: e,
-            },
-          })
+          .run(RespoEventMark::new("click", &coord, wrap_event))
           .expect("handle click event");
       }) as Box<dyn FnMut(MouseEvent)>);
       element
@@ -249,28 +246,130 @@ pub fn attach_event(element: &Element, key: &str, coord: &[RespoCoord], handle_e
         .set_onclick(Some(handler.as_ref().unchecked_ref()));
       handler.forget();
     }
+
+    "dblclick" => {
+      let handler = Closure::wrap(Box::new(move |e: MouseEvent| {
+        let wrap_event = RespoEvent::Click {
+          client_x: e.client_x() as f64,
+          client_y: e.client_y() as f64,
+          original_event: e,
+        };
+        handle_event
+          .run(RespoEventMark::new("dblclick", &coord, wrap_event))
+          .expect("handle dblclick event");
+      }) as Box<dyn FnMut(MouseEvent)>);
+      element
+        .dyn_ref::<HtmlElement>()
+        .expect("convert to html element")
+        .set_ondblclick(Some(handler.as_ref().unchecked_ref()));
+      handler.forget();
+    }
     "input" => {
       let handler = Closure::wrap(Box::new(move |e: InputEvent| {
+        let wrap_event = RespoEvent::Input {
+          value: e
+            .target()
+            .expect("to reach event target")
+            .dyn_ref::<HtmlInputElement>()
+            .expect("to convert to html input element")
+            .value(),
+          original_event: e,
+        };
         handle_event
-          .run(RespoEventMark {
-            coord: coord.to_owned(),
-            name: "input".to_owned(),
-            event_info: RespoEvent::Input {
-              value: e
-                .target()
-                .expect("to reach event target")
-                .dyn_ref::<HtmlInputElement>()
-                .expect("to convert to html input element")
-                .value(),
-              original_event: e,
-            },
-          })
+          .run(RespoEventMark::new("input", &coord, wrap_event))
           .expect("handle input event");
       }) as Box<dyn FnMut(InputEvent)>);
       element
         .dyn_ref::<HtmlInputElement>()
         .expect("convert to html input element")
         .set_oninput(Some(handler.as_ref().unchecked_ref()));
+      handler.forget();
+    }
+    "change" => {
+      let handler = Closure::wrap(Box::new(move |e: InputEvent| {
+        let wrap_event = RespoEvent::Input {
+          value: e
+            .target()
+            .expect("to reach event target")
+            .dyn_ref::<HtmlInputElement>()
+            .expect("to convert to html input element")
+            .value(),
+          original_event: e,
+        };
+        handle_event
+          .run(RespoEventMark::new("change", &coord, wrap_event))
+          .expect("handle change event");
+      }) as Box<dyn FnMut(InputEvent)>);
+      element
+        .dyn_ref::<HtmlInputElement>()
+        .expect("convert to html input element")
+        .set_onchange(Some(handler.as_ref().unchecked_ref()));
+      handler.forget();
+    }
+    "keydown" => {
+      let handler = Closure::wrap(Box::new(move |e: KeyboardEvent| {
+        let wrap_event = RespoEvent::Keyboard {
+          key: e.key(),
+          key_code: e.key_code(),
+          shift_key: e.shift_key(),
+          ctrl_key: e.ctrl_key(),
+          alt_key: e.alt_key(),
+          meta_key: e.meta_key(),
+          repeat: e.repeat(),
+          original_event: e,
+        };
+        handle_event
+          .run(RespoEventMark::new("keydown", &coord, wrap_event))
+          .expect("handle keydown event");
+      }) as Box<dyn FnMut(KeyboardEvent)>);
+      element
+        .dyn_ref::<HtmlInputElement>()
+        .expect("convert to html input element")
+        .set_onkeydown(Some(handler.as_ref().unchecked_ref()));
+      handler.forget();
+    }
+    "keyup" => {
+      let handler = Closure::wrap(Box::new(move |e: KeyboardEvent| {
+        let wrap_event = RespoEvent::Keyboard {
+          key: e.key(),
+          key_code: e.key_code(),
+          shift_key: e.shift_key(),
+          ctrl_key: e.ctrl_key(),
+          alt_key: e.alt_key(),
+          meta_key: e.meta_key(),
+          repeat: e.repeat(),
+          original_event: e,
+        };
+        handle_event
+          .run(RespoEventMark::new("keyup", &coord, wrap_event))
+          .expect("handle keyup event");
+      }) as Box<dyn FnMut(KeyboardEvent)>);
+      element
+        .dyn_ref::<HtmlInputElement>()
+        .expect("convert to html input element")
+        .set_onkeyup(Some(handler.as_ref().unchecked_ref()));
+      handler.forget();
+    }
+    "keypress" => {
+      let handler = Closure::wrap(Box::new(move |e: KeyboardEvent| {
+        let wrap_event = RespoEvent::Keyboard {
+          key: e.key(),
+          key_code: e.key_code(),
+          shift_key: e.shift_key(),
+          ctrl_key: e.ctrl_key(),
+          alt_key: e.alt_key(),
+          meta_key: e.meta_key(),
+          repeat: e.repeat(),
+          original_event: e,
+        };
+        handle_event
+          .run(RespoEventMark::new("keypress", &coord, wrap_event))
+          .expect("handle keypress event");
+      }) as Box<dyn FnMut(KeyboardEvent)>);
+      element
+        .dyn_ref::<HtmlInputElement>()
+        .expect("convert to html input element")
+        .set_onkeypress(Some(handler.as_ref().unchecked_ref()));
       handler.forget();
     }
     _ => {

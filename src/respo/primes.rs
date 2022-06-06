@@ -8,7 +8,7 @@ use cirru_parser::{Cirru, CirruWriterOptions};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use web_sys::{InputEvent, KeyboardEvent, MouseEvent, Node};
+use web_sys::{FocusEvent, InputEvent, KeyboardEvent, MouseEvent, Node};
 
 use crate::{MaybeState, StatesTree};
 
@@ -134,6 +134,26 @@ where
       }
       RespoNode::Referenced(_) => {
         unreachable!("should not be called on a referenced node");
+      }
+    }
+    self
+  }
+  pub fn maybe_insert_attr<U, V>(&mut self, property: U, value: Option<V>) -> &mut Self
+  where
+    U: Into<String> + ToOwned,
+    V: Into<String> + ToOwned,
+  {
+    if let Some(v) = value {
+      match self {
+        RespoNode::Component(_, _, node) => {
+          node.insert_attr(property, v);
+        }
+        RespoNode::Element { ref mut attrs, .. } => {
+          attrs.insert(property.into(), v.into());
+        }
+        RespoNode::Referenced(_) => {
+          unreachable!("should not be called on a referenced node");
+        }
       }
     }
     self
@@ -406,6 +426,8 @@ pub enum RespoEvent {
     value: String,
     original_event: InputEvent,
   },
+  Focus(FocusEvent),
+  Blur(FocusEvent),
 }
 
 /// effects that attached to components

@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use wasm_bindgen::prelude::Closure;
-use web_sys::{Element, HtmlElement, HtmlInputElement, InputEvent, KeyboardEvent, MouseEvent, Node};
+use web_sys::{Element, FocusEvent, HtmlElement, HtmlInputElement, InputEvent, KeyboardEvent, MouseEvent, Node};
 
 use wasm_bindgen::JsCast;
 use web_sys::console::warn_1;
@@ -227,7 +227,7 @@ fn find_coord_dom_target(mount_target: &Node, coord: &[u32]) -> Result<Node, Str
 
 pub fn attach_event(element: &Element, key: &str, coord: &[RespoCoord], handle_event: RespoEventMarkFn) -> Result<(), String> {
   let coord = coord.to_owned();
-  // util::log!("attach event {}", key);
+  // crate::util::log!("attach event {}", key);
   match key {
     "click" => {
       let handler = Closure::wrap(Box::new(move |e: MouseEvent| {
@@ -308,6 +308,7 @@ pub fn attach_event(element: &Element, key: &str, coord: &[RespoCoord], handle_e
     }
     "keydown" => {
       let handler = Closure::wrap(Box::new(move |e: KeyboardEvent| {
+        // crate::util::log!("calling handler");
         let wrap_event = RespoEvent::Keyboard {
           key: e.key(),
           key_code: e.key_code(),
@@ -370,6 +371,30 @@ pub fn attach_event(element: &Element, key: &str, coord: &[RespoCoord], handle_e
         .dyn_ref::<HtmlInputElement>()
         .expect("convert to html input element")
         .set_onkeypress(Some(handler.as_ref().unchecked_ref()));
+      handler.forget();
+    }
+    "focus" => {
+      let handler = Closure::wrap(Box::new(move |e: FocusEvent| {
+        handle_event
+          .run(RespoEventMark::new("focus", &coord, RespoEvent::Focus(e)))
+          .expect("handle focus event");
+      }) as Box<dyn FnMut(FocusEvent)>);
+      element
+        .dyn_ref::<HtmlInputElement>()
+        .expect("convert to html input element")
+        .set_onfocus(Some(handler.as_ref().unchecked_ref()));
+      handler.forget();
+    }
+    "blur" => {
+      let handler = Closure::wrap(Box::new(move |e: FocusEvent| {
+        handle_event
+          .run(RespoEventMark::new("blur", &coord, RespoEvent::Focus(e)))
+          .expect("handle blur event");
+      }) as Box<dyn FnMut(FocusEvent)>);
+      element
+        .dyn_ref::<HtmlInputElement>()
+        .expect("convert to html input element")
+        .set_onblur(Some(handler.as_ref().unchecked_ref()));
       handler.forget();
     }
     _ => {

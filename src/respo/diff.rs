@@ -46,41 +46,42 @@ where
         }
       } else {
         collect_effects_inside_out_as(old_tree, coord, dom_path, RespoEffectType::BeforeUnmount, changes)?;
+        // crate::util::log!("compare elements: {:?} {:?}", new_child, old_child);
         changes.push(DomChange::ReplaceElement {
           coord: coord.to_owned(),
           dom_path: dom_path.to_owned(),
-          node: *old_child.to_owned(),
+          node: *new_child.to_owned(),
         });
         collect_effects_outside_in_as(new_tree, coord, dom_path, RespoEffectType::Mounted, changes)?;
       }
     }
-    (RespoNode::Component(..), b) => {
+    (a @ RespoNode::Component(..), _b) => {
       collect_effects_inside_out_as(old_tree, coord, dom_path, RespoEffectType::BeforeUnmount, changes)?;
       changes.push(DomChange::ReplaceElement {
         coord: coord.to_owned(),
         dom_path: dom_path.to_owned(),
-        node: b.to_owned(),
+        node: a.to_owned(),
       });
       collect_effects_outside_in_as(new_tree, coord, dom_path, RespoEffectType::Mounted, changes)?;
     }
-    (_, b @ RespoNode::Component(..)) => {
+    (a, RespoNode::Component(..)) => {
       collect_effects_inside_out_as(old_tree, coord, dom_path, RespoEffectType::BeforeUnmount, changes)?;
       changes.push(DomChange::ReplaceElement {
         coord: coord.to_owned(),
         dom_path: dom_path.to_owned(),
-        node: b.to_owned(),
+        node: a.to_owned(),
       });
       collect_effects_outside_in_as(new_tree, coord, dom_path, RespoEffectType::Mounted, changes)?;
     }
     (
-      RespoNode::Element {
+      a @ RespoNode::Element {
         name,
         attrs,
         style,
         event,
         children,
       },
-      b @ RespoNode::Element {
+      RespoNode::Element {
         name: old_name,
         attrs: old_attrs,
         style: old_style,
@@ -93,7 +94,7 @@ where
         changes.push(DomChange::ReplaceElement {
           coord: coord.to_owned(),
           dom_path: dom_path.to_owned(),
-          node: b.to_owned(),
+          node: a.to_owned(),
         });
         collect_effects_outside_in_as(new_tree, coord, dom_path, RespoEffectType::Mounted, changes)?;
       } else {
@@ -373,13 +374,15 @@ where
   T: Debug + Clone,
 {
   match tree {
-    RespoNode::Component(name, _, tree) => {
-      changes.push(DomChange::Effect {
-        coord: coord.to_owned(),
-        dom_path: dom_path.to_owned(),
-        effect_type,
-        skip_indexes: HashSet::new(),
-      });
+    RespoNode::Component(name, effects, tree) => {
+      if !effects.is_empty() {
+        changes.push(DomChange::Effect {
+          coord: coord.to_owned(),
+          dom_path: dom_path.to_owned(),
+          effect_type,
+          skip_indexes: HashSet::new(),
+        });
+      }
       let mut next_coord = coord.to_owned();
       next_coord.push(RespoCoord::Comp(name.to_owned()));
       collect_effects_outside_in_as(tree, &next_coord, dom_path, effect_type, changes)?;
@@ -412,16 +415,18 @@ where
   T: Debug + Clone,
 {
   match tree {
-    RespoNode::Component(name, _, tree) => {
+    RespoNode::Component(name, effects, tree) => {
       let mut next_coord = coord.to_owned();
       next_coord.push(RespoCoord::Comp(name.to_owned()));
       collect_effects_inside_out_as(tree, &next_coord, dom_path, effect_type, changes)?;
-      changes.push(DomChange::Effect {
-        coord: coord.to_owned(),
-        dom_path: dom_path.to_owned(),
-        effect_type,
-        skip_indexes: HashSet::new(),
-      });
+      if !effects.is_empty() {
+        changes.push(DomChange::Effect {
+          coord: coord.to_owned(),
+          dom_path: dom_path.to_owned(),
+          effect_type,
+          skip_indexes: HashSet::new(),
+        });
+      }
       Ok(())
     }
     RespoNode::Element { children, .. } => {
@@ -452,13 +457,15 @@ where
   T: Debug + Clone,
 {
   match tree {
-    RespoNode::Component(name, _, tree) => {
-      operations.push(ChildDomOp::NestedEffect {
-        nested_coord: coord.to_owned(),
-        nested_dom_path: dom_path.to_owned(),
-        effect_type,
-        skip_indexes: HashSet::new(),
-      });
+    RespoNode::Component(name, effects, tree) => {
+      if !effects.is_empty() {
+        operations.push(ChildDomOp::NestedEffect {
+          nested_coord: coord.to_owned(),
+          nested_dom_path: dom_path.to_owned(),
+          effect_type,
+          skip_indexes: HashSet::new(),
+        });
+      }
       let mut next_coord = coord.to_owned();
       next_coord.push(RespoCoord::Comp(name.to_owned()));
       nested_effects_outside_in_as(tree, &next_coord, dom_path, effect_type, operations)?;
@@ -491,16 +498,18 @@ where
   T: Debug + Clone,
 {
   match tree {
-    RespoNode::Component(name, _, tree) => {
+    RespoNode::Component(name, effects, tree) => {
       let mut next_coord = coord.to_owned();
       next_coord.push(RespoCoord::Comp(name.to_owned()));
       nested_effects_inside_out_as(tree, &next_coord, dom_path, effect_type, operations)?;
-      operations.push(ChildDomOp::NestedEffect {
-        nested_coord: coord.to_owned(),
-        nested_dom_path: dom_path.to_owned(),
-        effect_type,
-        skip_indexes: HashSet::new(),
-      });
+      if !effects.is_empty() {
+        operations.push(ChildDomOp::NestedEffect {
+          nested_coord: coord.to_owned(),
+          nested_dom_path: dom_path.to_owned(),
+          effect_type,
+          skip_indexes: HashSet::new(),
+        });
+      }
       Ok(())
     }
     RespoNode::Element { children, .. } => {

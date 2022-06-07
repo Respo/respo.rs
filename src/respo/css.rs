@@ -33,6 +33,14 @@ impl RespoStyle {
     }
     result
   }
+
+  pub fn len(&self) -> usize {
+    self.0.len()
+  }
+
+  pub fn is_empty(&self) -> bool {
+    self.0.is_empty()
+  }
 }
 
 impl Display for RespoStyle {
@@ -772,7 +780,9 @@ pub fn css_name_from_path(p: &str) -> String {
   if let Some(x) = s.strip_suffix(".rs") {
     s = x.to_owned();
   }
-  s = s.replace(&"/", "_");
+  s = s.replace(&"::", "_");
+  s = s.replace('/', "_");
+  s = s.replace('.', "_");
   s
 }
 
@@ -792,8 +802,9 @@ pub fn css_name_from_path(p: &str) -> String {
 macro_rules! static_style_seq {
   ($a:ident, $b:expr) => {
     pub fn $a() -> String {
-      let name = crate::respo::css_name_from_path(std::file!());
-      crate::respo::declare_static_style(format!("{}__{}", name, stringify!($a)), $b)
+      // let name = $crate::css_name_from_path(std::file!());
+      let name = $crate::css_name_from_path(std::module_path!());
+      $crate::declare_static_style(format!("{}__{}", name, stringify!($a)), $b)
     }
   };
 }
@@ -813,32 +824,32 @@ pub use static_style_seq;
 #[macro_export]
 macro_rules! static_styles {
   ($a:ident, $b:expr) => {
-    crate::respo::static_style_seq!($a, &[$b]);
+    $crate::static_style_seq!($a, &[$b]);
   };
   // to allow optional trailing comma
   ($a:ident, $b:expr,) => {
-    crate::respo::static_style_seq!($a, &[$b]);
+    $crate::static_style_seq!($a, &[$b]);
   };
   ($a:ident, $b:expr, $c:expr) => {
-    crate::respo::static_style_seq!($a, &[$b, $c]);
+    $crate::static_style_seq!($a, &[$b, $c]);
   };
   ($a:ident, $b:expr, $c:expr,) => {
-    crate::respo::static_style_seq!($a, &[$b, $c]);
+    $crate::static_style_seq!($a, &[$b, $c]);
   };
   ($a:ident, $b:expr, $c:expr, $d:expr) => {
-    crate::respo::static_style_seq!($a, &[$b, $c, $d]);
+    $crate::static_style_seq!($a, &[$b, $c, $d]);
   };
   ($a:ident, $b:expr, $c:expr, $d:expr,) => {
-    crate::respo::static_style_seq!($a, &[$b, $c, $d]);
+    $crate::static_style_seq!($a, &[$b, $c, $d]);
   };
   ($a:ident, $b:expr, $c:expr, $d:expr, $e:expr) => {
-    crate::respo::static_style_seq!($a, &[$b, $c, $d, $e]);
+    $crate::static_style_seq!($a, &[$b, $c, $d, $e]);
   };
   ($a:ident, $b:expr, $c:expr, $d:expr, $e:expr,) => {
-    crate::respo::static_style_seq!($a, &[$b, $c, $d, $e]);
+    $crate::static_style_seq!($a, &[$b, $c, $d, $e]);
   };
   ($a:ident, $b:expr, $c:expr, $d:expr, $e:expr, $f:expr) => {
-    crate::respo::static_style_seq!($a, &[$b, $c, $d, $e, $f]);
+    $crate::static_style_seq!($a, &[$b, $c, $d, $e, $f]);
   };
 }
 pub use static_styles;

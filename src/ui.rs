@@ -1,3 +1,16 @@
+//! Some pre-defined styles for layout fonts, and form elements.
+//! Highly coupled with styles from <http://ui.respo-mvc.org/> .
+//!
+//! - Layouts: flexbox rows and columns, also with centering
+//! - Elements: button, input, textarea, and link from Respo UI.
+//! - Fonts: fancy(Josefin Sans), normal(Hind), code(monospace from system).
+//!
+//! Since this is CSS rules, you can combine styles with:
+//!
+//! ```ignore
+//! format!("{} {} {}", ui_input(), your_shared(), your_own())
+//! ```
+
 use crate::respo::{CssBoxSizing, CssColor, CssDisplay, CssLineHeight, CssSize, CssTextAlign, CssVerticalAlign, RespoStyle, *};
 
 const DEFAULT_FONTS: &str = "Hind,Verdana,'Hiragino Sans GB','WenQuanYi Micro Hei','Microsoft Yahei',sans-serif";

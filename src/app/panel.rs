@@ -1,7 +1,6 @@
 use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use uuid::Uuid;
 use web_sys::console::log_1;
 
@@ -58,7 +57,7 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
         ])
         .to_owned(),
     )
-    .effect(&vec![] as &Vec<Value>, move |_, _dispatch, _el| {
+    .stable_effect(move |_, _dispatch, _el| {
       log_1(&format!("panel effect {:?}", cursor).into());
       Ok(())
     })

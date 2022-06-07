@@ -34,7 +34,7 @@ where
   for op in changes {
     // crate::util::log!("op: {:?}", op);
     let coord = op.get_coord();
-    let target = find_coord_dom_target(&mount_target.first_child().ok_or("to get first child")?, &op.get_dom_path())?;
+    let target = find_coord_dom_target(&mount_target.first_child().ok_or("mount position")?, &op.get_dom_path())?;
     match op {
       DomChange::ModifyAttrs { set, unset, .. } => {
         let el = target.dyn_ref::<Element>().expect("load as element");
@@ -128,12 +128,20 @@ where
               let mut next_coord = coord.to_owned();
               next_coord.push(RespoCoord::Key(k.to_owned()));
               let new_element = build_dom_tree(node, &next_coord, handler).expect("new element");
-              let base = target.dyn_ref::<Node>().expect("to node").first_child().expect("to first child");
-              target
-                .dyn_ref::<Node>()
-                .expect("to node")
-                .insert_before(&new_element, Some(&base))
-                .expect("element appended");
+              if target.child_nodes().length() == 0 {
+                target
+                  .dyn_ref::<Node>()
+                  .expect("to node")
+                  .append_child(&new_element)
+                  .expect("element appended");
+              } else {
+                let base = target.dyn_ref::<Node>().expect("to node").first_child().ok_or("to first child")?;
+                target
+                  .dyn_ref::<Node>()
+                  .expect("to node")
+                  .insert_before(&new_element, Some(&base))
+                  .expect("element appended");
+              }
             }
             ChildDomOp::RemoveAt(idx) => {
               let child = target

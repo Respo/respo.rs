@@ -59,9 +59,9 @@ pub fn comp_todolist(
 
   Ok(
     div()
-      .add_children([
+      .children([
         div()
-          .add_children([
+          .children([
             span()
               .inner_text(format!("tasks size: {} ... {}", tasks.len(), state.hide_done))
               .to_owned(),
@@ -82,7 +82,7 @@ pub fn comp_todolist(
               .to_owned(),
           ])
           .to_owned(),
-        div().add_children_indexed(children).to_owned(),
+        div().children_indexed(children).to_owned(),
       ])
       .to_owned(),
   )

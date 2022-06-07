@@ -1,13 +1,14 @@
 use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use uuid::Uuid;
 use web_sys::console::log_1;
 
 use crate::{
   app::store::ActionOp,
   button,
-  respo::{div, input, span, util, RespoEffect, RespoEvent, RespoNode, StatesTree},
+  respo::{div, input, span, util, RespoEvent, RespoNode, StatesTree},
   space,
   ui::{ui_button, ui_input},
   DispatchFn,
@@ -40,19 +41,15 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
     Ok(())
   };
 
-  Ok(RespoNode::Component(
-    "panel".to_owned(),
-    vec![RespoEffect::new_insular(move |_, _dispatch, _el| {
-      log_1(&format!("panel effect {:?}", cursor).into());
-      Ok(())
-    })],
-    Box::new(
+  Ok(
+    RespoNode::new_component(
+      "panel",
       div()
-        .add_children([
+        .children([
           input()
             .class(ui_input())
-            .insert_attr("placeholder", "some content...")
-            .insert_attr("value", state.content.to_owned())
+            .attribute("placeholder", "some content...")
+            .attribute("value", state.content.to_owned())
             .on_input(on_input)
             .to_owned(),
           space(Some(8), None),
@@ -60,6 +57,11 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
           span().inner_text(format!("got panel state: {:?}", state)).to_owned(),
         ])
         .to_owned(),
-    ),
-  ))
+    )
+    .effect(&vec![] as &Vec<Value>, move |_, _dispatch, _el| {
+      log_1(&format!("panel effect {:?}", cursor).into());
+      Ok(())
+    })
+    .to_owned(),
+  )
 }

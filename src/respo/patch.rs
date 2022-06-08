@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::fmt::Debug;
 
 use wasm_bindgen::prelude::Closure;
@@ -161,11 +162,17 @@ where
                 let mut next_coord = coord.to_owned();
                 next_coord.push(RespoCoord::Key(k.to_owned()));
                 let new_element = build_dom_tree(node, &next_coord, handler).expect("new element");
-                if idx == &children.length() {
-                  target.append_child(&new_element).expect("element appended");
-                } else {
-                  let child = children.item(*idx + 1).ok_or_else(|| format!("child not found at {}", &idx))?;
-                  target.insert_before(&new_element, Some(&child)).expect("element inserted");
+                match (idx + 1).cmp(&children.length()) {
+                  Ordering::Less => {
+                    let child = children.item(*idx + 1).ok_or_else(|| format!("child not found at {}", &idx))?;
+                    target.insert_before(&new_element, Some(&child)).expect("element inserted");
+                  }
+                  Ordering::Equal => {
+                    target.append_child(&new_element).expect("element appended");
+                  }
+                  Ordering::Greater => {
+                    return Err(format!("out of bounds: {} of {} at coord {:?}", idx, &children.length(), coord));
+                  }
                 }
               }
             }

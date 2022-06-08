@@ -55,6 +55,7 @@ pub fn render_node<T>(
   mount_target: Node,
   mut renderer: Box<dyn FnMut() -> Result<RespoNode<T>, String>>,
   dispatch_action: DispatchFn<T>,
+  interval: Option<i32>,
 ) -> Result<(), JsValue>
 where
   T: 'static + Debug + Clone,
@@ -95,33 +96,56 @@ where
   patch_tree(&tree0, &prev_tree.borrow(), &mount_target, &mount_changes, handler)?;
 
   let to_prev_tree = prev_tree.clone();
-  util::raf_loop_slow(Box::new(move || -> Result<(), String> {
-    // let to_prev_tree2 = to_prev_tree.clone();
-    if drain_rerender_status() {
-      let new_tree = renderer()?;
-      let mut changes: Vec<DomChange<T>> = vec![];
-      diff_tree(&new_tree, &to_prev_tree.borrow(), &Vec::new(), &Vec::new(), &mut changes)?;
+  match interval {
+    Some(v) => {
+      util::raf_loop_slow(
+        v,
+        Box::new(move || -> Result<(), String> {
+          // let to_prev_tree2 = to_prev_tree.clone();
+          if drain_rerender_status() {
+            let new_tree = renderer()?;
+            let mut changes: Vec<DomChange<T>> = vec![];
+            diff_tree(&new_tree, &to_prev_tree.borrow(), &Vec::new(), &Vec::new(), &mut changes)?;
 
-      // util::log!(
-      //   "prev tree: {}",
-      //   cirru_parser::format(
-      //     &[to_prev_tree2.borrow().to_owned().into()],
-      //     cirru_parser::CirruWriterOptions { use_inline: true }
-      //   )
-      //   .unwrap()
-      // );
-      // util::log!(
-      //   "changes: {}",
-      //   cirru_parser::format(&[changes_to_cirru(&changes)], cirru_parser::CirruWriterOptions { use_inline: true }).unwrap()
-      // );
+            // util::log!(
+            //   "prev tree: {}",
+            //   cirru_parser::format(
+            //     &[to_prev_tree2.borrow().to_owned().into()],
+            //     cirru_parser::CirruWriterOptions { use_inline: true }
+            //   )
+            //   .unwrap()
+            // );
+            // util::log!(
+            //   "changes: {}",
+            //   cirru_parser::format(&[changes_to_cirru(&changes)], cirru_parser::CirruWriterOptions { use_inline: true }).unwrap()
+            // );
 
-      let handler = handle_event.clone();
-      patch_tree(&new_tree, &prev_tree.borrow(), &mount_target, &changes, handler)?;
-      prev_tree.replace(new_tree);
+            let handler = handle_event.clone();
+            patch_tree(&new_tree, &prev_tree.borrow(), &mount_target, &changes, handler)?;
+            prev_tree.replace(new_tree);
+          }
+
+          Ok(())
+        }),
+      );
     }
+    None => {
+      util::raf_loop(Box::new(move || -> Result<(), String> {
+        // let to_prev_tree2 = to_prev_tree.clone();
+        if drain_rerender_status() {
+          let new_tree = renderer()?;
+          let mut changes: Vec<DomChange<T>> = vec![];
+          diff_tree(&new_tree, &to_prev_tree.borrow(), &Vec::new(), &Vec::new(), &mut changes)?;
 
-    Ok(())
-  }));
+          let handler = handle_event.clone();
+          patch_tree(&new_tree, &prev_tree.borrow(), &mount_target, &changes, handler)?;
+          prev_tree.replace(new_tree);
+        }
+
+        Ok(())
+      }));
+    }
+  }
 
   Ok(())
 }

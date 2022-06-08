@@ -360,6 +360,26 @@ where
   {
     self.attribute("class", name.into())
   }
+  /// attach an optional class name for adding styles
+  pub fn maybe_class<U>(&mut self, name: Option<U>) -> &mut Self
+  where
+    U: Into<String>,
+  {
+    match name {
+      Some(name) => self.attribute("class", name.into()),
+      None => self,
+    }
+  }
+  /// attach a class name, controlled by a boolean
+  pub fn toggle_class<U>(&mut self, name: U, on: bool) -> &mut Self
+  where
+    U: Into<String>,
+  {
+    if on {
+      self.attribute("class", name.into());
+    }
+    self
+  }
   /// attach a list of class names for adding styles
   pub fn class_list<U>(&mut self, names: &[U]) -> &mut Self
   where

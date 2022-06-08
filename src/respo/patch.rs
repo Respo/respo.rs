@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::fmt::Debug;
 
 use wasm_bindgen::prelude::Closure;
-use web_sys::{Element, FocusEvent, HtmlElement, HtmlInputElement, InputEvent, KeyboardEvent, MouseEvent, Node};
+use web_sys::{Element, FocusEvent, HtmlElement, HtmlInputElement, HtmlLabelElement, InputEvent, KeyboardEvent, MouseEvent, Node};
 
 use wasm_bindgen::JsCast;
 use web_sys::console::warn_1;
@@ -44,6 +44,8 @@ where
             el.dyn_ref::<HtmlElement>().ok_or("to html element")?.set_inner_text(v);
           } else if k == "innerHTML" {
             el.set_inner_html(v);
+          } else if k == "htmlFor" {
+            el.dyn_ref::<HtmlLabelElement>().ok_or("to label element")?.set_html_for(v);
           } else if k == "value" {
             let input_el = el.dyn_ref::<HtmlInputElement>().expect("to input");
             let prev_value = input_el.value();

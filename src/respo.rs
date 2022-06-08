@@ -14,7 +14,7 @@ use std::sync::RwLock;
 
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::console::{error_1, warn_1};
-use web_sys::{HtmlElement, Node};
+use web_sys::{HtmlElement, HtmlLabelElement, Node};
 
 pub use alias::*;
 pub use app_template::RespoApp;
@@ -235,6 +235,8 @@ where
           element.dyn_ref::<HtmlElement>().expect("into html element").set_inner_text(value);
         } else if key == "innerHTML" {
           element.set_inner_html(value);
+        } else if key == "htmlFor" {
+          element.dyn_ref::<HtmlLabelElement>().ok_or("to label element")?.set_html_for(value);
         } else {
           element.set_attribute(key, value)?;
         }

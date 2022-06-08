@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
   button, input,
-  respo::{div, span, CssColor, RespoEffect, RespoNode, RespoStyle, StatesTree},
+  respo::{div, span, CssColor, RespoNode, RespoStyle, StatesTree},
   space, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
   util::{self},
@@ -58,51 +58,46 @@ pub fn comp_task(
     Ok(())
   };
 
-  Ok(
-    RespoNode::Component(
-      "tasks".to_owned(),
-      vec![RespoEffect::new(vec![&task], move |args, effect_type, _el| -> Result<(), String> {
+  Ok(RespoNode::new_component(
+    "task",
+    div()
+      .class_list(&[ui_row_middle(), style_task_container()])
+      .children([
+        div()
+          .class(style_done_button())
+          .modify_style(|s| {
+            if task.done {
+              s.background_color(CssColor::Blue);
+            }
+          })
+          .on_click(on_toggle)
+          .to_owned(),
+        div().inner_text(task.content.to_owned()).to_owned(),
+        span()
+          .class_list(&[ui_center(), style_remove_button()])
+          .inner_text("✕")
+          .on_click(on_remove)
+          .to_owned(),
+        div()
+          .style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0).to_owned())
+          .to_owned(),
+        input()
+          .class(ui_input())
+          .attribute("value", state.draft)
+          .attribute("placeholder", "something to update...")
+          .on_input(on_input)
+          .to_owned(),
+        space(Some(8), None),
+        button().class(ui_button()).inner_text("Update").on_click(on_update).to_owned(),
+      ])
+      .effect(&[task], move |args, effect_type, _el| -> Result<(), String> {
         let t: Task = args[0].cast_into()?;
         util::log!("effect {:?} task: {:?}", effect_type, t);
         // TODO
         Ok(())
-      })],
-      Box::new(
-        div()
-          .class_list(&[ui_row_middle(), style_task_container()])
-          .add_children([
-            div()
-              .class(style_done_button())
-              .add_style(if task.done {
-                RespoStyle::default().background_color(CssColor::Blue).to_owned()
-              } else {
-                RespoStyle::default()
-              })
-              .on_click(on_toggle)
-              .to_owned(),
-            div().inner_text(task.content.to_owned()).to_owned(),
-            span()
-              .class_list(&[ui_center(), style_remove_button()])
-              .inner_text("✕")
-              .on_click(on_remove)
-              .to_owned(),
-            div()
-              .add_style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0).to_owned())
-              .to_owned(),
-            input()
-              .class(ui_input())
-              .insert_attr("value", state.draft)
-              .insert_attr("placeholder", "something to update...")
-              .on_input(on_input)
-              .to_owned(),
-            space(Some(8), None),
-            button().class(ui_button()).inner_text("Update").on_click(on_update).to_owned(),
-          ])
-          .to_owned(),
-      ),
-    )
-    .share_with_ref(),
-  )
+      })
+      .share_with_ref(),
+  ))
 }
 
 static_styles!(

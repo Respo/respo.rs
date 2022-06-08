@@ -44,27 +44,27 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> Result<RespoNode<Actio
 
   Ok(
     div()
-      .add_children([
+      .children([
         div()
-          .add_children([
+          .children([
             button()
               .class(ui_button())
               .inner_text("demo inc")
-              .add_style(RespoStyle::default().margin(4.).to_owned())
+              .style(RespoStyle::default().margin(4.).to_owned())
               .on_click(on_inc)
               .to_owned(),
             button()
               .class(ui_button())
               .inner_text("demo dec")
-              .add_style(RespoStyle::default().margin(4.).to_owned())
+              .style(RespoStyle::default().margin(4.).to_owned())
               .on_click(on_dec)
               .to_owned(),
           ])
           .to_owned(),
         div()
-          .add_children([span()
+          .children([span()
             .inner_text(format!("value is: {}", counted))
-            .add_style(
+            .style(
               RespoStyle::default()
                 .color(CssColor::Hsluv(270, 100, 40))
                 .font_family("Menlo".to_owned())
@@ -74,7 +74,7 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> Result<RespoNode<Actio
             .to_owned()])
           .to_owned(),
         div()
-          .add_children([span().inner_text(format!("local state: {}", state.counted)).to_owned()])
+          .children([span().inner_text(format!("local state: {}", state.counted)).to_owned()])
           .to_owned(),
       ])
       .to_owned(),

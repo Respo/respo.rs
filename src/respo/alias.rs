@@ -20,7 +20,7 @@ macro_rules! declare_tag {
     where
       T: Debug + Clone,
     {
-      crate::respo::RespoNode::make_tag(stringify!($name))
+      crate::respo::RespoNode::new_tag(stringify!($name))
     }
   };
 }
@@ -45,6 +45,7 @@ declare_tag!(h4, "`<h4/>`");
 declare_tag!(blockquote, "`<blockquote/>`");
 declare_tag!(ul, "`<ul/>`");
 declare_tag!(li, "`<li/>`");
+declare_tag!(label, "`<label/>`");
 
 /// special function to return `<div/>` with width/height that can be used as a space
 pub fn space<T>(w: Option<i32>, h: Option<i32>) -> RespoNode<T>
@@ -53,7 +54,7 @@ where
 {
   match (w, h) {
     (Some(wv), Some(hv)) => div()
-      .add_style(
+      .style(
         RespoStyle::default()
           .width(CssSize::Px(wv as f32))
           .height(CssSize::Px(hv as f32))
@@ -62,7 +63,7 @@ where
       )
       .to_owned(),
     (Some(wv), None) => span()
-      .add_style(
+      .style(
         RespoStyle::default()
           .width(CssSize::Px(wv as f32))
           .display(crate::CssDisplay::InlineBlock)
@@ -70,7 +71,7 @@ where
       )
       .to_owned(),
     (None, Some(hv)) => div()
-      .add_style(
+      .style(
         RespoStyle::default()
           .height(CssSize::Px(hv as f32))
           .width(CssSize::Px(1.0))
@@ -79,7 +80,7 @@ where
       )
       .to_owned(),
     (None, None) => span()
-      .add_style(
+      .style(
         RespoStyle::default()
           .width(CssSize::Px(8.))
           .height(CssSize::Px(8.))

@@ -12,7 +12,9 @@ pub fn raf_loop(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
   let g = f_.clone();
 
   *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-    cb().expect("called in raq loop");
+    if let Err(e) = cb() {
+      crate::log!("failed in raq loop: {}", e);
+    }
 
     // Schedule ourself for another requestAnimationFrame callback.
     request_animation_frame(f_.borrow().as_ref().expect("call raq"));
@@ -38,7 +40,9 @@ pub fn raf_loop_slow(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
   let g = f.clone();
 
   *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-    cb().expect("called in raq loop");
+    if let Err(e) = cb() {
+      crate::log!("failed in slow loop: {}", e);
+    }
 
     let f2 = f.clone();
     let h = Closure::wrap(Box::new(move || {

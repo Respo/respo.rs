@@ -1,10 +1,11 @@
+mod dom_change;
+
 use std::boxed::Box;
-use std::collections::HashSet;
 use std::fmt::Display;
 use std::rc::Rc;
 use std::{collections::HashMap, fmt::Debug};
 
-use cirru_parser::{Cirru, CirruWriterOptions};
+use cirru_parser::Cirru;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -13,6 +14,8 @@ use web_sys::{FocusEvent, InputEvent, KeyboardEvent, MouseEvent, Node};
 use crate::{MaybeState, StatesTree};
 
 use super::css::RespoStyle;
+
+pub use dom_change::{changes_to_cirru, ChildDomOp, DomChange, RespoCoord};
 
 /// an `Element` or a `Component`
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -43,16 +46,16 @@ where
 {
   fn from(value: RespoNode<T>) -> Self {
     match value {
-      RespoNode::Component(name, _eff, tree) => Cirru::List(vec![Cirru::Leaf(name.into()), (*tree).into()]),
-      RespoNode::Element { name, children, .. } => Cirru::List(vec![
-        Cirru::Leaf(name.into()),
-        Cirru::List(
-          children
-            .iter()
-            .map(|(k, child)| Cirru::List(vec![Cirru::Leaf(k.0.to_owned().into()), (*child).to_owned().into()]))
-            .collect(),
-        ),
-      ]),
+      RespoNode::Component(name, _eff, tree) => {
+        Cirru::List(vec![Cirru::Leaf("::Component".into()), Cirru::Leaf(name.into()), (*tree).into()])
+      }
+      RespoNode::Element { name, children, .. } => {
+        let mut xs = vec![Cirru::Leaf(name.into())];
+        for (k, child) in children {
+          xs.push(Cirru::List(vec![Cirru::Leaf(k.to_string().into()), child.to_owned().into()]));
+        }
+        Cirru::List(xs)
+      }
       RespoNode::Referenced(cell) => (*cell).to_owned().into(),
     }
   }
@@ -63,10 +66,7 @@ where
   T: Debug + Clone,
 {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    match cirru_parser::format(&[self.to_owned().into()], CirruWriterOptions { use_inline: true }) {
-      Ok(s) => write!(f, "{}", s),
-      Err(e) => write!(f, "{}", e),
-    }
+    write!(f, "{}", self)
   }
 }
 
@@ -74,26 +74,42 @@ where
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub struct RespoIndexKey(String);
 
-impl<T> From<T> for RespoIndexKey
-where
-  T: Display + Clone + Debug,
-{
-  fn from(data: T) -> Self {
+impl From<usize> for RespoIndexKey {
+  fn from(data: usize) -> Self {
     Self(data.to_string())
   }
 }
 
-// impl Display for RespoIndexKey {
-//   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//     write!(f, "{}", self.0)
-//   }
-// }
+impl From<String> for RespoIndexKey {
+  fn from(s: String) -> Self {
+    Self(s)
+  }
+}
+
+impl From<&str> for RespoIndexKey {
+  fn from(s: &str) -> Self {
+    Self(s.to_owned())
+  }
+}
+
+impl Display for RespoIndexKey {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self.0)
+  }
+}
+
+impl From<RespoIndexKey> for Cirru {
+  fn from(k: RespoIndexKey) -> Cirru {
+    k.to_string().into()
+  }
+}
 
 impl<T> RespoNode<T>
 where
   T: Debug + Clone,
 {
-  pub fn make_tag(name: &str) -> Self {
+  /// create an element node
+  pub fn new_tag(name: &str) -> Self {
     Self::Element {
       name: name.to_owned(),
       attrs: HashMap::new(),
@@ -102,11 +118,18 @@ where
       children: Vec::new(),
     }
   }
-
-  pub fn add_style(&mut self, more: RespoStyle) -> &mut Self {
+  /// create a new component
+  pub fn new_component(name: &str, tree: RespoNode<T>) -> Self {
+    Self::Component(name.to_owned(), Vec::new(), Box::new(tree))
+  }
+  /// attach styles
+  /// ```ignore
+  /// element.style(RespoStyle::default().margin(10))
+  /// ```
+  pub fn style(&mut self, more: RespoStyle) -> &mut Self {
     match self {
       RespoNode::Component(_, _, node) => {
-        node.add_style(more);
+        node.style(more);
       }
       RespoNode::Element { ref mut style, .. } => {
         for (k, v) in more.0.into_iter() {
@@ -119,18 +142,24 @@ where
     }
     self
   }
-
-  pub fn insert_attr<U, V>(&mut self, property: U, value: V) -> &mut Self
+  /// imparative way of updating style
+  /// ```ignore
+  /// element.modify_style(|s| {
+  ///   if data > 1 {
+  ///     s.color(CssColor::Red);
+  ///   }
+  /// });
+  /// ```
+  pub fn modify_style<U>(&mut self, builder: U) -> &mut Self
   where
-    U: Into<String> + ToOwned,
-    V: Into<String> + ToOwned,
+    U: Fn(&mut RespoStyle),
   {
     match self {
       RespoNode::Component(_, _, node) => {
-        node.insert_attr(property, value);
+        node.modify_style(builder);
       }
-      RespoNode::Element { ref mut attrs, .. } => {
-        attrs.insert(property.into(), value.into());
+      RespoNode::Element { ref mut style, .. } => {
+        builder(style);
       }
       RespoNode::Referenced(_) => {
         unreachable!("should not be called on a referenced node");
@@ -138,18 +167,38 @@ where
     }
     self
   }
-  pub fn maybe_insert_attr<U, V>(&mut self, property: U, value: Option<V>) -> &mut Self
+  /// set an attribute on element
+  pub fn attribute<U, V>(&mut self, property: U, value: V) -> &mut Self
   where
     U: Into<String> + ToOwned,
-    V: Into<String> + ToOwned,
+    V: Display,
+  {
+    match self {
+      RespoNode::Component(_, _, node) => {
+        node.attribute(property, value);
+      }
+      RespoNode::Element { ref mut attrs, .. } => {
+        attrs.insert(property.into(), value.to_string());
+      }
+      RespoNode::Referenced(_) => {
+        unreachable!("should not be called on a referenced node");
+      }
+    }
+    self
+  }
+  /// set an attribute on element, but using `None` indicates noting
+  pub fn maybe_attribute<U, V>(&mut self, property: U, value: Option<V>) -> &mut Self
+  where
+    U: Into<String> + ToOwned,
+    V: Display,
   {
     if let Some(v) = value {
       match self {
         RespoNode::Component(_, _, node) => {
-          node.insert_attr(property, v);
+          node.attribute(property, v);
         }
         RespoNode::Element { ref mut attrs, .. } => {
-          attrs.insert(property.into(), v.into());
+          attrs.insert(property.into(), v.to_string());
         }
         RespoNode::Referenced(_) => {
           unreachable!("should not be called on a referenced node");
@@ -158,89 +207,71 @@ where
     }
     self
   }
-  pub fn add_attrs<U, V, W>(&mut self, more: U) -> &mut Self
-  where
-    U: IntoIterator<Item = (V, W)>,
-    V: Into<String> + ToOwned,
-    W: Into<String> + ToOwned,
-  {
-    match self {
-      RespoNode::Component(_, _, node) => {
-        node.add_attrs(more);
-      }
-      RespoNode::Element { ref mut attrs, .. } => {
-        for (k, v) in more {
-          attrs.insert(k.into(), v.into());
-        }
-      }
-      RespoNode::Referenced(_) => {
-        unreachable!("should not be called on a referenced node");
-      }
-    }
-    self
-  }
   pub fn on_click<U>(&mut self, handler: U) -> &mut Self
   where
     U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
   {
-    match self {
-      RespoNode::Component(_, _, node) => {
-        node.on_click(handler);
-      }
-      RespoNode::Element { ref mut event, .. } => {
-        event.insert("click".into(), RespoListenerFn::new(handler));
-      }
-      RespoNode::Referenced(_) => {
-        unreachable!("should not be called on a referenced node");
-      }
-    }
+    self.on_named_event("click", handler);
     self
   }
   pub fn on_input<U>(&mut self, handler: U) -> &mut Self
   where
     U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
   {
-    match self {
-      RespoNode::Component(_, _, node) => {
-        node.on_input(handler);
-      }
-      RespoNode::Element { ref mut event, .. } => {
-        event.insert("input".into(), RespoListenerFn::new(handler));
-      }
-      RespoNode::Referenced(_) => {
-        unreachable!("should not be called on a referenced node");
-      }
-    }
+    self.on_named_event("input", handler);
     self
   }
-  pub fn add_event<U, V>(&mut self, more: U) -> &mut Self
+  /// handle keydown event
+  pub fn on_keydown<U>(&mut self, handler: U) -> &mut Self
   where
-    U: IntoIterator<Item = (V, RespoListenerFn<T>)>,
-    V: Into<String> + ToOwned,
+    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
+  {
+    self.on_named_event("keydown", handler);
+    self
+  }
+  /// handle focus event
+  pub fn on_focus<U>(&mut self, handler: U) -> &mut Self
+  where
+    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
+  {
+    self.on_named_event("focus", handler);
+    self
+  }
+  /// handle change event
+  pub fn on_change<U>(&mut self, handler: U) -> &mut Self
+  where
+    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
+  {
+    self.on_named_event("change", handler);
+    self
+  }
+  /// attach a listener by event name(only a small set of events are supported)
+  pub fn on_named_event<U>(&mut self, name: &str, handler: U) -> &mut Self
+  where
+    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
   {
     match self {
       RespoNode::Component(_, _, node) => {
-        node.add_event(more);
+        node.on_named_event(name, handler);
       }
       RespoNode::Element { ref mut event, .. } => {
-        for (k, v) in more {
-          event.insert(k.into(), v.to_owned());
-        }
+        event.insert(name.into(), RespoListenerFn::new(handler));
       }
       RespoNode::Referenced(_) => {
-        unreachable!("should not be called on a referenced node");
+        unreachable!("should attach event on a referenced node");
       }
     }
     self
   }
+  /// add children elements,
   /// index key are generated from index number
-  pub fn add_children<U>(&mut self, more: U) -> &mut Self
+  pub fn children<U>(&mut self, more: U) -> &mut Self
   where
     U: IntoIterator<Item = RespoNode<T>>,
   {
     match self {
       RespoNode::Component(_, _, node) => {
-        node.add_children(more);
+        node.children(more);
       }
       RespoNode::Element { ref mut children, .. } => {
         for (idx, v) in more.into_iter().enumerate() {
@@ -253,13 +284,14 @@ where
     }
     self
   }
-  pub fn add_children_indexed<U>(&mut self, more: U) -> &mut Self
+  /// add children elements, with index keys specified
+  pub fn children_indexed<U>(&mut self, more: U) -> &mut Self
   where
     U: IntoIterator<Item = (RespoIndexKey, RespoNode<T>)>,
   {
     match self {
       RespoNode::Component(_, _, node) => {
-        node.add_children_indexed(more);
+        node.children_indexed(more);
       }
       RespoNode::Element { ref mut children, .. } => {
         for (idx, v) in more {
@@ -272,8 +304,41 @@ where
     }
     self
   }
-
-  pub fn add_effects<U>(&mut self, more: U) -> &mut Self
+  /// add an effect on component
+  pub fn effect<U, V>(&mut self, args: &[V], handler: U) -> &mut Self
+  where
+    U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
+    V: Serialize + Clone,
+  {
+    match self {
+      RespoNode::Component(_, ref mut effects, _) => {
+        effects.push(RespoEffect::new(args.to_vec(), handler));
+        self
+      }
+      RespoNode::Element { .. } => unreachable!("effects are on components"),
+      RespoNode::Referenced(_) => {
+        unreachable!("should not be called on a referenced node");
+      }
+    }
+  }
+  /// add an empty args effect on component, which does not update
+  pub fn stable_effect<U>(&mut self, handler: U) -> &mut Self
+  where
+    U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
+  {
+    match self {
+      RespoNode::Component(_, ref mut effects, _) => {
+        effects.push(RespoEffect::new(vec![] as Vec<()>, handler));
+        self
+      }
+      RespoNode::Element { .. } => unreachable!("effects are on components"),
+      RespoNode::Referenced(_) => {
+        unreachable!("should not be called on a referenced node");
+      }
+    }
+  }
+  /// add a list of effects on component
+  pub fn effects<U>(&mut self, more: U) -> &mut Self
   where
     U: IntoIterator<Item = RespoEffect>,
   {
@@ -293,7 +358,7 @@ where
   where
     U: Into<String>,
   {
-    self.add_attrs([("class", name.into())])
+    self.attribute("class", name.into())
   }
   /// attach a list of class names for adding styles
   pub fn class_list<U>(&mut self, names: &[U]) -> &mut Self
@@ -304,7 +369,7 @@ where
     for name in names {
       class_name.push((*name).to_owned().into());
     }
-    self.insert_attr("class", class_name.join(" "));
+    self.attribute("class", class_name.join(" "));
     self
   }
   /// writes `innerText`
@@ -312,7 +377,7 @@ where
   where
     U: Into<String>,
   {
-    self.insert_attr("innerText", content.into());
+    self.attribute("innerText", content.into());
     self
   }
   /// writes `innerHTML`
@@ -320,7 +385,15 @@ where
   where
     U: Into<String>,
   {
-    self.insert_attr("innerHTML", content.into());
+    self.attribute("innerHTML", content.into());
+    self
+  }
+  /// writes `value`
+  pub fn value<U>(&mut self, content: U) -> &mut Self
+  where
+    U: Into<String>,
+  {
+    self.attribute("value", content.into());
     self
   }
   /// wrap with a `Rc<RefCell<T>>` to enable memory reuse and skipping in diff
@@ -330,6 +403,14 @@ where
 }
 
 pub(crate) type StrDict = HashMap<String, String>;
+
+fn str_dict_to_cirrus_dict(dict: &StrDict) -> Cirru {
+  let mut xs = vec![];
+  for (k, v) in dict {
+    xs.push(vec![k.to_owned(), v.to_owned()].into());
+  }
+  Cirru::List(xs)
+}
 
 /// (internal) struct to store event handler function on the tree
 #[derive(Clone)]
@@ -371,14 +452,6 @@ where
   pub fn run(&self, event: RespoEvent, dispatch: DispatchFn<T>) -> Result<(), String> {
     (self.0)(event, dispatch)
   }
-}
-
-/// coordinate system on RespoNode, to lookup among elements and components
-#[derive(Debug, Clone)]
-pub enum RespoCoord {
-  Key(RespoIndexKey),
-  /// for indexing by component name, even though there's only one of that
-  Comp(String),
 }
 
 /// marks on virtual DOM to declare that there's an event
@@ -454,7 +527,7 @@ impl RespoEffect {
   pub fn run(&self, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
     (*self.handler)(self.args.to_owned(), effect_type, el)
   }
-  pub fn new<U, V>(args: Vec<&V>, handler: U) -> Self
+  pub fn new<U, V>(args: Vec<V>, handler: U) -> Self
   where
     U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
     V: Serialize,
@@ -500,97 +573,15 @@ pub enum RespoEffectType {
   BeforeUnmount,
 }
 
-/// DOM operations used for diff/patching
-/// performance is not optimial since looking up the DOM via dom_path has repetitive operations,
-/// might need to fix in future is overhead observed.
-#[derive(Debug, Clone)]
-pub enum DomChange<T>
-where
-  T: Debug + Clone,
-{
-  ReplaceElement {
-    coord: Vec<RespoCoord>,
-    dom_path: Vec<u32>,
-    node: RespoNode<T>,
-  },
-  ModifyChildren {
-    coord: Vec<RespoCoord>,
-    dom_path: Vec<u32>,
-    operations: Vec<ChildDomOp<T>>,
-  },
-  ModifyAttrs {
-    coord: Vec<RespoCoord>,
-    dom_path: Vec<u32>,
-    set: StrDict,
-    unset: HashSet<String>,
-  },
-  ModifyStyle {
-    coord: Vec<RespoCoord>,
-    dom_path: Vec<u32>,
-    set: StrDict,
-    unset: HashSet<String>,
-  },
-  ModifyEvent {
-    coord: Vec<RespoCoord>,
-    dom_path: Vec<u32>,
-    add: HashSet<String>,
-    remove: HashSet<String>,
-  },
-  /// this is only part of effects.
-  /// effects that collected while diffing children are nested inside
-  Effect {
-    coord: Vec<RespoCoord>,
-    dom_path: Vec<u32>,
-    effect_type: RespoEffectType,
-    // when args not changed in update, that effects are not re-run
-    skip_indexes: HashSet<u32>,
-  },
-}
-
-impl<T> DomChange<T>
-where
-  T: Debug + Clone,
-{
-  pub fn get_coord(&self) -> Vec<RespoCoord> {
-    match self {
-      DomChange::ReplaceElement { coord, .. } => coord.clone(),
-      DomChange::ModifyChildren { coord, .. } => coord.clone(),
-      DomChange::ModifyAttrs { coord, .. } => coord.clone(),
-      DomChange::ModifyStyle { coord, .. } => coord.clone(),
-      DomChange::ModifyEvent { coord, .. } => coord.clone(),
-      DomChange::Effect { coord, .. } => coord.clone(),
+impl From<RespoEffectType> for Cirru {
+  fn from(effect_type: RespoEffectType) -> Self {
+    match effect_type {
+      RespoEffectType::Mounted => "::mounted".into(),
+      RespoEffectType::BeforeUpdate => "::before-update".into(),
+      RespoEffectType::Updated => "::updated".into(),
+      RespoEffectType::BeforeUnmount => "::before-unmount".into(),
     }
   }
-  pub fn get_dom_path(&self) -> Vec<u32> {
-    match self {
-      DomChange::ReplaceElement { dom_path, .. } => dom_path.clone(),
-      DomChange::ModifyChildren { dom_path, .. } => dom_path.clone(),
-      DomChange::ModifyAttrs { dom_path, .. } => dom_path.clone(),
-      DomChange::ModifyStyle { dom_path, .. } => dom_path.clone(),
-      DomChange::ModifyEvent { dom_path, .. } => dom_path.clone(),
-      DomChange::Effect { dom_path, .. } => dom_path.clone(),
-    }
-  }
-}
-
-/// used in list diffing, this is still part of `DomChange`
-#[derive(Debug, Clone)]
-pub enum ChildDomOp<T>
-where
-  T: Debug + Clone,
-{
-  InsertAfter(u32, RespoIndexKey, RespoNode<T>),
-  RemoveAt(u32),
-  Append(RespoIndexKey, RespoNode<T>),
-  Prepend(RespoIndexKey, RespoNode<T>),
-  /// order is required in operating children elements, so put effect inside
-  NestedEffect {
-    nested_coord: Vec<RespoCoord>,
-    nested_dom_path: Vec<u32>,
-    effect_type: RespoEffectType,
-    // when args not changed in update, that effects are not re-run
-    skip_indexes: HashSet<u32>,
-  },
 }
 
 /// dispatch function passed from root of renderer,

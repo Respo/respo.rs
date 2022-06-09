@@ -14,7 +14,7 @@ use std::sync::RwLock;
 
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::console::{error_1, warn_1};
-use web_sys::{HtmlElement, Node};
+use web_sys::{HtmlElement, HtmlLabelElement, Node};
 
 pub use alias::*;
 pub use app_template::RespoApp;
@@ -55,6 +55,7 @@ pub fn render_node<T>(
   mount_target: Node,
   mut renderer: Box<dyn FnMut() -> Result<RespoNode<T>, String>>,
   dispatch_action: DispatchFn<T>,
+  interval: Option<i32>,
 ) -> Result<(), JsValue>
 where
   T: 'static + Debug + Clone,
@@ -95,33 +96,56 @@ where
   patch_tree(&tree0, &prev_tree.borrow(), &mount_target, &mount_changes, handler)?;
 
   let to_prev_tree = prev_tree.clone();
-  util::raf_loop_slow(Box::new(move || -> Result<(), String> {
-    // let to_prev_tree2 = to_prev_tree.clone();
-    if drain_rerender_status() {
-      let new_tree = renderer()?;
-      let mut changes: Vec<DomChange<T>> = vec![];
-      diff_tree(&new_tree, &to_prev_tree.borrow(), &Vec::new(), &Vec::new(), &mut changes)?;
+  match interval {
+    Some(v) => {
+      util::raf_loop_slow(
+        v,
+        Box::new(move || -> Result<(), String> {
+          if drain_rerender_status() {
+            let new_tree = renderer()?;
+            let mut changes: Vec<DomChange<T>> = vec![];
+            diff_tree(&new_tree, &to_prev_tree.borrow(), &Vec::new(), &Vec::new(), &mut changes)?;
 
-      // util::log!(
-      //   "prev tree: {}",
-      //   cirru_parser::format(
-      //     &[to_prev_tree2.borrow().to_owned().into()],
-      //     cirru_parser::CirruWriterOptions { use_inline: true }
-      //   )
-      //   .unwrap()
-      // );
-      // util::log!(
-      //   "changes: {}",
-      //   cirru_parser::format(&[changes_to_cirru(&changes)], cirru_parser::CirruWriterOptions { use_inline: true }).unwrap()
-      // );
+            // let to_prev_tree2 = to_prev_tree.clone();
+            // util::log!(
+            //   "prev tree: {}",
+            //   cirru_parser::format(
+            //     &[to_prev_tree2.borrow().to_owned().into()],
+            //     cirru_parser::CirruWriterOptions { use_inline: true }
+            //   )
+            //   .unwrap()
+            // );
+            // util::log!(
+            //   "changes: {}",
+            //   cirru_parser::format(&[changes_to_cirru(&changes)], cirru_parser::CirruWriterOptions { use_inline: true }).unwrap()
+            // );
 
-      let handler = handle_event.clone();
-      patch_tree(&new_tree, &prev_tree.borrow(), &mount_target, &changes, handler)?;
-      prev_tree.replace(new_tree);
+            let handler = handle_event.clone();
+            patch_tree(&new_tree, &prev_tree.borrow(), &mount_target, &changes, handler)?;
+            prev_tree.replace(new_tree);
+          }
+
+          Ok(())
+        }),
+      );
     }
+    None => {
+      util::raf_loop(Box::new(move || -> Result<(), String> {
+        // let to_prev_tree2 = to_prev_tree.clone();
+        if drain_rerender_status() {
+          let new_tree = renderer()?;
+          let mut changes: Vec<DomChange<T>> = vec![];
+          diff_tree(&new_tree, &to_prev_tree.borrow(), &Vec::new(), &Vec::new(), &mut changes)?;
 
-    Ok(())
-  }));
+          let handler = handle_event.clone();
+          patch_tree(&new_tree, &prev_tree.borrow(), &mount_target, &changes, handler)?;
+          prev_tree.replace(new_tree);
+        }
+
+        Ok(())
+      }));
+    }
+  }
 
   Ok(())
 }
@@ -211,6 +235,8 @@ where
           element.dyn_ref::<HtmlElement>().expect("into html element").set_inner_text(value);
         } else if key == "innerHTML" {
           element.set_inner_html(value);
+        } else if key == "htmlFor" {
+          element.dyn_ref::<HtmlLabelElement>().ok_or("to label element")?.set_html_for(value);
         } else {
           element.set_attribute(key, value)?;
         }

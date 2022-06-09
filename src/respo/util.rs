@@ -35,7 +35,7 @@ fn window() -> web_sys::Window {
 
 /// this API is used for development, prefer `req_loop` for fast response
 #[allow(dead_code)]
-pub fn raf_loop_slow(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
+pub fn raf_loop_slow(interval: i32, mut cb: Box<dyn FnMut() -> Result<(), String>>) {
   let f = Rc::new(RefCell::new(None));
   let g = f.clone();
 
@@ -48,7 +48,7 @@ pub fn raf_loop_slow(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
     let h = Closure::wrap(Box::new(move || {
       request_animation_frame(f2.borrow().as_ref().expect("call raq"));
     }) as Box<dyn FnMut()>);
-    web_sys::Window::set_timeout_with_callback_and_timeout_and_arguments_0(&window(), h.as_ref().unchecked_ref(), 180)
+    web_sys::Window::set_timeout_with_callback_and_timeout_and_arguments_0(&window(), h.as_ref().unchecked_ref(), interval)
       .expect("call set timeout");
     h.forget(); // It is not good practice, just for simplification!
 

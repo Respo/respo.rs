@@ -24,6 +24,11 @@ pub trait RespoApp {
   fn get_store(&self) -> Rc<RefCell<Self::Model>>;
   /// bridge to memo caches
   fn get_memo_caches(&self) -> MemoCache<RespoNode<Self::Action>>;
+  /// default interval in milliseconds, by default 100ms,
+  /// pass `None` to use raq directly, pass `Some(200)` to redice cost
+  fn get_loop_delay() -> Option<i32> {
+    Some(100)
+  }
 
   /// DSL for building a view
   fn view(store: Ref<Self::Model>, memo_caches: MemoCache<RespoNode<Self::Action>>) -> Result<RespoNode<Self::Action>, String>;
@@ -51,6 +56,7 @@ pub trait RespoApp {
         Self::view(global_store.borrow(), memo_caches.clone())
       }),
       DispatchFn::new(dispatch_action),
+      Self::get_loop_delay(),
     )
     .expect("rendering node");
 

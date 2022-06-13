@@ -7,13 +7,15 @@ mod task;
 mod todolist;
 
 use std::cell::{Ref, RefCell, RefMut};
+use std::panic;
 use std::rc::Rc;
-use std::{panic, vec};
 
-use web_sys::Node;
+use wasm_bindgen::prelude::Closure;
+use wasm_bindgen::JsCast;
+use web_sys::{BeforeUnloadEvent, Node};
 
 use respo::ui::ui_global;
-use respo::{div, util::query_select_node, StatesTree};
+use respo::{div, util::query_select_node};
 use respo::{MemoCache, RespoApp, RespoNode, RespoStore, RespoStyle};
 
 use self::counter::comp_counter;
@@ -21,6 +23,8 @@ pub use self::store::ActionOp;
 use self::store::*;
 use self::todolist::comp_todolist;
 use panel::comp_panel;
+
+const APP_STORE_KEY: &str = "demo_respo_store";
 
 struct App {
   store: Rc<RefCell<Store>>,
@@ -67,15 +71,38 @@ impl RespoApp for App {
 fn main() {
   panic::set_hook(Box::new(console_error_panic_hook::hook));
 
+  // util::log!("todo");
+  let window = web_sys::window().expect("window");
+  let storage = window.local_storage().expect("get storage").expect("unwrap storage");
+
+  let prev_store: Option<Store> = match storage.get_item(APP_STORE_KEY) {
+    Ok(Some(s)) => match serde_json::from_str(&s) {
+      Ok(s) => Some(s),
+      Err(e) => {
+        respo::util::log!("error: {:?}", e);
+        None
+      }
+    },
+    Ok(None) => None,
+    Err(_e) => None,
+  };
+
   let app = App {
     mount_target: query_select_node(".app").expect("mount target"),
-    store: Rc::new(RefCell::new(Store {
-      counted: 0,
-      states: StatesTree::default(),
-      tasks: vec![],
-    })),
+    store: Rc::new(RefCell::new(prev_store.unwrap_or_default())),
     memo_caches: MemoCache::default(),
   };
+
+  let store2 = app.store.clone();
+  let beforeunload = Closure::wrap(Box::new(move |_e: BeforeUnloadEvent| {
+    respo::util::log!("before unload.");
+    let s: &Store = &store2.borrow();
+    storage
+      .set_item(APP_STORE_KEY, &serde_json::to_string(s).expect("to json"))
+      .expect("save storage");
+  }) as Box<dyn FnMut(BeforeUnloadEvent)>);
+  window.set_onbeforeunload(Some(beforeunload.as_ref().unchecked_ref()));
+  beforeunload.forget();
 
   app.render_loop().expect("app render");
 }

@@ -43,4 +43,5 @@ features = [
   "CssStyleDeclaration",
   "FocusEvent",
   "HtmlLabelElement",
+  "BeforeUnloadEvent",
 ]

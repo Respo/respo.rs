@@ -4,9 +4,9 @@ version = 3
 
 [[package]]
 name = "bumpalo"
-version = "3.9.1"
+version = "3.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4a45a46ab1f2412e53d3a0ade76ffad2025804294569aae387231a0cd6e0899"
+checksum = "37ccbd214614c6783386c1af30caf03192f17891059cecc394b4fb119e363de3"
 
 [[package]]
 name = "cfg-if"
@@ -16,9 +16,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "cirru_parser"
-version = "0.1.22"
+version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39236d6a490271b719e0c04687a913360a829b9bd83ba787e4e53eeaea8819e5"
+checksum = "db57e13c5181e48b287fbb5f6c8652b23c8bb30ffdc8cf63772c0fe17279f8b8"
 
 [[package]]
 name = "console_error_panic_hook"
@@ -28,6 +28,19 @@ checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
 dependencies = [
  "cfg-if",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "demo_respo"
+version = "0.0.1"
+dependencies = [
+ "console_error_panic_hook",
+ "js-sys",
+ "respo",
+ "serde",
+ "uuid",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
@@ -81,11 +94,11 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.38"
+version = "1.0.39"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9027b48e9d4c9175fa2218adf3557f91c1137021739951d4932f5f8268ac48aa"
+checksum = "c54b25569025b7fc9651de43004ae593a75ad88543b17178aa5e1b9c4f15f56f"
 dependencies = [
- "unicode-xid",
+ "unicode-ident",
 ]
 
 [[package]]
@@ -99,16 +112,14 @@ dependencies = [
 
 [[package]]
 name = "respo"
-version = "0.0.12-a4"
+version = "0.0.12-a5"
 dependencies = [
  "cirru_parser",
- "console_error_panic_hook",
  "js-sys",
  "lazy_static",
  "rust-hsluv",
  "serde",
  "serde_json",
- "uuid",
  "wasm-bindgen",
  "web-sys",
 ]
@@ -158,26 +169,26 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.94"
+version = "1.0.96"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a07e33e919ebcd69113d5be0e4d70c5707004ff45188910106854f38b960df4a"
+checksum = "0748dd251e24453cb8717f0354206b91557e4ec8703673a4b30208f2abaf1ebf"
 dependencies = [
  "proc-macro2",
  "quote",
- "unicode-xid",
+ "unicode-ident",
 ]
 
 [[package]]
-name = "unicode-xid"
-version = "0.2.3"
+name = "unicode-ident"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "957e51f3646910546462e67d5f7599b9e4fb8acdd304b087a6494730f9eebf04"
+checksum = "d22af068fba1eb5edcb4aea19d382b2a3deb4c8f9d475c589b6ada9e0fd493ee"
 
 [[package]]
 name = "uuid"
-version = "1.1.1"
+version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6d5d669b51467dcf7b2f1a796ce0f955f05f01cafda6c19d6e95f730df29238"
+checksum = "dd6469f4314d5f1ffec476e05f17cc9a78bc7a27a6a857842170bdf8d6f98d2f"
 dependencies = [
  "getrandom",
 ]

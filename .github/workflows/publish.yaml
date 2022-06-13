@@ -31,10 +31,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
 
-      - run: cargo test && wasm-pack build -t web
+      - run: cargo test && wasm-pack build -t web demo_respo
 
       - run: yarn && yarn vite build --base=./
 
       - uses: katyo/publish-crates@v1
         with:
+          path: respo/
           registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}

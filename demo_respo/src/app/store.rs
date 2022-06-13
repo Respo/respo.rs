@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{respo::StatesTree, util, MaybeState, RespoAction, RespoStore};
+use respo::{util, MaybeState, RespoAction, RespoStore, StatesTree};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Store {

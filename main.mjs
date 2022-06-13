@@ -1,4 +1,4 @@
-import init, { loadDemoApp } from "./pkg/respo";
+import init, { loadDemoApp } from "./demo_respo/pkg/demo_respo";
 
 window.onload = () => {
   init().then(() => {

@@ -20,11 +20,9 @@
 //! - ❌ React-like hooks. Respo uses plain functions without tricky internal states
 //! - ❌ Hot reloading. Not working in WebAssembly so far
 
-mod app;
 mod memof1;
 mod respo;
 pub mod ui;
 
 pub use crate::respo::*;
-pub use app::load_demo_app;
 pub use memof1::*;

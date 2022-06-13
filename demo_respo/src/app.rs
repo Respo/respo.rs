@@ -13,15 +13,15 @@ use std::{panic, vec};
 use wasm_bindgen::prelude::*;
 use web_sys::Node;
 
-use crate::respo::{div, util::query_select_node, StatesTree};
-use crate::ui::ui_global;
-use crate::{MemoCache, RespoApp, RespoNode, RespoStore, RespoStyle};
+use respo::ui::ui_global;
+use respo::{div, util::query_select_node, StatesTree};
+use respo::{MemoCache, RespoApp, RespoNode, RespoStore, RespoStyle};
 
 use self::counter::comp_counter;
-use self::panel::comp_panel;
 pub use self::store::ActionOp;
 use self::store::*;
 use self::todolist::comp_todolist;
+use panel::comp_panel;
 
 struct App {
   store: Rc<RefCell<Store>>,

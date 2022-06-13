@@ -19,21 +19,15 @@ jobs:
         with:
           version: "latest"
 
-      - name: Get yarn cache
-        id: yarn-cache
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-
-      - uses: actions/cache@v2
-        name: Cache node modules of yarn
+      - uses: jetli/trunk-action@v0.1.0
         with:
-          path: ${{ steps.yarn-cache.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
+          # Optional version of trunk to install(eg. 'v0.8.1', 'latest')
+          version: 'latest'
 
-      - run: cargo test && wasm-pack build -t web demo_respo
+      - run: cargo test
 
-      - run: yarn && yarn vite build --base=./
+      - run: rustup target add wasm32-unknown-unknown && trunk build
+        working-directory: demo_respo/
 
       - uses: katyo/publish-crates@v1
         with:

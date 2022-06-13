@@ -10,7 +10,6 @@ use std::cell::{Ref, RefCell, RefMut};
 use std::rc::Rc;
 use std::{panic, vec};
 
-use wasm_bindgen::prelude::*;
 use web_sys::Node;
 
 use respo::ui::ui_global;
@@ -65,13 +64,11 @@ impl RespoApp for App {
   }
 }
 
-/// a demo Respo node that mounts target element for dev/debug purposes
-#[wasm_bindgen(js_name = loadDemoApp)]
-pub fn load_demo_app(query: &str) -> JsValue {
+fn main() {
   panic::set_hook(Box::new(console_error_panic_hook::hook));
 
   let app = App {
-    mount_target: query_select_node(query).expect("mount target"),
+    mount_target: query_select_node(".app").expect("mount target"),
     store: Rc::new(RefCell::new(Store {
       counted: 0,
       states: StatesTree::default(),
@@ -81,6 +78,4 @@ pub fn load_demo_app(query: &str) -> JsValue {
   };
 
   app.render_loop().expect("app render");
-
-  JsValue::NULL
 }

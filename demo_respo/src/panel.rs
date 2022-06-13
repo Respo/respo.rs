@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use web_sys::console::log_1;
 
-use crate::app::store::ActionOp;
+use crate::store::ActionOp;
 
 use respo::{
   button, div, input, space, span,

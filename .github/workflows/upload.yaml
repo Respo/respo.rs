@@ -17,25 +17,15 @@ jobs:
         with:
           toolchain: stable
 
-      - uses: jetli/wasm-pack-action@v0.3.0
+      - uses: jetli/trunk-action@v0.1.0
         with:
-          version: "latest"
+          # Optional version of trunk to install(eg. 'v0.8.1', 'latest')
+          version: 'latest'
 
-      - name: Get yarn cache
-        id: yarn-cache
-        run: echo "::set-output name=dir::$(yarn cache dir)"
+      - run: cargo test
 
-      - uses: actions/cache@v2
-        name: Cache node modules of yarn
-        with:
-          path: ${{ steps.yarn-cache.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-
-      - run: cargo test && wasm-pack build -t web
-
-      - run: yarn && yarn vite build --base=./
+      - run: rustup target add wasm32-unknown-unknown && trunk build
+        working-directory: demo_respo
 
       - name: Deploy to server
         id: deploy
@@ -46,7 +36,7 @@ jobs:
           flags: "-avzr --progress"
           options: ""
           ssh_options: ""
-          src: "dist/*"
+          src: "demo_respo/dist/*"
           dest: "rsync-user@tiye.me:/web-assets/repo/${{ github.repository }}"
 
       - name: Display status from deploy

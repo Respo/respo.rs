@@ -1,0 +1,30 @@
+
+body {
+  margin: 0;
+}
+
+.my-button {
+  background-color: aqua;
+}
+
+body {
+  animation-duration: 1s;
+  animation-name: hint_open;
+}
+
+@keyframes hint_open {
+  from {
+    background-color: white;
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+    background-color: hsl(0, 0%, 88%);
+  }
+
+  to {
+    background-color: white;
+    opacity: 1;
+  }
+}

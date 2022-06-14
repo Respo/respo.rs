@@ -2,13 +2,10 @@ use std::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-  button, input,
-  respo::{div, span, CssColor, RespoNode, RespoStyle, StatesTree},
-  space, static_styles,
+use respo::{
+  button, div, input, space, span, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
-  util::{self},
-  CssSize, DispatchFn, MemoCache, RespoEvent,
+  util, CssColor, CssSize, DispatchFn, MemoCache, RespoEvent, RespoNode, RespoStyle, StatesTree,
 };
 
 use super::store::*;
@@ -23,7 +20,7 @@ pub fn comp_task(
   states: &StatesTree,
   task: &Task,
 ) -> Result<RespoNode<ActionOp>, String> {
-  crate::util::log!("calling task function");
+  respo::util::log!("calling task function");
 
   let task_id = task.id.to_owned();
   let task_id2 = task_id.clone();

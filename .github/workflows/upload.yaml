@@ -29,10 +29,9 @@ jobs:
       - run: cargo test
 
       - run: rustup target add wasm32-unknown-unknown && trunk build
-        working-directory: demo_respo/
+        working-directory: demo_respo
 
       - name: Deploy to server
-        working-directory: demo_respo/
         id: deploy
         uses: Pendect/action-rsyncer@v1.1.0
         env:
@@ -41,7 +40,7 @@ jobs:
           flags: "-avzr --progress"
           options: ""
           ssh_options: ""
-          src: "dist/*"
+          src: "demo_respo/dist/*"
           dest: "rsync-user@tiye.me:/web-assets/repo/${{ github.repository }}"
 
       - name: Display status from deploy

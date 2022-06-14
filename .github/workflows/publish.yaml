@@ -15,10 +15,6 @@ jobs:
         with:
           toolchain: stable
 
-      - uses: jetli/wasm-pack-action@v0.3.0
-        with:
-          version: "latest"
-
       - uses: jetli/trunk-action@v0.1.0
         with:
           # Optional version of trunk to install(eg. 'v0.8.1', 'latest')

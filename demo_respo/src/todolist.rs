@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
+use std::rc::Rc;
 
-use respo::{button, div, memo1_call_by, span, ui::ui_button, util, MemoCache, RespoIndexKey, RespoNode, StatesTree};
+use respo::{button, div, memo1_call_by, span, ui::ui_button, util, DispatchFn, MemoCache, RespoIndexKey, RespoNode, StatesTree};
+
+use respo::alerts::{AlertOptions, AlertPlugin, AlertPluginInterface};
 
 use super::{
   store::{ActionOp, Task},
@@ -19,6 +22,11 @@ pub fn comp_todolist(
 ) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
   let state: TodolistState = states.data.cast_or_default()?;
+
+  let alert_plugin = AlertPlugin::new(states.pick("info"), AlertOptions::default(), |_dispatch: DispatchFn<ActionOp>| {
+    println!("on read");
+    Ok(())
+  })?;
 
   let mut children: Vec<(RespoIndexKey, RespoNode<_>)> = vec![];
   for task in tasks {
@@ -52,6 +60,24 @@ pub fn comp_todolist(
 
   // util::log!("{:?}", &tasks);
 
+  let p1 = Rc::new(alert_plugin);
+  let p2 = p1.clone();
+
+  let on_hide = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+    util::log!("click {:?}", e);
+
+    dispatch.run_state(
+      &cursor,
+      TodolistState {
+        hide_done: !state.hide_done,
+      },
+    )?;
+
+    p1.show(dispatch, None)?;
+
+    Ok(())
+  };
+
   Ok(
     div()
       .children([
@@ -60,24 +86,11 @@ pub fn comp_todolist(
             span()
               .inner_text(format!("tasks size: {} ... {}", tasks.len(), state.hide_done))
               .to_owned(),
-            button()
-              .class(ui_button())
-              .inner_text("hide done")
-              .on_click(move |e, dispatch| -> Result<(), String> {
-                util::log!("click {:?}", e);
-
-                dispatch.run_state(
-                  &cursor,
-                  TodolistState {
-                    hide_done: !state.hide_done,
-                  },
-                )?;
-                Ok(())
-              })
-              .to_owned(),
+            button().class(ui_button()).inner_text("hide done").on_click(on_hide).to_owned(),
           ])
           .to_owned(),
         div().children_indexed(children).to_owned(),
+        p2.render()?,
       ])
       .to_owned(),
   )

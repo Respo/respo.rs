@@ -24,7 +24,7 @@ pub fn comp_todolist(
   let state: TodolistState = states.data.cast_or_default()?;
 
   let alert_plugin = AlertPlugin::new(states.pick("info"), AlertOptions::default(), |_dispatch: DispatchFn<ActionOp>| {
-    println!("on read");
+    respo::util::log!("on read");
     Ok(())
   })?;
 

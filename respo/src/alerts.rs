@@ -22,7 +22,7 @@ pub(crate) fn effect_focus(args: Vec<RespoEffectArg>, effect_type: RespoEffectTy
 }
 
 fn focus_element(el: &Node, name: &str) -> Result<(), String> {
-  match el.dyn_ref::<Element>().unwrap().query_selector(name) {
+  match el.dyn_ref::<Element>().unwrap().query_selector(&format!(".{}", name)) {
     Ok(Some(element)) => {
       match element.dyn_ref::<HtmlElement>() {
         Some(el) => el.focus().unwrap(),
@@ -91,7 +91,6 @@ pub(crate) fn effect_fade(args: Vec<RespoEffectArg>, effect_type: RespoEffectTyp
         style.set_property("opacity", "0").unwrap();
         card_style.set_property("transform", "scale(0.94)").unwrap();
         let call = Closure::once(move || {
-          respo::util::log!("closure: fade in");
           style.set_property("transition-duration", "240ms").unwrap();
           card_style.set_property("transition-duration", "240ms").unwrap();
           style.set_property("opacity", "1").unwrap();

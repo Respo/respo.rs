@@ -6,7 +6,7 @@ use std::rc::Rc;
 use serde::{Deserialize, Serialize};
 
 use crate::alerts::{css_backdrop, css_button, css_card};
-use crate::ui::{ui_center, ui_column, ui_fullscreen, ui_global, ui_row_parted};
+use crate::ui::{ui_button, ui_center, ui_column, ui_fullscreen, ui_global, ui_row_parted};
 
 use crate::{
   button, div, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree,
@@ -29,7 +29,6 @@ where
   T: Clone + Debug,
 {
   let read = Rc::new(on_read);
-  let read2 = read.clone();
   let close = Rc::new(on_close);
   let close2 = close.clone();
 
@@ -47,9 +46,7 @@ where
                 // stop propagation to prevent closing the modal
                 original_event.stop_propagation();
               }
-              let d2 = dispatch.clone();
-              read(dispatch)?;
-              close(d2)?;
+              close(dispatch)?;
               Ok(())
             })
             .children([div()
@@ -69,11 +66,11 @@ where
                     .children([
                       span(),
                       button()
-                        .class_list(&[css_button(), BUTTON_NAME.to_owned()])
+                        .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
                         .inner_text(options.button_text.unwrap_or_else(|| "Read".to_owned()))
                         .on_click(move |_e, dispatch| -> Result<(), String> {
                           let d2 = dispatch.clone();
-                          read2(dispatch)?;
+                          read(dispatch)?;
                           close2(d2)?;
                           Ok(())
                         })
@@ -145,7 +142,9 @@ where
   fn render(&self) -> Result<RespoNode<T>, String> {
     let on_read = self.on_read;
     let cursor = self.cursor.clone();
+    let cursor2 = self.cursor.clone();
     let state = self.state.to_owned();
+    let state2 = self.state.to_owned();
     comp_alert_modal(
       self.options.to_owned(),
       self.state.show,
@@ -159,7 +158,14 @@ where
         d2.run_state(&cursor, s)?;
         Ok(())
       },
-      |_| Ok(()),
+      move |dispatch| {
+        let s = AlertPluginState {
+          show: false,
+          text: state2.text.to_owned(),
+        };
+        dispatch.run_state(&cursor2, s)?;
+        Ok(())
+      },
     )
   }
   fn show(&self, dispatch: DispatchFn<T>, text: Option<String>) -> Result<(), String> {

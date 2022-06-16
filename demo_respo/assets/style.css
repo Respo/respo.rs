@@ -3,6 +3,10 @@ body {
   margin: 0;
 }
 
+body * {
+  box-sizing: border-box;
+}
+
 .my-button {
   background-color: aqua;
 }

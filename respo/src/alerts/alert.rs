@@ -85,7 +85,7 @@ where
               .to_owned()])
             .to_owned()
         } else {
-          span()
+          span().attribute("data-name", "placeholder").to_owned()
         }])
         .to_owned(),
     )

@@ -50,24 +50,19 @@ pub(crate) fn effect_fade(args: Vec<RespoEffectArg>, effect_type: RespoEffectTyp
         // when closing, fade out the cloned element
         match el.first_child() {
           Some(target) => {
-            let d = target.clone_node().unwrap();
+            let d = target.clone_node_with_deep(true).unwrap();
             let cloned = Rc::new(d.dyn_ref::<HtmlElement>().unwrap().to_owned()); // outlive
             let cloned2 = cloned.clone();
             let document = el.owner_document().unwrap();
-            document.body().unwrap().append_child(&d).unwrap();
+            document.body().unwrap().append_child(&cloned).unwrap();
             // setTimeout
             let window = web_sys::window().unwrap();
             let immediate_call: Closure<dyn FnMut()> = Closure::once(move || {
               let style = cloned.style();
               style.set_property("opacity", "0").unwrap();
-
-              if let Some(target) = cloned.first_child() {
-                let card_style = target.dyn_ref::<HtmlElement>().unwrap().style();
-                card_style.set_property("transitionDuration", "240ms").unwrap();
-                card_style.set_property("transform", "scale(0.94) translate(0px,-20px)").unwrap();
-              } else {
-                respo::util::log!("effect_fade: foud not targot for child of cloned element");
-              }
+              let card_style = target.dyn_ref::<HtmlElement>().unwrap().style();
+              card_style.set_property("transition-duration", "240ms").unwrap();
+              card_style.set_property("transform", "scale(0.94) translate(0px,-20px)").unwrap();
             });
             window
               .set_timeout_with_callback_and_timeout_and_arguments_0(immediate_call.as_ref().unchecked_ref(), 10)
@@ -77,12 +72,12 @@ pub(crate) fn effect_fade(args: Vec<RespoEffectArg>, effect_type: RespoEffectTyp
               cloned2.remove();
             });
             window
-              .set_timeout_with_callback_and_timeout_and_arguments_0(delay_call.as_ref().unchecked_ref(), 240)
+              .set_timeout_with_callback_and_timeout_and_arguments_0(delay_call.as_ref().unchecked_ref(), 250)
               .unwrap();
             delay_call.forget();
           }
           None => {
-            // TODO
+            respo::util::log!("conetent not found");
           }
         }
       }
@@ -94,10 +89,11 @@ pub(crate) fn effect_fade(args: Vec<RespoEffectArg>, effect_type: RespoEffectTyp
         let style = target.dyn_ref::<HtmlElement>().unwrap().style();
         let card_style = target.first_child().unwrap().dyn_ref::<HtmlElement>().unwrap().style();
         style.set_property("opacity", "0").unwrap();
-        style.set_property("transform", "scale(0.94)").unwrap();
+        card_style.set_property("transform", "scale(0.94)").unwrap();
         let call = Closure::once(move || {
-          style.set_property("transitionDuration", "240ms").unwrap();
-          card_style.set_property("transitionDuration", "240ms").unwrap();
+          respo::util::log!("closure: fade in");
+          style.set_property("transition-duration", "240ms").unwrap();
+          card_style.set_property("transition-duration", "240ms").unwrap();
           style.set_property("opacity", "1").unwrap();
           card_style.set_property("transform", "scale(1) translate(0px,0px)").unwrap();
         });
@@ -119,7 +115,7 @@ static_styles!(
   (
     "$0".to_owned(),
     RespoStyle::default()
-      .background_color(CssColor::Hsl(0, 0, 0))
+      .background_color(CssColor::Hsla(0.0, 30.0, 10.0, 0.6))
       .position(CssPosition::Fixed)
       .z_index(999)
       .padding(16.0)

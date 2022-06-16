@@ -32,6 +32,35 @@ where
     ));
   }
 
+  // handle BeforeUpdate before DOM changes
+  for op in changes {
+    if let DomChange::Effect {
+      coord,
+      effect_type,
+      skip_indexes,
+      ..
+    } = op
+    {
+      if effect_type == &RespoEffectType::BeforeUpdate {
+        let target = find_coord_dom_target(&mount_target.first_child().ok_or("mount position")?, &op.get_dom_path())?;
+        let target_tree = if effect_type == &RespoEffectType::BeforeUnmount {
+          load_coord_target_tree(old_tree, coord)?
+        } else {
+          load_coord_target_tree(tree, coord)?
+        };
+        if let RespoNode::Component(_, effects, _) = target_tree {
+          for (idx, effect) in effects.iter().enumerate() {
+            if !skip_indexes.contains(&(idx as u32)) {
+              effect.run(effect_type.to_owned(), &target)?;
+            }
+          }
+        } else {
+          crate::util::log!("expected component for effects, got: {}", target_tree);
+        }
+      }
+    }
+  }
+
   for op in changes {
     // crate::util::log!("op: {:?}", op);
     let coord = op.get_coord();
@@ -210,6 +239,10 @@ where
         skip_indexes,
         ..
       } => {
+        if effect_type == &RespoEffectType::BeforeUpdate {
+          // should be handled before current pass
+          continue;
+        }
         let target_tree = if effect_type == &RespoEffectType::BeforeUnmount {
           load_coord_target_tree(old_tree, coord)?
         } else {

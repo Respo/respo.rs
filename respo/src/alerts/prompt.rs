@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 
 use std::marker::PhantomData;
+use std::option;
 use std::rc::Rc;
 
 use js_sys::{Array, Function, Reflect};
@@ -9,37 +10,70 @@ use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
 use crate::alerts::{css_backdrop, css_button, css_card};
-use crate::ui::{ui_button, ui_center, ui_column, ui_fullscreen, ui_global, ui_row_parted};
+use crate::ui::{ui_button, ui_center, ui_column, ui_fullscreen, ui_global, ui_input, ui_row_parted};
 
 use crate::{
-  button, div, respo, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree,
+  button, div, input, respo, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle,
+  StatesTree,
 };
 
 use crate::alerts::{effect_fade, effect_focus, BUTTON_NAME};
 
-const NEXT_TASK_NAME: &str = "_RESPO_CONFIRM_NEXT_TASK";
+const NEXT_TASK_NAME: &str = "_RESPO_PROMPT_NEXT_TASK";
 
 #[derive(Debug, Clone, Default)]
-pub struct ConfirmOptions {
+pub struct PromptOptions {
   backdrop_style: RespoStyle,
   card_style: RespoStyle,
   text: Option<String>,
   button_text: Option<String>,
+  initial_value: Option<String>,
+  multilines: bool,
+  input_style: RespoStyle,
+  validator: Option<Validator>,
 }
 
-pub fn comp_confirm_modal<T, U, V>(options: ConfirmOptions, show: bool, on_confirm: U, on_close: V) -> Result<RespoNode<T>, String>
+#[derive(Clone)]
+struct Validator(Rc<dyn Fn(String) -> Result<bool, String>>);
+
+impl Debug for Validator {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "(&Validator ..)")
+  }
+}
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+struct InputState {
+  draft: String,
+}
+
+pub fn comp_prompt_modal<T, U, V>(
+  states: StatesTree,
+  options: PromptOptions,
+  show: bool,
+  on_submit: U,
+  on_close: V,
+) -> Result<RespoNode<T>, String>
 where
-  U: Fn(DispatchFn<T>) -> Result<(), String> + 'static,
+  U: Fn(String, DispatchFn<T>) -> Result<(), String> + 'static,
   V: Fn(DispatchFn<T>) -> Result<(), String> + 'static,
   T: Clone + Debug,
 {
-  let confirm = Rc::new(on_confirm);
+  let cursor = states.path();
+  let mut state: InputState = states.data.cast_or_default()?;
+  if let Some(text) = &options.initial_value {
+    state.draft = text.to_owned();
+  }
+
+  let state2 = state.clone();
+
+  let read = Rc::new(on_submit);
   let close = Rc::new(on_close);
   let close2 = close.clone();
 
   Ok(
     RespoNode::new_component(
-      "confirm-modal",
+      "prompt-modal",
       div()
         .style(RespoStyle::default().position(CssPosition::Absolute).to_owned())
         .children([if show {
@@ -65,7 +99,11 @@ where
               .children([div()
                 .children([
                   span()
-                    .inner_text(options.text.unwrap_or_else(|| "Need confirmation...".to_owned()))
+                    .inner_text(options.text.unwrap_or_else(|| "Input your text:".to_owned()))
+                    .to_owned(),
+                  space(None, Some(8)),
+                  div()
+                    .children([input().class_list(&[ui_input()]).value(state.draft).to_owned()])
                     .to_owned(),
                   space(None, Some(8)),
                   div()
@@ -74,10 +112,10 @@ where
                       span(),
                       button()
                         .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
-                        .inner_text(options.button_text.unwrap_or_else(|| "Confirm".to_owned()))
+                        .inner_text(options.button_text.unwrap_or_else(|| "Read".to_owned()))
                         .on_click(move |_e, dispatch| -> Result<(), String> {
                           let d2 = dispatch.clone();
-                          confirm(dispatch)?;
+                          read(state2.draft.to_owned(), dispatch)?;
                           close2(d2)?;
                           Ok(())
                         })
@@ -100,10 +138,10 @@ where
 }
 
 /// provides the interfaces to component of alert
-pub trait ConfirmPluginInterface<T, U>
+pub trait PromptPluginInterface<T, U>
 where
   T: Debug + Clone + RespoAction,
-  U: Fn(DispatchFn<T>) -> Result<(), String>,
+  U: Fn(String, DispatchFn<T>) -> Result<(), String>,
 {
   /// renders UI
   fn render(&self) -> Result<RespoNode<T>, String>
@@ -112,69 +150,73 @@ where
   /// to show alert
   fn show<V>(&self, dispatch: DispatchFn<T>, next_task: V) -> Result<(), String>
   where
-    V: Fn() -> Result<(), String> + 'static;
+    V: Fn(String) -> Result<(), String> + 'static;
   /// to close alert
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String>;
 
-  fn new(states: StatesTree, options: ConfirmOptions, on_confirm: U) -> Result<Self, String>
+  fn new(states: StatesTree, options: PromptOptions, on_submit: U) -> Result<Self, String>
   where
     Self: std::marker::Sized;
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-struct ConfirmPluginState {
+struct PromptPluginState {
   show: bool,
   text: Option<String>,
 }
 
-/// struct for ConfirmPlugin
+/// struct for PromptPlugin
 #[derive(Debug, Clone)]
-pub struct ConfirmPlugin<T, U>
+pub struct PromptPlugin<T, U>
 where
   T: Clone + Debug,
-  U: Fn(DispatchFn<T>) -> Result<(), String> + 'static,
+  U: Fn(String, DispatchFn<T>) -> Result<(), String> + 'static,
 {
-  state: ConfirmPluginState,
-  options: ConfirmOptions,
+  states: StatesTree,
+  state: PromptPluginState,
+  options: PromptOptions,
   /// tracking content to display
   text: Option<String>,
   cursor: Vec<String>,
-  on_confirm: U,
+  on_submit: U,
   phantom: PhantomData<T>,
 }
 
-impl<T, U> ConfirmPluginInterface<T, U> for ConfirmPlugin<T, U>
+impl<T, U> PromptPluginInterface<T, U> for PromptPlugin<T, U>
 where
   T: Clone + Debug + RespoAction,
-  U: Fn(DispatchFn<T>) -> Result<(), String> + 'static + Copy,
+  U: Fn(String, DispatchFn<T>) -> Result<(), String> + 'static + Copy,
 {
   fn render(&self) -> Result<RespoNode<T>, String> {
-    let on_confirm = self.on_confirm;
+    let on_submit = self.on_submit;
     let cursor = self.cursor.clone();
     let cursor2 = self.cursor.clone();
     let state = self.state.to_owned();
     let state2 = self.state.to_owned();
 
-    comp_confirm_modal(
+    comp_prompt_modal(
+      self.states.pick("plugin"),
       self.options.to_owned(),
       self.state.show,
-      move |dispatch| {
+      move |content, dispatch| {
         let d2 = dispatch.clone();
-        on_confirm(dispatch)?;
+        on_submit(content.to_owned(), dispatch)?;
         let window = web_sys::window().expect("window");
         // dirty global variable
         let task = Reflect::get(&window, &JsValue::from_str(NEXT_TASK_NAME));
         if let Ok(f) = task {
           if f.is_function() {
             let f = f.dyn_into::<Function>().unwrap();
-            let _ = f.apply(&JsValue::NULL, &Array::new());
+            let arr = Array::new();
+            arr.push(&JsValue::from_str(&content.to_owned()));
+            let _ = f.apply(&JsValue::NULL, &arr);
           } else {
             return Err("_NEXT_TASK is not a function".to_owned());
           }
         } else {
           respo::util::log!("next task is None");
         };
-        let s = ConfirmPluginState {
+        let s = PromptPluginState {
           show: false,
           text: state.text.to_owned(),
         };
@@ -185,7 +227,7 @@ where
         Ok(())
       },
       move |dispatch| {
-        let s = ConfirmPluginState {
+        let s = PromptPluginState {
           show: false,
           text: state2.text.to_owned(),
         };
@@ -199,9 +241,9 @@ where
   }
   fn show<V>(&self, dispatch: DispatchFn<T>, next_task: V) -> Result<(), String>
   where
-    V: Fn() -> Result<(), String> + 'static,
+    V: Fn(String) -> Result<(), String> + 'static,
   {
-    let s = ConfirmPluginState {
+    let s = PromptPluginState {
       show: true,
       text: self.state.text.to_owned(),
     };
@@ -216,7 +258,7 @@ where
     Ok(())
   }
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String> {
-    let s = ConfirmPluginState {
+    let s = PromptPluginState {
       show: false,
       text: self.text.clone(),
     };
@@ -224,16 +266,17 @@ where
     Ok(())
   }
 
-  fn new(states: StatesTree, options: ConfirmOptions, on_confirm: U) -> Result<Self, String> {
+  fn new(states: StatesTree, options: PromptOptions, on_submit: U) -> Result<Self, String> {
     let cursor = states.path();
-    let state: ConfirmPluginState = states.data.cast_or_default()?;
+    let state: PromptPluginState = states.data.cast_or_default()?;
 
     let instance = Self {
+      states,
       state,
       options,
       text: None,
       cursor,
-      on_confirm,
+      on_submit,
       phantom: PhantomData,
     };
 

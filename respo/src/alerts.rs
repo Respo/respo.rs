@@ -1,4 +1,5 @@
 mod alert;
+mod confirm;
 
 use std::rc::Rc;
 use wasm_bindgen::prelude::Closure;
@@ -11,6 +12,7 @@ use crate::{CssColor, CssOverflow, CssPosition, CssSize, RespoEffectArg, RespoSt
 pub(crate) const BUTTON_NAME: &str = "alert-button";
 
 pub use alert::{comp_alert_modal, AlertOptions, AlertPlugin, AlertPluginInterface};
+pub use confirm::{comp_confirm_modal, ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface};
 
 pub(crate) fn effect_focus(args: Vec<RespoEffectArg>, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
   let show: bool = args[0].cast_into()?;
@@ -58,7 +60,6 @@ pub(crate) fn effect_fade(args: Vec<RespoEffectArg>, effect_type: RespoEffectTyp
             // setTimeout
             let window = web_sys::window().unwrap();
             let immediate_call: Closure<dyn FnMut()> = Closure::once(move || {
-              respo::util::log!("fading out");
               let style = cloned.style();
               style.set_property("opacity", "0").unwrap();
               let card = cloned.first_child().unwrap();

@@ -58,9 +58,11 @@ pub(crate) fn effect_fade(args: Vec<RespoEffectArg>, effect_type: RespoEffectTyp
             // setTimeout
             let window = web_sys::window().unwrap();
             let immediate_call: Closure<dyn FnMut()> = Closure::once(move || {
+              respo::util::log!("fading out");
               let style = cloned.style();
               style.set_property("opacity", "0").unwrap();
-              let card_style = target.dyn_ref::<HtmlElement>().unwrap().style();
+              let card = cloned.first_child().unwrap();
+              let card_style = card.dyn_ref::<HtmlElement>().unwrap().style();
               card_style.set_property("transition-duration", "240ms").unwrap();
               card_style.set_property("transform", "scale(0.94) translate(0px,-20px)").unwrap();
             });

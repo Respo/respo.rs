@@ -28,7 +28,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
     states.pick("confirm"),
     ConfirmOptions::default(),
     |_dispatch: DispatchFn<ActionOp>| {
-      respo::util::log!("on read");
+      respo::util::log!("on confirm");
       Ok(())
     },
   )?;

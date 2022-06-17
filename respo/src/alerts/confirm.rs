@@ -1,10 +1,12 @@
-use std::borrow::Borrow;
 use std::fmt::Debug;
 
 use std::marker::PhantomData;
 use std::rc::Rc;
 
+use js_sys::{Array, Function, Reflect};
 use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::Closure;
+use wasm_bindgen::{JsCast, JsValue};
 
 use crate::alerts::{css_backdrop, css_button, css_card};
 use crate::ui::{ui_button, ui_center, ui_column, ui_fullscreen, ui_global, ui_row_parted};
@@ -14,6 +16,8 @@ use crate::{
 };
 
 use crate::alerts::{effect_fade, effect_focus, BUTTON_NAME};
+
+const NEXT_TASK_NAME: &str = "_RESPO_CONFIRM_NEXT_TASK";
 
 #[derive(Debug, Clone, Default)]
 pub struct ConfirmOptions {
@@ -35,7 +39,7 @@ where
 
   Ok(
     RespoNode::new_component(
-      "alert-model",
+      "confirm-modal",
       div()
         .style(RespoStyle::default().position(CssPosition::Absolute).to_owned())
         .children([if show {
@@ -60,7 +64,9 @@ where
               })
               .children([div()
                 .children([
-                  span().inner_text(options.text.unwrap_or_else(|| "Alert!".to_owned())).to_owned(),
+                  span()
+                    .inner_text(options.text.unwrap_or_else(|| "Need confirmation...".to_owned()))
+                    .to_owned(),
                   space(None, Some(8)),
                   div()
                     .class(ui_row_parted())
@@ -134,28 +140,7 @@ where
   text: Option<String>,
   cursor: Vec<String>,
   on_confirm: U,
-  next_task: NextTask,
   phantom: PhantomData<T>,
-}
-
-#[derive(Clone, Default)]
-pub struct NextTask {
-  task: Option<Rc<dyn Fn() -> Result<(), String> + 'static>>,
-}
-
-impl Debug for NextTask {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "(&NextTask ..)")
-  }
-}
-
-impl NextTask {
-  pub fn new(task: impl Fn() -> Result<(), String> + 'static) -> Self {
-    NextTask { task: Some(Rc::new(task)) }
-  }
-  pub fn none() -> Self {
-    NextTask { task: None }
-  }
 }
 
 impl<T, U> ConfirmPluginInterface<T, U> for ConfirmPlugin<T, U>
@@ -169,15 +154,23 @@ where
     let cursor2 = self.cursor.clone();
     let state = self.state.to_owned();
     let state2 = self.state.to_owned();
-    let next_task = self.next_task.task.clone();
+
     comp_confirm_modal(
       self.options.to_owned(),
       self.state.show,
       move |dispatch| {
         let d2 = dispatch.clone();
         on_read(dispatch)?;
-        if let Some(f) = next_task.borrow() {
-          f()?;
+        let window = web_sys::window().expect("window");
+        // dirty global variable
+        let task = Reflect::get(&window, &JsValue::from_str(NEXT_TASK_NAME));
+        if let Ok(f) = task {
+          if f.is_function() {
+            let f = f.dyn_into::<Function>().unwrap();
+            let _ = f.apply(&JsValue::NULL, &Array::new());
+          } else {
+            return Err("_NEXT_TASK is not a function".to_owned());
+          }
         } else {
           respo::util::log!("next task is None");
         };
@@ -186,6 +179,9 @@ where
           text: state.text.to_owned(),
         };
         d2.run_state(&cursor, s)?;
+        // clean up leaked closure
+        let window = web_sys::window().expect("window");
+        let _ = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), &JsValue::NULL);
         Ok(())
       },
       move |dispatch| {
@@ -194,6 +190,9 @@ where
           text: state2.text.to_owned(),
         };
         dispatch.run_state(&cursor2, s)?;
+        // clean up leaked closure
+        let window = web_sys::window().expect("window");
+        let _ = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), &JsValue::NULL);
         Ok(())
       },
     )
@@ -206,7 +205,13 @@ where
       show: true,
       text: self.state.text.to_owned(),
     };
-    self.next_task = NextTask::new(next_task);
+    let task = Closure::once(next_task);
+    let window = web_sys::window().unwrap();
+    // dirty global variable to store a shared callback
+    if let Err(e) = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), task.as_ref()) {
+      respo::util::log!("failed to store next task {:?}", e);
+    }
+    task.forget();
     dispatch.run_state(&self.cursor, s)?;
     Ok(())
   }
@@ -230,7 +235,6 @@ where
       cursor,
       on_confirm: on_read,
       phantom: PhantomData,
-      next_task: NextTask::none(),
     };
 
     Ok(instance)

@@ -22,6 +22,8 @@
 
 mod memof1;
 mod respo;
+
+pub mod alerts;
 pub mod ui;
 
 pub use crate::respo::*;

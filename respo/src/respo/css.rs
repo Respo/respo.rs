@@ -115,6 +115,10 @@ impl RespoStyle {
     self.insert("border-radius", format!("{}px", r));
     self
   }
+  pub fn border_color(&mut self, color: CssColor) -> &mut Self {
+    self.insert("border-color", color.to_string());
+    self
+  }
   pub fn overflow(&mut self, rule: CssOverflow) -> &mut Self {
     self.insert("overflow", rule.to_string());
     self
@@ -285,7 +289,7 @@ pub enum CssSize {
   Px(f32),
   Percent(f32),
   Vw(f32),
-  Wh(f32),
+  Vh(f32),
   /// may be calc or something
   Custom(String),
 }
@@ -297,7 +301,7 @@ impl Display for CssSize {
       Self::Px(v) => write!(f, "{}px", v),
       Self::Percent(v) => write!(f, "{}%", v),
       Self::Vw(v) => write!(f, "{}vw", v),
-      Self::Wh(v) => write!(f, "{}wh", v),
+      Self::Vh(v) => write!(f, "{}wh", v),
       Self::Custom(v) => write!(f, "{}", v),
     }
   }

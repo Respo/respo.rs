@@ -58,8 +58,12 @@ where
               .class_list(&[ui_column(), ui_global(), css_card()])
               .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).to_owned())
               .style(options.card_style)
-              .on_click(move |_e, _dispatch| -> Result<(), String> {
+              .on_click(move |e, _dispatch| -> Result<(), String> {
                 // nothing to do
+                if let RespoEvent::Click { original_event, .. } = e {
+                  // stop propagation to prevent closing the modal
+                  original_event.stop_propagation();
+                }
                 Ok(())
               })
               .children([div()

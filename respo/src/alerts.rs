@@ -1,5 +1,6 @@
 mod alert;
 mod confirm;
+mod prompt;
 
 use std::rc::Rc;
 use wasm_bindgen::prelude::Closure;
@@ -13,6 +14,7 @@ pub(crate) const BUTTON_NAME: &str = "alert-button";
 
 pub use alert::{comp_alert_modal, AlertOptions, AlertPlugin, AlertPluginInterface};
 pub use confirm::{comp_confirm_modal, ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface};
+pub use prompt::{comp_prompt_modal, PromptOptions, PromptPlugin, PromptPluginInterface, PromptValidator};
 
 pub(crate) fn effect_focus(args: Vec<RespoEffectArg>, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
   let show: bool = args[0].cast_into()?;

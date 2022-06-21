@@ -33,6 +33,7 @@ features = [
   'Window',
   "HtmlElement",
   "HtmlInputElement",
+  "HtmlTextAreaElement",
   "MouseEvent",
   "KeyboardEvent",
   "InputEvent",

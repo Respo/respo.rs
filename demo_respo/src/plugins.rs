@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use std::fmt::Debug;
 use std::rc::Rc;
 
@@ -7,13 +6,17 @@ use serde::{Deserialize, Serialize};
 
 use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoNode, StatesTree};
 
-use respo::alerts::{AlertOptions, AlertPlugin, AlertPluginInterface, ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface};
+use respo::alerts::{
+  AlertOptions, AlertPlugin, AlertPluginInterface, ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface, PromptOptions, PromptPlugin,
+  PromptPluginInterface, PromptValidator,
+};
 
 use super::store::*;
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 struct TaskState {
   draft: String,
+  error: Option<String>,
 }
 
 pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
@@ -33,9 +36,31 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
     },
   )?;
 
-  let confirm_plugin = Rc::new(RefCell::new(confirm_plugin));
+  let confirm_plugin = Rc::new(confirm_plugin);
   let confirm_plugin3 = confirm_plugin.clone();
   let confirm_plugin2 = confirm_plugin;
+
+  let options = PromptOptions {
+    validator: Some(PromptValidator::new(|text| {
+      if text.len() < 3 {
+        Ok(())
+      } else {
+        Err("too long".to_owned())
+      }
+    })),
+    multilines: true,
+    ..Default::default()
+  };
+
+  let prompt_plugin = Rc::new(PromptPlugin::new(
+    states.pick("prompt"),
+    options,
+    |content, _dispatch: DispatchFn<ActionOp>| {
+      respo::util::log!("on prompt: {}", content);
+      Ok(())
+    },
+  )?);
+  let prompt_plugin2 = prompt_plugin.clone();
 
   let on_alert = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
     util::log!("click {:?}", e);
@@ -48,7 +73,6 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   let on_confirm = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
     util::log!("click {:?}", e);
 
-    let mut confirm_plugin2 = confirm_plugin2.borrow_mut();
     confirm_plugin2.show(dispatch, move || {
       respo::util::log!("do something on confirm");
       Ok(())
@@ -57,8 +81,16 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
     Ok(())
   };
 
-  // borrow again since mutable borrow happen
-  let confirm_plugin3 = confirm_plugin3.borrow();
+  let on_prompt = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+    util::log!("click {:?}", e);
+
+    prompt_plugin2.show(dispatch, move |content| {
+      respo::util::log!("do something on prompt: {}", content);
+      Ok(())
+    })?;
+
+    Ok(())
+  };
 
   Ok(
     div()
@@ -73,10 +105,13 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
               .inner_text("Try Confirm")
               .on_click(on_confirm)
               .to_owned(),
+            space(Some(8), None),
+            button().class(ui_button()).inner_text("Try Prompt").on_click(on_prompt).to_owned(),
           ])
           .to_owned(),
         alert_plugin2.render()?,
         confirm_plugin3.render()?,
+        prompt_plugin.render()?,
       ])
       .to_owned(),
   )

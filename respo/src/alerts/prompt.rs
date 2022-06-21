@@ -1,7 +1,7 @@
+// use std::borrow::Borrow;
 use std::fmt::Debug;
 
 use std::marker::PhantomData;
-use std::option;
 use std::rc::Rc;
 
 use js_sys::{Array, Function, Reflect};
@@ -10,41 +10,54 @@ use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
 use crate::alerts::{css_backdrop, css_button, css_card};
-use crate::ui::{ui_button, ui_center, ui_column, ui_fullscreen, ui_global, ui_input, ui_row_parted};
+use crate::ui::{ui_button, ui_center, ui_column, ui_fullscreen, ui_global, ui_input, ui_row_parted, ui_textarea};
 
 use crate::{
-  button, div, input, respo, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle,
-  StatesTree,
+  button, div, input, respo, space, span, static_styles, textarea, CssColor, CssLineHeight, CssPosition, CssSize, DispatchFn,
+  RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree,
 };
 
-use crate::alerts::{effect_fade, effect_focus, BUTTON_NAME};
+use crate::alerts::{effect_fade, BUTTON_NAME};
 
 const NEXT_TASK_NAME: &str = "_RESPO_PROMPT_NEXT_TASK";
 
 #[derive(Debug, Clone, Default)]
 pub struct PromptOptions {
-  backdrop_style: RespoStyle,
-  card_style: RespoStyle,
-  text: Option<String>,
-  button_text: Option<String>,
-  initial_value: Option<String>,
-  multilines: bool,
-  input_style: RespoStyle,
-  validator: Option<Validator>,
+  pub backdrop_style: RespoStyle,
+  pub card_style: RespoStyle,
+  pub text: Option<String>,
+  pub button_text: Option<String>,
+  pub initial_value: Option<String>,
+  pub multilines: bool,
+  pub input_style: RespoStyle,
+  pub validator: Option<PromptValidator>,
 }
 
 #[derive(Clone)]
-struct Validator(Rc<dyn Fn(String) -> Result<bool, String>>);
+pub struct PromptValidator(Rc<dyn Fn(&str) -> Result<(), String>>);
 
-impl Debug for Validator {
+impl Debug for PromptValidator {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "(&Validator ..)")
+    write!(f, "(&PromptValidator ..)")
+  }
+}
+
+impl PromptValidator {
+  pub fn new<F>(f: F) -> Self
+  where
+    F: Fn(&str) -> Result<(), String> + 'static,
+  {
+    PromptValidator(Rc::new(f))
+  }
+  fn run(&self, value: &str) -> Result<(), String> {
+    self.0(value)
   }
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 struct InputState {
   draft: String,
+  error: Option<String>,
 }
 
 pub fn comp_prompt_modal<T, U, V>(
@@ -57,19 +70,69 @@ pub fn comp_prompt_modal<T, U, V>(
 where
   U: Fn(String, DispatchFn<T>) -> Result<(), String> + 'static,
   V: Fn(DispatchFn<T>) -> Result<(), String> + 'static,
-  T: Clone + Debug,
+  T: Clone + Debug + RespoAction,
 {
   let cursor = states.path();
+  let cursor2 = cursor.clone();
+  let cursor3 = cursor.clone();
   let mut state: InputState = states.data.cast_or_default()?;
   if let Some(text) = &options.initial_value {
     state.draft = text.to_owned();
   }
 
+  // respo::util::log!("State: {:?}", state);
+
   let state2 = state.clone();
 
-  let read = Rc::new(on_submit);
+  let submit = Rc::new(on_submit);
   let close = Rc::new(on_close);
   let close2 = close.clone();
+
+  let on_text_input = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+    if let RespoEvent::Input { value, .. } = e {
+      dispatch.run_state(&cursor, InputState { draft: value, error: None })?;
+    }
+    Ok(())
+  };
+
+  let check_submit = move |text: &str, dispatch: DispatchFn<_>| -> Result<(), String> {
+    let dispatch2 = dispatch.clone();
+    let dispatch3 = dispatch.clone();
+    let dispatch4 = dispatch.clone();
+    respo::util::log!("validator: {:?}", &options.validator);
+    if let Some(validator) = &options.validator {
+      // let validator = validator.borrow();
+      let result = validator.run(text);
+      match result {
+        Ok(()) => {
+          submit(text.to_owned(), dispatch)?;
+          close2(dispatch3)?;
+          dispatch4.run_empty_state(&cursor2)?;
+        }
+        Err(message) => {
+          // dispatch.run_state(&cursor2, InputState { draft: text.to_owned() })?;
+          dispatch4.run_state(
+            &cursor2,
+            InputState {
+              draft: text.to_owned(),
+              error: Some(message),
+            },
+          )?;
+        }
+      }
+    } else {
+      submit(text.to_owned(), dispatch)?;
+      close2(dispatch2)?;
+      dispatch4.run_empty_state(&cursor2)?;
+    }
+    Ok(())
+  };
+
+  let mut input_el = if options.multilines {
+    textarea().class(ui_textarea()).to_owned()
+  } else {
+    input().class(ui_input()).to_owned()
+  };
 
   Ok(
     RespoNode::new_component(
@@ -85,15 +148,24 @@ where
                 // stop propagation to prevent closing the modal
                 original_event.stop_propagation();
               }
-              close(dispatch)?;
+              {
+                let dispatch = dispatch.clone();
+                close(dispatch)?;
+              }
+              dispatch.run_empty_state(&cursor3)?;
               Ok(())
             })
             .children([div()
               .class_list(&[ui_column(), ui_global(), css_card()])
               .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).to_owned())
               .style(options.card_style)
-              .on_click(move |_e, _dispatch| -> Result<(), String> {
+              .style(options.input_style)
+              .on_click(move |e, _dispatch| -> Result<(), String> {
                 // nothing to do
+                if let RespoEvent::Click { original_event, .. } = e {
+                  // stop propagation to prevent closing the modal
+                  original_event.stop_propagation();
+                }
                 Ok(())
               })
               .children([div()
@@ -103,8 +175,19 @@ where
                     .to_owned(),
                   space(None, Some(8)),
                   div()
-                    .children([input().class_list(&[ui_input()]).value(state.draft).to_owned()])
+                    .children([input_el
+                      .class_list(&[ui_input()])
+                      .style(RespoStyle::default().width(CssSize::Percent(100.0)).to_owned())
+                      .attribute("placeholder", "Content...")
+                      .attribute("autoFocus", "autofocus")
+                      .value(state.draft)
+                      .on_input(on_text_input)
+                      .to_owned()])
                     .to_owned(),
+                  match &state.error {
+                    Some(message) => div().class_list(&[css_error()]).inner_text(message).to_owned(),
+                    None => span(),
+                  },
                   space(None, Some(8)),
                   div()
                     .class(ui_row_parted())
@@ -112,11 +195,9 @@ where
                       span(),
                       button()
                         .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
-                        .inner_text(options.button_text.unwrap_or_else(|| "Read".to_owned()))
+                        .inner_text(options.button_text.unwrap_or_else(|| "Submit".to_owned()))
                         .on_click(move |_e, dispatch| -> Result<(), String> {
-                          let d2 = dispatch.clone();
-                          read(state2.draft.to_owned(), dispatch)?;
-                          close2(d2)?;
+                          check_submit(&state2.draft, dispatch)?;
                           Ok(())
                         })
                         .to_owned(),
@@ -131,7 +212,7 @@ where
         }])
         .to_owned(),
     )
-    .effect(&[show], effect_focus)
+    // .effect(&[show], effect_focus)
     .effect(&[show], effect_fade)
     .share_with_ref(),
   )
@@ -208,7 +289,7 @@ where
           if f.is_function() {
             let f = f.dyn_into::<Function>().unwrap();
             let arr = Array::new();
-            arr.push(&JsValue::from_str(&content.to_owned()));
+            arr.push(&JsValue::from_str(&content));
             let _ = f.apply(&JsValue::NULL, &arr);
           } else {
             return Err("_NEXT_TASK is not a function".to_owned());
@@ -283,3 +364,5 @@ where
     Ok(instance)
   }
 }
+
+static_styles!(css_error, ("$0".to_owned(), RespoStyle::default().color(CssColor::Red)));

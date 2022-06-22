@@ -71,6 +71,10 @@ impl MaybeState {
     Self(state)
   }
 
+  pub fn none() -> Self {
+    Self(None)
+  }
+
   pub fn cast_or_default<T>(&self) -> Result<T, String>
   where
     T: DeserializeOwned + Default,

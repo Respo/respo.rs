@@ -26,6 +26,14 @@ pub enum ActionOp {
   RemoveTask(String),
   UpdateTask(String, String),
   ToggleTask(String),
+  Noop,
+}
+
+/// TODO added to pass type checking, maybe we can remove it
+impl Default for ActionOp {
+  fn default() -> Self {
+    ActionOp::Noop
+  }
 }
 
 impl RespoAction for ActionOp {
@@ -42,6 +50,9 @@ impl RespoStore for Store {
   }
   fn update(&mut self, op: Self::Action) -> Result<(), String> {
     match op {
+      ActionOp::Noop => {
+        // nothing to to
+      }
       ActionOp::Increment => {
         self.counted += 1;
       }

@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoNode, StatesTree};
 
 use respo::alerts::{
-  AlertOptions, AlertPlugin, AlertPluginInterface, ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface, PromptOptions, PromptPlugin,
-  PromptPluginInterface, PromptValidator,
+  AlertOptions, AlertPlugin, AlertPluginInterface, ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface, ModalOptions, ModalPlugin,
+  ModalPluginInterface, ModalRenderer, PromptOptions, PromptPlugin, PromptPluginInterface, PromptValidator,
 };
 
 use super::store::*;
@@ -20,6 +20,8 @@ struct TaskState {
 }
 
 pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
+  respo::util::log!("renrender");
+
   let alert_plugin = AlertPlugin::new(states.pick("info"), AlertOptions::default(), |_dispatch: DispatchFn<ActionOp>| {
     respo::util::log!("on read");
     Ok(())
@@ -62,6 +64,28 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   )?);
   let prompt_plugin2 = prompt_plugin.clone();
 
+  let modal_plugin = Rc::new(ModalPlugin::new(
+    states.pick("modal"),
+    ModalOptions {
+      render: ModalRenderer::new(|close_modal: _| {
+        let handler = move |_e: _, dispatch: DispatchFn<ActionOp>| {
+          respo::util::log!("on modal handle");
+          close_modal(dispatch)
+        };
+        Ok(
+          div()
+            .children([
+              span().inner_text("TODO").to_owned(),
+              button().class(ui_button()).inner_text("close").on_click(handler).to_owned(),
+            ])
+            .to_owned(),
+        )
+      }),
+      ..ModalOptions::default()
+    },
+  )?);
+  let modal_plugin2 = modal_plugin.clone();
+
   let on_alert = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
     util::log!("click {:?}", e);
 
@@ -92,6 +116,14 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
     Ok(())
   };
 
+  let on_modal = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+    util::log!("click {:?}", e);
+
+    modal_plugin.show(dispatch, None)?;
+
+    Ok(())
+  };
+
   Ok(
     div()
       .children([
@@ -107,11 +139,14 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
               .to_owned(),
             space(Some(8), None),
             button().class(ui_button()).inner_text("Try Prompt").on_click(on_prompt).to_owned(),
+            space(Some(8), None),
+            button().class(ui_button()).inner_text("Try Modal").on_click(on_modal).to_owned(),
           ])
           .to_owned(),
         alert_plugin2.render()?,
         confirm_plugin3.render()?,
         prompt_plugin.render()?,
+        modal_plugin2.render()?,
       ])
       .to_owned(),
   )

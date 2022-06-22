@@ -1,3 +1,5 @@
+//! module to provide popup dialogs.
+
 mod alert;
 mod confirm;
 mod modal;
@@ -11,12 +13,12 @@ use web_sys::{Element, HtmlElement, Node};
 use crate::{respo, static_styles, RespoEffectType};
 use crate::{CssColor, CssOverflow, CssPosition, CssSize, RespoEffectArg, RespoStyle};
 
-pub(crate) const BUTTON_NAME: &str = "alert-button";
+pub(crate) const BUTTON_NAME: &str = "dialog-button";
 
-pub use alert::{comp_alert_modal, AlertOptions, AlertPlugin, AlertPluginInterface};
-pub use confirm::{comp_confirm_modal, ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface};
-pub use modal::{comp_modal, ModalOptions, ModalPlugin, ModalPluginInterface, ModalRenderer};
-pub use prompt::{comp_prompt_modal, PromptOptions, PromptPlugin, PromptPluginInterface, PromptValidator};
+pub use alert::{AlertOptions, AlertPlugin, AlertPluginInterface};
+pub use confirm::{ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface};
+pub use modal::{ModalOptions, ModalPlugin, ModalPluginInterface, ModalRenderer};
+pub use prompt::{PromptOptions, PromptPlugin, PromptPluginInterface, PromptValidator};
 
 pub(crate) fn effect_focus(args: Vec<RespoEffectArg>, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
   let show: bool = args[0].cast_into()?;

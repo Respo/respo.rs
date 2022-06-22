@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
-use crate::alerts::{css_backdrop, css_button, css_card};
+use crate::dialog::{css_backdrop, css_button, css_card};
 use crate::ui::{ui_button, ui_center, ui_column, ui_fullscreen, ui_global, ui_input, ui_row_parted, ui_textarea};
 
 use crate::{
@@ -17,22 +17,32 @@ use crate::{
   RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree,
 };
 
-use crate::alerts::{effect_fade, BUTTON_NAME};
+use crate::dialog::{effect_fade, BUTTON_NAME};
 
 const NEXT_TASK_NAME: &str = "_RESPO_PROMPT_NEXT_TASK";
 
+/// options for prompt dialog
 #[derive(Debug, Clone, Default)]
 pub struct PromptOptions {
+  /// inline style for backdrop
   pub backdrop_style: RespoStyle,
+  /// inline style for card
   pub card_style: RespoStyle,
+  /// hint to display, defaults `input message`
   pub text: Option<String>,
+  /// text on button
   pub button_text: Option<String>,
+  /// initial value of input
   pub initial_value: Option<String>,
+  /// textarea or input
   pub multilines: bool,
+  /// inline style for input bix
   pub input_style: RespoStyle,
+  /// a validation function to check input
   pub validator: Option<PromptValidator>,
 }
 
+/// wraps validator function
 #[derive(Clone)]
 pub struct PromptValidator(Rc<dyn Fn(&str) -> Result<(), String>>);
 
@@ -60,7 +70,7 @@ struct InputState {
   error: Option<String>,
 }
 
-pub fn comp_prompt_modal<T, U, V>(
+fn comp_prompt_modal<T, U, V>(
   states: StatesTree,
   options: PromptOptions,
   show: bool,
@@ -218,7 +228,7 @@ where
   )
 }
 
-/// provides the interfaces to component of alert
+/// provides the interfaces to component of prompt dialog
 pub trait PromptPluginInterface<T, U>
 where
   T: Debug + Clone + RespoAction,
@@ -228,16 +238,21 @@ where
   fn render(&self) -> Result<RespoNode<T>, String>
   where
     T: Clone + Debug;
-  /// to show alert
+  /// to show prompt dialog, second parameter is the callback task when the dialog is read,
+  /// the callback is stored in a dirty to provide syntax sugar
   fn show<V>(&self, dispatch: DispatchFn<T>, next_task: V) -> Result<(), String>
   where
     V: Fn(String) -> Result<(), String> + 'static;
-  /// to close alert
+  /// to close prompt dialog
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String>;
 
+  /// initialize the plugin, second parameter is the callback task when submitted,
   fn new(states: StatesTree, options: PromptOptions, on_submit: U) -> Result<Self, String>
   where
     Self: std::marker::Sized;
+
+  /// shared it in `Rc`
+  fn share_with_ref(&self) -> Rc<Self>;
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -246,7 +261,7 @@ struct PromptPluginState {
   text: Option<String>,
 }
 
-/// struct for PromptPlugin
+/// a dialog for prompt, request for some input, and submit
 #[derive(Debug, Clone)]
 pub struct PromptPlugin<T, U>
 where
@@ -283,7 +298,7 @@ where
         let d2 = dispatch.clone();
         on_submit(content.to_owned(), dispatch)?;
         let window = web_sys::window().expect("window");
-        // dirty global variable
+        // TODO dirty global variable
         let task = Reflect::get(&window, &JsValue::from_str(NEXT_TASK_NAME));
         if let Ok(f) = task {
           if f.is_function() {
@@ -362,6 +377,10 @@ where
     };
 
     Ok(instance)
+  }
+
+  fn share_with_ref(&self) -> Rc<Self> {
+    Rc::new(self.clone())
   }
 }
 

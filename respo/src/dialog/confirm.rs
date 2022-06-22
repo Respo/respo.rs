@@ -8,26 +8,31 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
-use crate::alerts::{css_backdrop, css_button, css_card};
+use crate::dialog::{css_backdrop, css_button, css_card};
 use crate::ui::{ui_button, ui_center, ui_column, ui_fullscreen, ui_global, ui_row_parted};
 
 use crate::{
   button, div, respo, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree,
 };
 
-use crate::alerts::{effect_fade, effect_focus, BUTTON_NAME};
+use crate::dialog::{effect_fade, effect_focus, BUTTON_NAME};
 
 const NEXT_TASK_NAME: &str = "_RESPO_CONFIRM_NEXT_TASK";
 
+/// options for confirm dialog
 #[derive(Debug, Clone, Default)]
 pub struct ConfirmOptions {
-  backdrop_style: RespoStyle,
+  /// inline style for backdrop
+  pub backdrop_style: RespoStyle,
+  /// inline style for card
   card_style: RespoStyle,
+  /// message to display
   text: Option<String>,
+  /// text on button
   button_text: Option<String>,
 }
 
-pub fn comp_confirm_modal<T, U, V>(options: ConfirmOptions, show: bool, on_confirm: U, on_close: V) -> Result<RespoNode<T>, String>
+fn comp_confirm_modal<T, U, V>(options: ConfirmOptions, show: bool, on_confirm: U, on_close: V) -> Result<RespoNode<T>, String>
 where
   U: Fn(DispatchFn<T>) -> Result<(), String> + 'static,
   V: Fn(DispatchFn<T>) -> Result<(), String> + 'static,
@@ -103,7 +108,7 @@ where
   )
 }
 
-/// provides the interfaces to component of alert
+/// provides the interfaces to component of confirm dialog
 pub trait ConfirmPluginInterface<T, U>
 where
   T: Debug + Clone + RespoAction,
@@ -113,16 +118,20 @@ where
   fn render(&self) -> Result<RespoNode<T>, String>
   where
     T: Clone + Debug;
-  /// to show alert
+  /// to show dialog, second parameter is a callback when confirmed,
+  /// the callback is implemented dirty, it perform directly after confirmed
   fn show<V>(&self, dispatch: DispatchFn<T>, next_task: V) -> Result<(), String>
   where
     V: Fn() -> Result<(), String> + 'static;
-  /// to close alert
+  /// to close dialog
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String>;
 
+  /// creates a new instance of confirm plugin, second parameter is a callback when confirmed
   fn new(states: StatesTree, options: ConfirmOptions, on_confirm: U) -> Result<Self, String>
   where
     Self: std::marker::Sized;
+
+  fn share_with_ref(&self) -> Rc<Self>;
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -131,7 +140,7 @@ struct ConfirmPluginState {
   text: Option<String>,
 }
 
-/// struct for ConfirmPlugin
+/// Popup a confirmation dialog, confirm to process next task
 #[derive(Debug, Clone)]
 pub struct ConfirmPlugin<T, U>
 where
@@ -166,7 +175,7 @@ where
         let d2 = dispatch.clone();
         on_confirm(dispatch)?;
         let window = web_sys::window().expect("window");
-        // dirty global variable
+        // TODO dirty global variable
         let task = Reflect::get(&window, &JsValue::from_str(NEXT_TASK_NAME));
         if let Ok(f) = task {
           if f.is_function() {
@@ -242,5 +251,9 @@ where
     };
 
     Ok(instance)
+  }
+
+  fn share_with_ref(&self) -> Rc<Self> {
+    Rc::new(self.clone())
   }
 }

@@ -5,24 +5,29 @@ use std::rc::Rc;
 
 use serde::{Deserialize, Serialize};
 
-use crate::alerts::{css_backdrop, css_button, css_card};
+use crate::dialog::{css_backdrop, css_button, css_card};
 use crate::ui::{ui_button, ui_center, ui_column, ui_fullscreen, ui_global, ui_row_parted};
 
 use crate::{
   button, div, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree,
 };
 
-use crate::alerts::{effect_fade, effect_focus, BUTTON_NAME};
+use crate::dialog::{effect_fade, effect_focus, BUTTON_NAME};
 
+/// The options for alert modal.
 #[derive(Debug, Clone, Default)]
 pub struct AlertOptions {
-  backdrop_style: RespoStyle,
-  card_style: RespoStyle,
-  text: Option<String>,
-  button_text: Option<String>,
+  /// inline style for backdrop
+  pub backdrop_style: RespoStyle,
+  /// inline style for card
+  pub card_style: RespoStyle,
+  /// message of the alert modal, defaults to `Alert!`
+  pub text: Option<String>,
+  /// text on button
+  pub button_text: Option<String>,
 }
 
-pub fn comp_alert_modal<T, U, V>(options: AlertOptions, show: bool, on_read: U, on_close: V) -> Result<RespoNode<T>, String>
+fn comp_alert_modal<T, U, V>(options: AlertOptions, show: bool, on_read: U, on_close: V) -> Result<RespoNode<T>, String>
 where
   U: Fn(DispatchFn<T>) -> Result<(), String> + 'static,
   V: Fn(DispatchFn<T>) -> Result<(), String> + 'static,
@@ -34,7 +39,7 @@ where
 
   Ok(
     RespoNode::new_component(
-      "alert-model",
+      "alert-modal",
       div()
         .style(RespoStyle::default().position(CssPosition::Absolute).to_owned())
         .children([if show {
@@ -96,24 +101,28 @@ where
   )
 }
 
-/// provides the interfaces to component of alert
+/// provides the interfaces to component of alert dialog
 pub trait AlertPluginInterface<T, U>
 where
   T: Debug + Clone + RespoAction,
   U: Fn(DispatchFn<T>) -> Result<(), String>,
 {
-  /// renders UI
+  /// renders virtual dom for alert modal
   fn render(&self) -> Result<RespoNode<T>, String>
   where
     T: Clone + Debug;
-  /// to show alert
+  /// to show alert, second parameter is a message that could overwrite the default message
   fn show(&self, dispatch: DispatchFn<T>, text: Option<String>) -> Result<(), String>;
   /// to close alert
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String>;
 
+  /// show alert with options, `on_read` is the callback function when read button is clicked
   fn new(states: StatesTree, options: AlertOptions, on_read: U) -> Result<Self, String>
   where
     Self: std::marker::Sized;
+
+  /// return referencial counted alert plugin
+  fn share_with_ref(&self) -> Rc<Self>;
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -122,7 +131,8 @@ struct AlertPluginState {
   text: Option<String>,
 }
 
-/// struct for AlertPlugin
+/// abstraction for Alert modal, new with `AlertOption`,
+/// just displaying a message, you read it, you close it
 #[derive(Debug, Clone)]
 pub struct AlertPlugin<T, U>
 where
@@ -203,5 +213,9 @@ where
     };
 
     Ok(instance)
+  }
+
+  fn share_with_ref(&self) -> Rc<Self> {
+    Rc::new(self.clone())
   }
 }

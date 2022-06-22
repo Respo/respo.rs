@@ -51,15 +51,19 @@ pub(crate) fn mark_need_rerender() {
 }
 
 /// render elements
-pub fn render_node<T>(
+pub fn render_node<T, U>(
   mount_target: Node,
+  // TODO it copies the whole store, need to optimize
+  get_store: Box<dyn Fn() -> U>,
   mut renderer: Box<dyn FnMut() -> Result<RespoNode<T>, String>>,
   dispatch_action: DispatchFn<T>,
   interval: Option<i32>,
 ) -> Result<(), JsValue>
 where
   T: 'static + Debug + Clone,
+  U: Debug + Clone + PartialEq + 'static,
 {
+  let prev_store = RefCell::new(get_store());
   let tree0: RespoNode<T> = renderer()?;
   let prev_tree = Rc::new(RefCell::new(tree0.clone()));
 
@@ -102,6 +106,14 @@ where
         v,
         Box::new(move || -> Result<(), String> {
           if drain_rerender_status() {
+            let store = get_store();
+            if store == prev_store.borrow().to_owned() {
+              // no need to update if store not changed
+              return Ok(());
+            }
+
+            prev_store.replace(store);
+
             let new_tree = renderer()?;
             let mut changes: Vec<DomChange<T>> = vec![];
             diff_tree(&new_tree, &to_prev_tree.borrow(), &Vec::new(), &Vec::new(), &mut changes)?;

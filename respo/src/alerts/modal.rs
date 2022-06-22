@@ -10,7 +10,7 @@ use crate::ui::{ui_center, ui_column, ui_fullscreen, ui_global};
 
 use crate::{div, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree};
 
-use crate::alerts::{effect_fade, effect_focus};
+use crate::alerts::effect_fade;
 
 #[derive(Debug, Clone, Default)]
 pub struct ModalOptions<T>
@@ -123,7 +123,7 @@ where
         }])
         .to_owned(),
     )
-    .effect(&[show], effect_focus)
+    // .effect(&[show], effect_focus)
     .effect(&[show], effect_fade)
     .share_with_ref(),
   )

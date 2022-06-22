@@ -7,7 +7,7 @@ use serde_json::Value;
 /// Respo maintains states in a tree structure, where the keys are strings,
 /// each child component "picks" a key to attach its own state to the tree,
 /// and it dispatches events to global store to update the state.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StatesTree {
   /// local data
   pub data: MaybeState,

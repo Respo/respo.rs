@@ -109,7 +109,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
         Ok(
           div()
             .children([
-              span().inner_text("TODO").to_owned(),
+              span().inner_text("content in custom modal").to_owned(),
               button().class(ui_button()).inner_text("close").on_click(handler).to_owned(),
             ])
             .to_owned(),
@@ -134,7 +134,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   Ok(
     div()
       .children([
-        div().children([span().inner_text("TODO").to_owned()]).to_owned(),
+        div().children([span().inner_text("Dialogs").to_owned()]).to_owned(),
         div()
           .children([
             button().class(ui_button()).inner_text("Try Alert").on_click(on_alert).to_owned(),

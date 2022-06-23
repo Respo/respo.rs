@@ -3,38 +3,48 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
+use js_sys::{Array, Function, Reflect};
 use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::Closure;
+use wasm_bindgen::{JsCast, JsValue};
 
-use crate::alerts::{css_backdrop, css_button, css_card};
+use crate::dialog::{css_backdrop, css_button, css_card};
 use crate::ui::{ui_button, ui_center, ui_column, ui_fullscreen, ui_global, ui_row_parted};
 
 use crate::{
-  button, div, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree,
+  button, div, respo, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree,
 };
 
-use crate::alerts::{effect_fade, effect_focus, BUTTON_NAME};
+use crate::dialog::{effect_fade, effect_focus, BUTTON_NAME};
 
+const NEXT_TASK_NAME: &str = "_RESPO_CONFIRM_NEXT_TASK";
+
+/// options for confirm dialog
 #[derive(Debug, Clone, Default)]
-pub struct AlertOptions {
-  backdrop_style: RespoStyle,
+pub struct ConfirmOptions {
+  /// inline style for backdrop
+  pub backdrop_style: RespoStyle,
+  /// inline style for card
   card_style: RespoStyle,
+  /// message to display
   text: Option<String>,
+  /// text on button
   button_text: Option<String>,
 }
 
-pub fn comp_alert_modal<T, U, V>(options: AlertOptions, show: bool, on_read: U, on_close: V) -> Result<RespoNode<T>, String>
+fn comp_confirm_modal<T, U, V>(options: ConfirmOptions, show: bool, on_confirm: U, on_close: V) -> Result<RespoNode<T>, String>
 where
   U: Fn(DispatchFn<T>) -> Result<(), String> + 'static,
   V: Fn(DispatchFn<T>) -> Result<(), String> + 'static,
   T: Clone + Debug,
 {
-  let read = Rc::new(on_read);
+  let confirm = Rc::new(on_confirm);
   let close = Rc::new(on_close);
   let close2 = close.clone();
 
   Ok(
     RespoNode::new_component(
-      "alert-model",
+      "confirm-modal",
       div()
         .style(RespoStyle::default().position(CssPosition::Absolute).to_owned())
         .children([if show {
@@ -53,13 +63,19 @@ where
               .class_list(&[ui_column(), ui_global(), css_card()])
               .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).to_owned())
               .style(options.card_style)
-              .on_click(move |_e, _dispatch| -> Result<(), String> {
+              .on_click(move |e, _dispatch| -> Result<(), String> {
                 // nothing to do
+                if let RespoEvent::Click { original_event, .. } = e {
+                  // stop propagation to prevent closing the modal
+                  original_event.stop_propagation();
+                }
                 Ok(())
               })
               .children([div()
                 .children([
-                  span().inner_text(options.text.unwrap_or_else(|| "Alert!".to_owned())).to_owned(),
+                  span()
+                    .inner_text(options.text.unwrap_or_else(|| "Need confirmation...".to_owned()))
+                    .to_owned(),
                   space(None, Some(8)),
                   div()
                     .class(ui_row_parted())
@@ -67,10 +83,10 @@ where
                       span(),
                       button()
                         .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
-                        .inner_text(options.button_text.unwrap_or_else(|| "Read".to_owned()))
+                        .inner_text(options.button_text.unwrap_or_else(|| "Confirm".to_owned()))
                         .on_click(move |_e, dispatch| -> Result<(), String> {
                           let d2 = dispatch.clone();
-                          read(dispatch)?;
+                          confirm(dispatch)?;
                           close2(d2)?;
                           Ok(())
                         })
@@ -92,8 +108,8 @@ where
   )
 }
 
-/// provides the interfaces to component of alert
-pub trait AlertPluginInterface<T, U>
+/// provides the interfaces to component of confirm dialog
+pub trait ConfirmPluginInterface<T, U>
 where
   T: Debug + Clone + RespoAction,
   U: Fn(DispatchFn<T>) -> Result<(), String>,
@@ -102,82 +118,118 @@ where
   fn render(&self) -> Result<RespoNode<T>, String>
   where
     T: Clone + Debug;
-  /// to show alert
-  fn show(&self, dispatch: DispatchFn<T>, text: Option<String>) -> Result<(), String>;
-  /// to close alert
+  /// to show dialog, second parameter is a callback when confirmed,
+  /// the callback is implemented dirty, it perform directly after confirmed
+  fn show<V>(&self, dispatch: DispatchFn<T>, next_task: V) -> Result<(), String>
+  where
+    V: Fn() -> Result<(), String> + 'static;
+  /// to close dialog
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String>;
 
-  fn new(states: StatesTree, options: AlertOptions, on_read: U) -> Result<Self, String>
+  /// creates a new instance of confirm plugin, second parameter is a callback when confirmed
+  fn new(states: StatesTree, options: ConfirmOptions, on_confirm: U) -> Result<Self, String>
   where
     Self: std::marker::Sized;
+
+  fn share_with_ref(&self) -> Rc<Self>;
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-struct AlertPluginState {
+struct ConfirmPluginState {
   show: bool,
   text: Option<String>,
 }
 
-/// struct for AlertPlugin
+/// Popup a confirmation dialog, confirm to process next task
 #[derive(Debug, Clone)]
-pub struct AlertPlugin<T, U>
+pub struct ConfirmPlugin<T, U>
 where
   T: Clone + Debug,
   U: Fn(DispatchFn<T>) -> Result<(), String> + 'static,
 {
-  state: AlertPluginState,
-  options: AlertOptions,
+  state: ConfirmPluginState,
+  options: ConfirmOptions,
   /// tracking content to display
   text: Option<String>,
   cursor: Vec<String>,
-  on_read: U,
+  on_confirm: U,
   phantom: PhantomData<T>,
 }
 
-impl<T, U> AlertPluginInterface<T, U> for AlertPlugin<T, U>
+impl<T, U> ConfirmPluginInterface<T, U> for ConfirmPlugin<T, U>
 where
   T: Clone + Debug + RespoAction,
   U: Fn(DispatchFn<T>) -> Result<(), String> + 'static + Copy,
 {
   fn render(&self) -> Result<RespoNode<T>, String> {
-    let on_read = self.on_read;
+    let on_confirm = self.on_confirm;
     let cursor = self.cursor.clone();
     let cursor2 = self.cursor.clone();
     let state = self.state.to_owned();
     let state2 = self.state.to_owned();
-    comp_alert_modal(
+
+    comp_confirm_modal(
       self.options.to_owned(),
       self.state.show,
       move |dispatch| {
         let d2 = dispatch.clone();
-        on_read(dispatch)?;
-        let s = AlertPluginState {
+        on_confirm(dispatch)?;
+        let window = web_sys::window().expect("window");
+        // TODO dirty global variable
+        let task = Reflect::get(&window, &JsValue::from_str(NEXT_TASK_NAME));
+        if let Ok(f) = task {
+          if f.is_function() {
+            let f = f.dyn_into::<Function>().unwrap();
+            let _ = f.apply(&JsValue::NULL, &Array::new());
+          } else {
+            return Err("_NEXT_TASK is not a function".to_owned());
+          }
+        } else {
+          respo::util::log!("next task is None");
+        };
+        let s = ConfirmPluginState {
           show: false,
           text: state.text.to_owned(),
         };
         d2.run_state(&cursor, s)?;
+        // clean up leaked closure
+        let window = web_sys::window().expect("window");
+        let _ = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), &JsValue::NULL);
         Ok(())
       },
       move |dispatch| {
-        let s = AlertPluginState {
+        let s = ConfirmPluginState {
           show: false,
           text: state2.text.to_owned(),
         };
         dispatch.run_state(&cursor2, s)?;
+        // clean up leaked closure
+        let window = web_sys::window().expect("window");
+        let _ = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), &JsValue::NULL);
         Ok(())
       },
     )
   }
-  fn show(&self, dispatch: DispatchFn<T>, text: Option<String>) -> Result<(), String> {
-    let s = AlertPluginState {
+  fn show<V>(&self, dispatch: DispatchFn<T>, next_task: V) -> Result<(), String>
+  where
+    V: Fn() -> Result<(), String> + 'static,
+  {
+    let s = ConfirmPluginState {
       show: true,
-      text: text.or_else(|| self.state.text.to_owned()),
+      text: self.state.text.to_owned(),
     };
+    let task = Closure::once(next_task);
+    let window = web_sys::window().unwrap();
+    // dirty global variable to store a shared callback
+    if let Err(e) = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), task.as_ref()) {
+      respo::util::log!("failed to store next task {:?}", e);
+    }
+    task.forget();
     dispatch.run_state(&self.cursor, s)?;
     Ok(())
   }
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String> {
-    let s = AlertPluginState {
+    let s = ConfirmPluginState {
       show: false,
       text: self.text.clone(),
     };
@@ -185,19 +237,23 @@ where
     Ok(())
   }
 
-  fn new(states: StatesTree, options: AlertOptions, on_read: U) -> Result<Self, String> {
+  fn new(states: StatesTree, options: ConfirmOptions, on_confirm: U) -> Result<Self, String> {
     let cursor = states.path();
-    let state: AlertPluginState = states.data.cast_or_default()?;
+    let state: ConfirmPluginState = states.data.cast_or_default()?;
 
     let instance = Self {
       state,
       options,
       text: None,
       cursor,
-      on_read,
+      on_confirm,
       phantom: PhantomData,
     };
 
     Ok(instance)
+  }
+
+  fn share_with_ref(&self) -> Rc<Self> {
+    Rc::new(self.clone())
   }
 }

@@ -1,4 +1,9 @@
+//! module to provide popup dialogs.
+
 mod alert;
+mod confirm;
+mod modal;
+mod prompt;
 
 use std::rc::Rc;
 use wasm_bindgen::prelude::Closure;
@@ -8,9 +13,12 @@ use web_sys::{Element, HtmlElement, Node};
 use crate::{respo, static_styles, RespoEffectType};
 use crate::{CssColor, CssOverflow, CssPosition, CssSize, RespoEffectArg, RespoStyle};
 
-pub(crate) const BUTTON_NAME: &str = "alert-button";
+pub(crate) const BUTTON_NAME: &str = "dialog-button";
 
-pub use alert::{comp_alert_modal, AlertOptions, AlertPlugin, AlertPluginInterface};
+pub use alert::{AlertOptions, AlertPlugin, AlertPluginInterface};
+pub use confirm::{ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface};
+pub use modal::{ModalOptions, ModalPlugin, ModalPluginInterface, ModalRenderer};
+pub use prompt::{PromptOptions, PromptPlugin, PromptPluginInterface, PromptValidator};
 
 pub(crate) fn effect_focus(args: Vec<RespoEffectArg>, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
   let show: bool = args[0].cast_into()?;
@@ -60,7 +68,8 @@ pub(crate) fn effect_fade(args: Vec<RespoEffectArg>, effect_type: RespoEffectTyp
             let immediate_call: Closure<dyn FnMut()> = Closure::once(move || {
               let style = cloned.style();
               style.set_property("opacity", "0").unwrap();
-              let card_style = target.dyn_ref::<HtmlElement>().unwrap().style();
+              let card = cloned.first_child().unwrap();
+              let card_style = card.dyn_ref::<HtmlElement>().unwrap().style();
               card_style.set_property("transition-duration", "240ms").unwrap();
               card_style.set_property("transform", "scale(0.94) translate(0px,-20px)").unwrap();
             });

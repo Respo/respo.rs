@@ -2,6 +2,7 @@ extern crate console_error_panic_hook;
 
 mod counter;
 mod panel;
+mod plugins;
 mod store;
 mod task;
 mod todolist;
@@ -23,6 +24,7 @@ pub use self::store::ActionOp;
 use self::store::*;
 use self::todolist::comp_todolist;
 use panel::comp_panel;
+use plugins::comp_plugins_demo;
 
 const APP_STORE_KEY: &str = "demo_respo_store";
 
@@ -62,6 +64,7 @@ impl RespoApp for App {
           comp_counter(&states.pick("counter"), store.counted)?,
           comp_panel(&states.pick("panel"))?,
           comp_todolist(memo_caches, &states.pick("todolist"), &store.tasks)?,
+          comp_plugins_demo(&states.pick("plugins-demo"))?,
         ])
         .to_owned(),
     )

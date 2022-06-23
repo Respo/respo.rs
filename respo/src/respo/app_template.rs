@@ -11,7 +11,7 @@ use crate::{render_node, DispatchFn, MemoCache, RespoAction, RespoNode, RespoSto
 /// A template for a Respo app
 pub trait RespoApp {
   /// a type of the store, with a place for states tree
-  type Model: RespoStore + 'static;
+  type Model: RespoStore + Debug + Clone + PartialEq + 'static;
   /// actions should include one for updating states tree
   type Action: Debug + Clone + RespoAction + 'static;
 
@@ -39,6 +39,7 @@ pub trait RespoApp {
     let memo_caches = self.get_memo_caches();
 
     let store_to_action = global_store.clone();
+    let store_to_action2 = global_store.clone();
     let dispatch_action = move |op: Self::Action| -> Result<(), String> {
       // util::log!("action {:?} store, {:?}", op, store_to_action.borrow());
       let mut store = store_to_action.borrow_mut();
@@ -50,6 +51,7 @@ pub trait RespoApp {
 
     render_node(
       mount_target.to_owned(),
+      Box::new(move || store_to_action2.borrow().clone()),
       Box::new(move || -> Result<RespoNode<Self::Action>, String> {
         // util::log!("global store: {:?}", store);
 

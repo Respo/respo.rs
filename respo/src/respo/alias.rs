@@ -31,6 +31,7 @@ declare_tag!(section, "`<section/>`");
 declare_tag!(footer, "`<footer/>`");
 declare_tag!(span, "`<span/>`");
 declare_tag!(input, "`<input/>`");
+declare_tag!(textarea, "`<input/>`");
 declare_tag!(link, "`<link/>`");
 declare_tag!(button, "`<button/>`");
 declare_tag!(pre, "`<pre/>`");

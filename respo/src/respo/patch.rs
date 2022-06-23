@@ -2,7 +2,10 @@ use std::cmp::Ordering;
 use std::fmt::Debug;
 
 use wasm_bindgen::prelude::Closure;
-use web_sys::{Element, FocusEvent, HtmlElement, HtmlInputElement, HtmlLabelElement, InputEvent, KeyboardEvent, MouseEvent, Node};
+use web_sys::{
+  Element, FocusEvent, HtmlElement, HtmlInputElement, HtmlLabelElement, HtmlTextAreaElement, InputEvent, KeyboardEvent, MouseEvent,
+  Node,
+};
 
 use wasm_bindgen::JsCast;
 use web_sys::console::warn_1;
@@ -76,10 +79,24 @@ where
           } else if k == "htmlFor" {
             el.dyn_ref::<HtmlLabelElement>().ok_or("to label element")?.set_html_for(v);
           } else if k == "value" {
-            let input_el = el.dyn_ref::<HtmlInputElement>().expect("to input");
-            let prev_value = input_el.value();
-            if &prev_value != v {
-              input_el.set_value(v);
+            match el.tag_name().as_str() {
+              "INPUT" => {
+                let input_el = el.dyn_ref::<HtmlInputElement>().expect("to input");
+                let prev_value = input_el.value();
+                if &prev_value != v {
+                  input_el.set_value(v);
+                }
+              }
+              "TEXTAREA" => {
+                let textarea_el = el.dyn_ref::<HtmlTextAreaElement>().expect("to textarea");
+                let prev_value = textarea_el.value();
+                if &prev_value != v {
+                  textarea_el.set_value(v);
+                }
+              }
+              name => {
+                return Err(format!("unsupported value for {}", name));
+              }
             }
           } else {
             el.set_attribute(k, v).expect("to set attribute");
@@ -316,23 +333,42 @@ pub fn attach_event(element: &Element, key: &str, coord: &[RespoCoord], handle_e
     }
     "input" => {
       let handler = Closure::wrap(Box::new(move |e: InputEvent| {
-        let wrap_event = RespoEvent::Input {
-          value: e
-            .target()
-            .expect("to reach event target")
-            .dyn_ref::<HtmlInputElement>()
-            .expect("to convert to html input element")
+        let target = e.target().expect("get target");
+        let el = target.dyn_ref::<Element>().unwrap();
+        let value = match el.tag_name().as_str() {
+          "INPUT" => el.dyn_ref::<HtmlInputElement>().expect("to convert to html input element").value(),
+          "TEXTAREA" => el
+            .dyn_ref::<HtmlTextAreaElement>()
+            .expect("to convert to html text area element")
             .value(),
-          original_event: e,
+          _ => {
+            // TODO Error
+            return;
+          }
         };
+        let wrap_event = RespoEvent::Input { value, original_event: e };
         handle_event
           .run(RespoEventMark::new("input", &coord, wrap_event))
           .expect("handle input event");
       }) as Box<dyn FnMut(InputEvent)>);
-      element
-        .dyn_ref::<HtmlInputElement>()
-        .expect("convert to html input element")
-        .set_oninput(Some(handler.as_ref().unchecked_ref()));
+      match element.tag_name().as_str() {
+        "INPUT" => {
+          element
+            .dyn_ref::<HtmlInputElement>()
+            .expect("convert to html input element")
+            .set_oninput(Some(handler.as_ref().unchecked_ref()));
+        }
+        "TEXTAREA" => {
+          element
+            .dyn_ref::<HtmlTextAreaElement>()
+            .expect("convert to html textarea element")
+            .set_oninput(Some(handler.as_ref().unchecked_ref()));
+        }
+        _ => {
+          return Err(format!("unsupported input event: {}", element.tag_name()));
+        }
+      }
+
       handler.forget();
     }
     "change" => {

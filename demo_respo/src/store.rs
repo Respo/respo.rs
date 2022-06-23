@@ -2,14 +2,14 @@ use serde::{Deserialize, Serialize};
 
 use respo::{util, MaybeState, RespoAction, RespoStore, StatesTree};
 
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+#[derive(Debug, Clone, Deserialize, Serialize, Default, PartialEq)]
 pub struct Store {
   pub counted: i32,
   pub tasks: Vec<Task>,
   pub states: StatesTree,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Task {
   pub id: String,
   pub done: bool,
@@ -26,6 +26,14 @@ pub enum ActionOp {
   RemoveTask(String),
   UpdateTask(String, String),
   ToggleTask(String),
+  Noop,
+}
+
+/// TODO added to pass type checking, maybe we can remove it
+impl Default for ActionOp {
+  fn default() -> Self {
+    ActionOp::Noop
+  }
 }
 
 impl RespoAction for ActionOp {
@@ -42,6 +50,9 @@ impl RespoStore for Store {
   }
   fn update(&mut self, op: Self::Action) -> Result<(), String> {
     match op {
+      ActionOp::Noop => {
+        // nothing to to
+      }
       ActionOp::Increment => {
         self.counted += 1;
       }

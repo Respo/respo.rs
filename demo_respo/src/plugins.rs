@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use respo::space;
+use respo::{space, ui::ui_row_parted};
 use serde::{Deserialize, Serialize};
 
 use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoNode, StatesTree};
@@ -21,10 +21,17 @@ struct TaskState {
 pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
   // respo::util::log!("re-render");
 
-  let alert_plugin = AlertPlugin::new(states.pick("info"), AlertOptions::default(), |_dispatch: DispatchFn<ActionOp>| {
-    respo::util::log!("on read");
-    Ok(())
-  })?
+  let alert_plugin = AlertPlugin::new(
+    states.pick("info"),
+    AlertOptions {
+      // card_style: RespoStyle::default().background_color(CssColor::Blue).to_owned(),
+      ..AlertOptions::default()
+    },
+    |_dispatch: DispatchFn<ActionOp>| {
+      respo::util::log!("user has read the message");
+      Ok(())
+    },
+  )?
   .share_with_ref();
 
   let on_alert = {
@@ -32,6 +39,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("click {:?}", e);
 
+      // alert_plugin.show(dispatch, Some("a mesasge for you".to_owned()))?;
       alert_plugin.show(dispatch, None)?;
 
       Ok(())
@@ -66,10 +74,12 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
     states.pick("prompt"),
     PromptOptions {
       validator: Some(PromptValidator::new(|text| {
-        if text.len() < 3 {
-          Ok(())
-        } else {
+        if text.len() <= 1 {
+          Err("too short".to_owned())
+        } else if text.len() > 8 {
           Err("too long".to_owned())
+        } else {
+          Ok(())
         }
       })),
       multilines: true,
@@ -109,8 +119,11 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
         Ok(
           div()
             .children([
-              span().inner_text("content in custom modal").to_owned(),
-              button().class(ui_button()).inner_text("close").on_click(handler).to_owned(),
+              div().children([span().inner_text("content in custom modal").to_owned()]).to_owned(),
+              div()
+                .class(ui_row_parted())
+                .children([span(), button().class(ui_button()).inner_text("close").on_click(handler).to_owned()])
+                .to_owned(),
             ])
             .to_owned(),
         )
@@ -147,7 +160,11 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
             space(Some(8), None),
             button().class(ui_button()).inner_text("Try Prompt").on_click(on_prompt).to_owned(),
             space(Some(8), None),
-            button().class(ui_button()).inner_text("Try Modal").on_click(on_modal).to_owned(),
+            button()
+              .class(ui_button())
+              .inner_text("Try Custom Modal")
+              .on_click(on_modal)
+              .to_owned(),
           ])
           .to_owned(),
         alert_plugin.render()?,

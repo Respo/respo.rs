@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use respo::{space, ui::ui_row_parted};
+use respo::{space, ui::ui_row_parted, RespoStyle};
 use serde::{Deserialize, Serialize};
 
 use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoNode, StatesTree};
@@ -73,6 +73,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   let prompt_plugin = PromptPlugin::new(
     states.pick("prompt"),
     PromptOptions {
+      text: Some(String::from("Demo text(length 3~8)")),
       validator: Some(PromptValidator::new(|text| {
         if text.len() <= 1 {
           Err("too short".to_owned())
@@ -111,6 +112,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   let modal_plugin = ModalPlugin::new(
     states.pick("modal"),
     ModalOptions {
+      title: Some(String::from("Modal demo")),
       render: ModalRenderer::new(|close_modal: _| {
         let handler = move |_e: _, dispatch: DispatchFn<ActionOp>| {
           respo::util::log!("on modal handle");
@@ -118,6 +120,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
         };
         Ok(
           div()
+            .style(RespoStyle::default().padding(8.0).to_owned())
             .children([
               div().children([span().inner_text("content in custom modal").to_owned()]).to_owned(),
               div()

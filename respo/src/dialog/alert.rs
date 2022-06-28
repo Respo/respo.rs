@@ -159,8 +159,12 @@ where
     let cursor2 = self.cursor.clone();
     let state = self.state.to_owned();
     let state2 = self.state.to_owned();
+
+    let mut options = self.options.to_owned();
+    options.text = state.text.as_deref().or(options.text.as_deref()).map(ToOwned::to_owned);
+
     comp_alert_modal(
-      self.options.to_owned(),
+      options,
       self.state.show,
       move |dispatch| {
         let d2 = dispatch.clone();
@@ -183,10 +187,7 @@ where
     )
   }
   fn show(&self, dispatch: DispatchFn<T>, text: Option<String>) -> Result<(), String> {
-    let s = AlertPluginState {
-      show: true,
-      text: text.or_else(|| self.state.text.to_owned()),
-    };
+    let s = AlertPluginState { show: true, text };
     dispatch.run_state(&self.cursor, s)?;
     Ok(())
   }

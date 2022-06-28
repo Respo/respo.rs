@@ -100,7 +100,7 @@ where
             })
             .children([div()
               .class_list(&[ui_column(), ui_global(), css_card()])
-              .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).to_owned())
+              .style(RespoStyle::default().padding(0.0).line_height(CssLineHeight::Px(32.0)).to_owned())
               .style(options.card_style)
               .on_click(move |e, _dispatch| -> Result<(), String> {
                 // nothing to do

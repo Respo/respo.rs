@@ -1,5 +1,6 @@
 use std::{
   collections::HashSet,
+  fmt::Write,
   fmt::{self, Display, Formatter},
   sync::RwLock,
 };
@@ -29,7 +30,7 @@ impl RespoStyle {
     let mut result = String::new();
     for rule in rules {
       let (query, value) = rule;
-      result.push_str(&format!("{} {{\n{}\n}}", query, value));
+      let _ = write!(result, "{} {{\n{}\n}}", query, value);
     }
     result
   }

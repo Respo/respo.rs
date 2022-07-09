@@ -20,7 +20,7 @@ macro_rules! declare_tag {
     where
       T: Debug + Clone,
     {
-      crate::respo::RespoNode::new_tag(stringify!($name))
+      $crate::respo::RespoNode::new_tag(stringify!($name))
     }
   };
 }

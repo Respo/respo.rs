@@ -24,7 +24,7 @@ jobs:
 
       - run: cargo test
 
-      - run: rustup target add wasm32-unknown-unknown && trunk build
+      - run: rustup target add wasm32-unknown-unknown && trunk build --release
         working-directory: demo_respo
 
       - name: Deploy to server

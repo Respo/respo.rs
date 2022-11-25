@@ -2,6 +2,7 @@
 
 mod alert;
 mod confirm;
+mod drawer;
 mod modal;
 mod prompt;
 
@@ -17,6 +18,7 @@ pub(crate) const BUTTON_NAME: &str = "dialog-button";
 
 pub use alert::{AlertOptions, AlertPlugin, AlertPluginInterface};
 pub use confirm::{ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface};
+pub use drawer::{DrawerOptions, DrawerPlugin, DrawerPluginInterface, DrawerRenderer};
 pub use modal::{ModalOptions, ModalPlugin, ModalPluginInterface, ModalRenderer};
 pub use prompt::{PromptOptions, PromptPlugin, PromptPluginInterface, PromptValidator};
 
@@ -71,7 +73,7 @@ pub(crate) fn effect_fade(args: Vec<RespoEffectArg>, effect_type: RespoEffectTyp
               let card = cloned.first_child().unwrap();
               let card_style = card.dyn_ref::<HtmlElement>().unwrap().style();
               card_style.set_property("transition-duration", "240ms").unwrap();
-              card_style.set_property("transform", "scale(0.94) translate(0px,-20px)").unwrap();
+              card_style.set_property("transform", "translate(100%,0px)").unwrap();
             });
             window
               .set_timeout_with_callback_and_timeout_and_arguments_0(immediate_call.as_ref().unchecked_ref(), 10)
@@ -98,12 +100,12 @@ pub(crate) fn effect_fade(args: Vec<RespoEffectArg>, effect_type: RespoEffectTyp
         let style = target.dyn_ref::<HtmlElement>().unwrap().style();
         let card_style = target.first_child().unwrap().dyn_ref::<HtmlElement>().unwrap().style();
         style.set_property("opacity", "0").unwrap();
-        card_style.set_property("transform", "scale(0.94)").unwrap();
+        card_style.set_property("transform", "translate(100%, 0px)").unwrap();
         let call = Closure::once(move || {
           style.set_property("transition-duration", "240ms").unwrap();
           card_style.set_property("transition-duration", "240ms").unwrap();
           style.set_property("opacity", "1").unwrap();
-          card_style.set_property("transform", "scale(1) translate(0px,0px)").unwrap();
+          card_style.set_property("transform", "translate(0px,0px)").unwrap();
         });
         let window = web_sys::window().unwrap();
         window
@@ -126,7 +128,6 @@ static_styles!(
       .background_color(CssColor::Hsla(0.0, 30.0, 10.0, 0.6))
       .position(CssPosition::Fixed)
       .z_index(999)
-      .padding(16.0)
   )
 );
 
@@ -136,14 +137,17 @@ static_styles!(
     "$0".to_owned(),
     RespoStyle::default()
       .background_color(CssColor::Hsl(0, 0, 100))
-      .max_width(CssSize::Px(600.0))
-      .width(CssSize::Percent(100.))
-      .max_height(CssSize::Vh(80.0))
+      .max_width(CssSize::Vw(50.0))
+      .width(CssSize::Px(400.))
+      .height(CssSize::Vh(100.0))
       .overflow(CssOverflow::Auto)
-      .border_radius(3.0)
       .color(CssColor::Hsl(0, 0, 0))
-      .insert("margin", "auto".to_owned())
-      .padding(16.0)
+      .top(CssSize::Px(0.))
+      .right(CssSize::Px(0.))
+      .bottom(CssSize::Px(0.))
+      .position(CssPosition::Absolute)
+      .box_shadow(-2., 0., 12., 0., CssColor::Hsla(0., 0., 0., 0.2))
+      .transform_property("transform, opacity".to_owned())
   )
 );
 

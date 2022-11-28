@@ -1,13 +1,15 @@
 use std::fmt::Debug;
 
+use respo::RespoEvent;
 use respo::{space, ui::ui_row_parted, RespoStyle};
 use serde::{Deserialize, Serialize};
 
 use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoNode, StatesTree};
 
 use respo::dialog::{
-  AlertOptions, AlertPlugin, AlertPluginInterface, ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface, ModalOptions, ModalPlugin,
-  ModalPluginInterface, ModalRenderer, PromptOptions, PromptPlugin, PromptPluginInterface, PromptValidator,
+  AlertOptions, AlertPlugin, AlertPluginInterface, ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface, DrawerOptions, DrawerPlugin,
+  DrawerPluginInterface, DrawerRenderer, ModalOptions, ModalPlugin, ModalPluginInterface, ModalRenderer, PromptOptions, PromptPlugin,
+  PromptPluginInterface, PromptValidator,
 };
 
 use super::store::*;
@@ -147,6 +149,48 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
     }
   };
 
+  // declare drawer
+
+  let drawer_plugin = DrawerPlugin::new(
+    states.pick("drawer"),
+    DrawerOptions {
+      title: Some(String::from("Modal demo")),
+      render: DrawerRenderer::new(|close_drawer: _| {
+        let handler = move |_e: _, dispatch: DispatchFn<ActionOp>| {
+          respo::util::log!("on modal handle");
+          close_drawer(dispatch)
+        };
+        Ok(
+          div()
+            .style(RespoStyle::default().padding(8.0).to_owned())
+            .children([
+              div()
+                .children([span().inner_text("content in custom drawer").to_owned()])
+                .to_owned(),
+              div()
+                .class(ui_row_parted())
+                .children([span(), button().class(ui_button()).inner_text("close").on_click(handler).to_owned()])
+                .to_owned(),
+            ])
+            .to_owned(),
+        )
+      }),
+      ..DrawerOptions::default()
+    },
+  )?
+  .share_with_ref();
+
+  let on_drawer = {
+    let drawer_plugin = drawer_plugin.clone();
+    move |e: RespoEvent, dispatch: DispatchFn<_>| -> Result<(), String> {
+      util::log!("click {:?}", e);
+
+      drawer_plugin.show(dispatch)?;
+
+      Ok(())
+    }
+  };
+
   Ok(
     div()
       .children([
@@ -168,12 +212,19 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
               .inner_text("Try Custom Modal")
               .on_click(on_modal)
               .to_owned(),
+            space(Some(8), None),
+            button()
+              .class(ui_button())
+              .inner_text("Try Custom Drawer")
+              .on_click(on_drawer)
+              .to_owned(),
           ])
           .to_owned(),
         alert_plugin.render()?,
         confirm_plugin.render()?,
         prompt_plugin.render()?,
         modal_plugin.render()?,
+        drawer_plugin.render()?,
       ])
       .to_owned(),
   )

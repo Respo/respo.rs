@@ -302,7 +302,7 @@ impl Display for CssSize {
       Self::Px(v) => write!(f, "{}px", v),
       Self::Percent(v) => write!(f, "{}%", v),
       Self::Vw(v) => write!(f, "{}vw", v),
-      Self::Vh(v) => write!(f, "{}wh", v),
+      Self::Vh(v) => write!(f, "{}vh", v),
       Self::Custom(v) => write!(f, "{}", v),
     }
   }

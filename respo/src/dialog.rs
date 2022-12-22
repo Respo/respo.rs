@@ -51,7 +51,74 @@ fn focus_element(el: &Node, name: &str) -> Result<(), String> {
   Ok(())
 }
 
-pub(crate) fn effect_fade(args: Vec<RespoEffectArg>, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
+pub(crate) fn effect_modal_fade(args: Vec<RespoEffectArg>, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
+  let show: bool = args[0].cast_into()?;
+  match effect_type {
+    RespoEffectType::BeforeUpdate => {
+      if !show {
+        // when closing, fade out the cloned element
+        match el.first_child() {
+          Some(target) => {
+            let d = target.clone_node_with_deep(true).unwrap();
+            let cloned = Rc::new(d.dyn_ref::<HtmlElement>().unwrap().to_owned()); // outlive
+            let cloned2 = cloned.clone();
+            let document = el.owner_document().unwrap();
+            document.body().unwrap().append_child(&cloned).unwrap();
+            // setTimeout
+            let window = web_sys::window().unwrap();
+            let immediate_call: Closure<dyn FnMut()> = Closure::once(move || {
+              let style = cloned.style();
+              style.set_property("opacity", "0").unwrap();
+              let card = cloned.first_child().unwrap();
+              let card_style = card.dyn_ref::<HtmlElement>().unwrap().style();
+              card_style.set_property("transition-duration", "240ms").unwrap();
+              card_style.set_property("transform", "scale(0.94) translate(0px,-20px)").unwrap();
+            });
+            window
+              .set_timeout_with_callback_and_timeout_and_arguments_0(immediate_call.as_ref().unchecked_ref(), 10)
+              .unwrap();
+            immediate_call.forget();
+            let delay_call: Closure<dyn FnMut()> = Closure::once(move || {
+              cloned2.remove();
+            });
+            window
+              .set_timeout_with_callback_and_timeout_and_arguments_0(delay_call.as_ref().unchecked_ref(), 250)
+              .unwrap();
+            delay_call.forget();
+          }
+          None => {
+            respo::util::log!("content not found");
+          }
+        }
+      }
+    }
+    RespoEffectType::Updated => {
+      if show {
+        // when opening, fade in the cloned element
+        let target = el.first_child().unwrap();
+        let style = target.dyn_ref::<HtmlElement>().unwrap().style();
+        let card_style = target.first_child().unwrap().dyn_ref::<HtmlElement>().unwrap().style();
+        style.set_property("opacity", "0").unwrap();
+        card_style.set_property("transform", "scale(0.94) translate(0px,-12px)").unwrap();
+        let call = Closure::once(move || {
+          style.set_property("transition-duration", "240ms").unwrap();
+          card_style.set_property("transition-duration", "240ms").unwrap();
+          style.set_property("opacity", "1").unwrap();
+          card_style.set_property("transform", "scale(1) translate(0px,0px)").unwrap();
+        });
+        let window = web_sys::window().unwrap();
+        window
+          .set_timeout_with_callback_and_timeout_and_arguments_0(call.as_ref().unchecked_ref(), 10)
+          .unwrap();
+        call.forget();
+      }
+    }
+    _ => {}
+  }
+  Ok(())
+}
+
+pub(crate) fn effect_drawer_fade(args: Vec<RespoEffectArg>, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
   let show: bool = args[0].cast_into()?;
 
   match effect_type {
@@ -88,7 +155,7 @@ pub(crate) fn effect_fade(args: Vec<RespoEffectArg>, effect_type: RespoEffectTyp
             delay_call.forget();
           }
           None => {
-            respo::util::log!("conetent not found");
+            respo::util::log!("content not found");
           }
         }
       }
@@ -132,7 +199,24 @@ static_styles!(
 );
 
 static_styles!(
-  css_card,
+  css_modal_card,
+  (
+    "$0".to_owned(),
+    RespoStyle::default()
+      .background_color(CssColor::Hsl(0, 0, 100))
+      .max_width(CssSize::Px(600.0))
+      .width(CssSize::Percent(100.))
+      .max_height(CssSize::Vh(80.0))
+      .overflow(CssOverflow::Auto)
+      .border_radius(3.0)
+      .color(CssColor::Hsl(0, 0, 0))
+      .insert("margin", "auto".to_owned())
+      .padding(16.0)
+  )
+);
+
+static_styles!(
+  css_drawer_card,
   (
     "$0".to_owned(),
     RespoStyle::default()

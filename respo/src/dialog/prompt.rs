@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
-use crate::dialog::{css_backdrop, css_button, css_card};
+use crate::dialog::{css_backdrop, css_button, css_modal_card};
 use crate::ui::{ui_button, ui_center, ui_column, ui_fullscreen, ui_global, ui_input, ui_row_parted, ui_textarea};
 
 use crate::{
@@ -17,7 +17,7 @@ use crate::{
   RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree,
 };
 
-use crate::dialog::{effect_fade, BUTTON_NAME};
+use crate::dialog::{effect_modal_fade, BUTTON_NAME};
 
 const NEXT_TASK_NAME: &str = "_RESPO_PROMPT_NEXT_TASK";
 
@@ -166,7 +166,7 @@ where
               Ok(())
             })
             .children([div()
-              .class_list(&[ui_column(), ui_global(), css_card()])
+              .class_list(&[ui_column(), ui_global(), css_modal_card()])
               .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).to_owned())
               .style(options.card_style)
               .style(options.input_style)
@@ -223,7 +223,7 @@ where
         .to_owned(),
     )
     // .effect(&[show], effect_focus)
-    .effect(&[show], effect_fade)
+    .effect(&[show], effect_modal_fade)
     .share_with_ref(),
   )
 }

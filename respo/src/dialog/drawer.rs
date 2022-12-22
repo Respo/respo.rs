@@ -5,12 +5,12 @@ use std::rc::Rc;
 
 use serde::{Deserialize, Serialize};
 
-use crate::dialog::{css_backdrop, css_card};
+use crate::dialog::{css_backdrop, css_drawer_card};
 use crate::ui::{ui_center, ui_column, ui_fullscreen, ui_global};
 
 use crate::{div, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree};
 
-use crate::dialog::effect_fade;
+use crate::dialog::effect_drawer_fade;
 
 /// The options for custom drawer.
 #[derive(Debug, Clone, Default)]
@@ -99,7 +99,7 @@ where
               Ok(())
             })
             .children([div()
-              .class_list(&[ui_column(), ui_global(), css_card()])
+              .class_list(&[ui_column(), ui_global(), css_drawer_card()])
               .style(RespoStyle::default().padding(0.0).line_height(CssLineHeight::Px(32.0)).to_owned())
               .style(options.card_style)
               .on_click(move |e, _dispatch| -> Result<(), String> {
@@ -133,7 +133,7 @@ where
         .to_owned(),
     )
     // .effect(&[show], effect_focus)
-    .effect(&[show], effect_fade)
+    .effect(&[show], effect_drawer_fade)
     .share_with_ref(),
   )
 }

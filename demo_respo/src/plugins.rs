@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+use respo::ui::{ui_button_danger, ui_button_primary};
 use respo::RespoEvent;
 use respo::{space, ui::ui_row_parted, RespoStyle};
 use serde::{Deserialize, Serialize};
@@ -208,13 +209,13 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
             button().class(ui_button()).inner_text("Try Prompt").on_click(on_prompt).to_owned(),
             space(Some(8), None),
             button()
-              .class(ui_button())
+              .class(ui_button_primary())
               .inner_text("Try Custom Modal")
               .on_click(on_modal)
               .to_owned(),
             space(Some(8), None),
             button()
-              .class(ui_button())
+              .class(ui_button_danger())
               .inner_text("Try Custom Drawer")
               .on_click(on_drawer)
               .to_owned(),

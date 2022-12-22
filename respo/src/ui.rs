@@ -72,7 +72,61 @@ static_styles!(
   (
     "$0:active",
     RespoStyle::default()
-      .transform(CssTransform::Scale(1.04, 1.04))
+      .transform(CssTransform::Scale(1.02, 1.02))
+      .transition_duration(0.0),
+  ),
+);
+
+static_styles!(
+  ui_button_primary,
+  (
+    "$0",
+    RespoStyle::default()
+      .outline(None)
+      .color(CssColor::White)
+      .background_color(CssColor::Hsl(220, 80, 60))
+      .border(Some((0., CssBorderStyle::Solid, CssColor::Hsl(220, 80, 60))))
+      .min_width(CssSize::Px(80.))
+      .line_height(CssLineHeight::Px(24.))
+      .border_radius(4.)
+      .font_size(14.)
+      .cursor("pointer".to_owned())
+      .transition_duration(200.)
+      .text_align(CssTextAlign::Center),
+  ),
+  ("$0:hover", RespoStyle::default().background_color(CssColor::Hsl(220, 80, 64))),
+  (
+    "$0:active",
+    RespoStyle::default()
+      .transform(CssTransform::Scale(1.02, 1.02))
+      .background_color(CssColor::Hsl(220, 80, 68))
+      .transition_duration(0.0),
+  ),
+);
+
+static_styles!(
+  ui_button_danger,
+  (
+    "$0",
+    RespoStyle::default()
+      .outline(None)
+      .color(CssColor::White)
+      .background_color(CssColor::Hsl(6, 100, 60))
+      .border(Some((0., CssBorderStyle::Solid, CssColor::Hsl(6, 100, 60))))
+      .min_width(CssSize::Px(80.))
+      .line_height(CssLineHeight::Px(24.))
+      .border_radius(4.)
+      .font_size(14.)
+      .cursor("pointer".to_owned())
+      .transition_duration(200.)
+      .text_align(CssTextAlign::Center),
+  ),
+  ("$0:hover", RespoStyle::default().background_color(CssColor::Hsl(6, 100, 64))),
+  (
+    "$0:active",
+    RespoStyle::default()
+      .transform(CssTransform::Scale(1.02, 1.02))
+      .background_color(CssColor::Hsl(6, 100, 68))
       .transition_duration(0.0),
   ),
 );

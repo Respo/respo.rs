@@ -389,10 +389,12 @@ where
       Ok(())
     }
     RespoNode::Element { children, .. } => {
-      for (k, child) in children {
+      for (idx, (k, child)) in children.iter().enumerate() {
         let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Key(k.to_owned()));
-        collect_effects_outside_in_as(child, &next_coord, dom_path, effect_type, changes)?;
+        let mut next_dom_path = dom_path.to_owned();
+        next_dom_path.push(idx as u32);
+        collect_effects_outside_in_as(child, &next_coord, &next_dom_path, effect_type, changes)?;
       }
       Ok(())
     }
@@ -430,10 +432,12 @@ where
       Ok(())
     }
     RespoNode::Element { children, .. } => {
-      for (k, child) in children {
+      for (idx, (k, child)) in children.iter().enumerate() {
         let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Key(k.to_owned()));
-        collect_effects_inside_out_as(child, &next_coord, dom_path, effect_type, changes)?;
+        let mut next_dom_path = dom_path.to_owned();
+        next_dom_path.push(idx as u32);
+        collect_effects_inside_out_as(child, &next_coord, &next_dom_path, effect_type, changes)?;
       }
       Ok(())
     }

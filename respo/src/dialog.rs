@@ -11,10 +11,9 @@ use std::fmt::Debug;
 use std::rc::Rc;
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
-use web_sys::console::log_1;
 use web_sys::{Element, HtmlElement, KeyboardEvent, KeyboardEventInit, Node};
 
-use crate::{input, log, respo, static_styles, CssDisplay, DispatchFn, RespoEffectType, RespoEvent, RespoNode};
+use crate::{input, respo, static_styles, CssDisplay, DispatchFn, RespoEffectType, RespoEvent, RespoNode};
 use crate::{CssColor, CssOverflow, CssPosition, CssSize, RespoEffectArg, RespoStyle};
 
 pub(crate) const BUTTON_NAME: &str = "dialog-button";
@@ -212,12 +211,7 @@ pub(crate) fn effect_keydown(_args: Vec<RespoEffectArg>, effect_type: RespoEffec
           .key_code(event.key_code());
         let new_event = KeyboardEvent::new_with_keyboard_event_init_dict(&event.type_(), &init_dict).unwrap();
 
-        // log_1(&new_event);
-        // log_1(&el_1);
-
-        // TODO need to find target more accurately
-        // el_1.dispatch_event(&new_event).unwrap();
-        el_1.last_child().unwrap().dispatch_event(&new_event).unwrap();
+        el_1.dispatch_event(&new_event).unwrap();
       }) as Box<dyn FnMut(_)>);
       window
         .add_event_listener_with_callback("keydown", listener.as_ref().unchecked_ref())
@@ -251,7 +245,6 @@ where
       input()
         .style(RespoStyle::default().display(CssDisplay::None).to_owned())
         .on_keydown(move |e, dispatch| -> Result<(), String> {
-          log!("keydown");
           if let RespoEvent::Keyboard { key, .. } = e {
             if key == "Escape" {
               on_close(dispatch)?;

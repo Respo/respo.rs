@@ -12,6 +12,8 @@ use crate::{div, space, span, CssLineHeight, CssPosition, DispatchFn, RespoActio
 
 use crate::dialog::effect_modal_fade;
 
+use super::comp_esc_listener;
+
 /// The options for custom modal.
 #[derive(Debug, Clone, Default)]
 pub struct ModalOptions<T>
@@ -80,6 +82,7 @@ where
 {
   let close = Rc::new(on_close);
   let close2 = close.clone();
+  let close3 = close.clone();
 
   Ok(
     RespoNode::new_component(
@@ -98,34 +101,37 @@ where
               close(dispatch)?;
               Ok(())
             })
-            .children([div()
-              .class_list(&[ui_column(), ui_global(), css_modal_card()])
-              .style(RespoStyle::default().padding(0.0).line_height(CssLineHeight::Px(32.0)).to_owned())
-              .style(options.card_style)
-              .on_click(move |e, _dispatch| -> Result<(), String> {
-                // nothing to do
-                if let RespoEvent::Click { original_event, .. } = e {
-                  // stop propagation to prevent closing the modal
-                  original_event.stop_propagation();
-                }
-                Ok(())
-              })
-              .children([div()
-                .class(ui_column())
-                .children([
-                  div()
-                    .class(ui_center())
-                    .children([span().inner_text(options.title.unwrap_or_else(|| "Modal".to_owned())).to_owned()])
-                    .to_owned(),
-                  space(None, Some(8)),
-                  options.render.run(move |dispatch| -> Result<(), String> {
-                    let close = close2.clone();
-                    close(dispatch)?;
-                    Ok(())
-                  })?,
-                ])
-                .to_owned()])
-              .to_owned()])
+            .children([
+              div()
+                .class_list(&[ui_column(), ui_global(), css_modal_card()])
+                .style(RespoStyle::default().padding(0.0).line_height(CssLineHeight::Px(32.0)).to_owned())
+                .style(options.card_style)
+                .on_click(move |e, _dispatch| -> Result<(), String> {
+                  // nothing to do
+                  if let RespoEvent::Click { original_event, .. } = e {
+                    // stop propagation to prevent closing the modal
+                    original_event.stop_propagation();
+                  }
+                  Ok(())
+                })
+                .children([div()
+                  .class(ui_column())
+                  .children([
+                    div()
+                      .class(ui_center())
+                      .children([span().inner_text(options.title.unwrap_or_else(|| "Modal".to_owned())).to_owned()])
+                      .to_owned(),
+                    space(None, Some(8)),
+                    options.render.run(move |dispatch| -> Result<(), String> {
+                      let close = close2.clone();
+                      close(dispatch)?;
+                      Ok(())
+                    })?,
+                  ])
+                  .to_owned()])
+                .to_owned(),
+              comp_esc_listener(show, close3)?,
+            ])
             .to_owned()
         } else {
           span().attribute("data-name", "placeholder").to_owned()

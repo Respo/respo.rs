@@ -17,6 +17,8 @@ use crate::{
 
 use crate::dialog::{effect_focus, effect_modal_fade, BUTTON_NAME};
 
+use super::comp_esc_listener;
+
 const NEXT_TASK_NAME: &str = "_RESPO_CONFIRM_NEXT_TASK";
 
 /// options for confirm dialog
@@ -41,6 +43,7 @@ where
   let confirm = Rc::new(on_confirm);
   let close = Rc::new(on_close);
   let close2 = close.clone();
+  let close3 = close.clone();
 
   Ok(
     RespoNode::new_component(
@@ -59,43 +62,46 @@ where
               close(dispatch)?;
               Ok(())
             })
-            .children([div()
-              .class_list(&[ui_column(), ui_global(), css_modal_card()])
-              .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).to_owned())
-              .style(options.card_style)
-              .on_click(move |e, _dispatch| -> Result<(), String> {
-                // nothing to do
-                if let RespoEvent::Click { original_event, .. } = e {
-                  // stop propagation to prevent closing the modal
-                  original_event.stop_propagation();
-                }
-                Ok(())
-              })
-              .children([div()
-                .children([
-                  span()
-                    .inner_text(options.text.unwrap_or_else(|| "Need confirmation...".to_owned()))
-                    .to_owned(),
-                  space(None, Some(8)),
-                  div()
-                    .class(ui_row_parted())
-                    .children([
-                      span(),
-                      button()
-                        .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
-                        .inner_text(options.button_text.unwrap_or_else(|| "Confirm".to_owned()))
-                        .on_click(move |_e, dispatch| -> Result<(), String> {
-                          let d2 = dispatch.clone();
-                          confirm(dispatch)?;
-                          close2(d2)?;
-                          Ok(())
-                        })
-                        .to_owned(),
-                    ])
-                    .to_owned(),
-                ])
-                .to_owned()])
-              .to_owned()])
+            .children([
+              div()
+                .class_list(&[ui_column(), ui_global(), css_modal_card()])
+                .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).to_owned())
+                .style(options.card_style)
+                .on_click(move |e, _dispatch| -> Result<(), String> {
+                  // nothing to do
+                  if let RespoEvent::Click { original_event, .. } = e {
+                    // stop propagation to prevent closing the modal
+                    original_event.stop_propagation();
+                  }
+                  Ok(())
+                })
+                .children([div()
+                  .children([
+                    span()
+                      .inner_text(options.text.unwrap_or_else(|| "Need confirmation...".to_owned()))
+                      .to_owned(),
+                    space(None, Some(8)),
+                    div()
+                      .class(ui_row_parted())
+                      .children([
+                        span(),
+                        button()
+                          .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
+                          .inner_text(options.button_text.unwrap_or_else(|| "Confirm".to_owned()))
+                          .on_click(move |_e, dispatch| -> Result<(), String> {
+                            let d2 = dispatch.clone();
+                            confirm(dispatch)?;
+                            close2(d2)?;
+                            Ok(())
+                          })
+                          .to_owned(),
+                      ])
+                      .to_owned(),
+                  ])
+                  .to_owned()])
+                .to_owned(),
+              comp_esc_listener(show, close3)?,
+            ])
             .to_owned()
         } else {
           span().attribute("data-name", "placeholder").to_owned()

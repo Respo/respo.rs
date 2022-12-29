@@ -19,6 +19,8 @@ use crate::{
 
 use crate::dialog::{effect_modal_fade, BUTTON_NAME};
 
+use super::comp_esc_listener;
+
 const NEXT_TASK_NAME: &str = "_RESPO_PROMPT_NEXT_TASK";
 
 /// options for prompt dialog
@@ -97,6 +99,7 @@ where
   let submit = Rc::new(on_submit);
   let close = Rc::new(on_close);
   let close2 = close.clone();
+  let close3 = close.clone();
 
   let on_text_input = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
     if let RespoEvent::Input { value, .. } = e {
@@ -165,57 +168,60 @@ where
               dispatch.run_empty_state(&cursor3)?;
               Ok(())
             })
-            .children([div()
-              .class_list(&[ui_column(), ui_global(), css_modal_card()])
-              .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).to_owned())
-              .style(options.card_style)
-              .style(options.input_style)
-              .on_click(move |e, _dispatch| -> Result<(), String> {
-                // nothing to do
-                if let RespoEvent::Click { original_event, .. } = e {
-                  // stop propagation to prevent closing the modal
-                  original_event.stop_propagation();
-                }
-                Ok(())
-              })
-              .children([div()
-                .children([
-                  span()
-                    .inner_text(options.text.unwrap_or_else(|| "Input your text:".to_owned()))
-                    .to_owned(),
-                  space(None, Some(8)),
-                  div()
-                    .children([input_el
-                      .class_list(&[ui_input()])
-                      .style(RespoStyle::default().width(CssSize::Percent(100.0)).to_owned())
-                      .attribute("placeholder", "Content...")
-                      .attribute("autoFocus", "autofocus")
-                      .value(state.draft)
-                      .on_input(on_text_input)
-                      .to_owned()])
-                    .to_owned(),
-                  match &state.error {
-                    Some(message) => div().class_list(&[css_error()]).inner_text(message).to_owned(),
-                    None => span(),
-                  },
-                  space(None, Some(8)),
-                  div()
-                    .class(ui_row_parted())
-                    .children([
-                      span(),
-                      button()
-                        .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
-                        .inner_text(options.button_text.unwrap_or_else(|| "Submit".to_owned()))
-                        .on_click(move |_e, dispatch| -> Result<(), String> {
-                          check_submit(&state2.draft, dispatch)?;
-                          Ok(())
-                        })
-                        .to_owned(),
-                    ])
-                    .to_owned(),
-                ])
-                .to_owned()])
-              .to_owned()])
+            .children([
+              div()
+                .class_list(&[ui_column(), ui_global(), css_modal_card()])
+                .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).to_owned())
+                .style(options.card_style)
+                .style(options.input_style)
+                .on_click(move |e, _dispatch| -> Result<(), String> {
+                  // nothing to do
+                  if let RespoEvent::Click { original_event, .. } = e {
+                    // stop propagation to prevent closing the modal
+                    original_event.stop_propagation();
+                  }
+                  Ok(())
+                })
+                .children([div()
+                  .children([
+                    span()
+                      .inner_text(options.text.unwrap_or_else(|| "Input your text:".to_owned()))
+                      .to_owned(),
+                    space(None, Some(8)),
+                    div()
+                      .children([input_el
+                        .class_list(&[ui_input()])
+                        .style(RespoStyle::default().width(CssSize::Percent(100.0)).to_owned())
+                        .attribute("placeholder", "Content...")
+                        .attribute("autoFocus", "autofocus")
+                        .value(state.draft)
+                        .on_input(on_text_input)
+                        .to_owned()])
+                      .to_owned(),
+                    match &state.error {
+                      Some(message) => div().class_list(&[css_error()]).inner_text(message).to_owned(),
+                      None => span(),
+                    },
+                    space(None, Some(8)),
+                    div()
+                      .class(ui_row_parted())
+                      .children([
+                        span(),
+                        button()
+                          .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
+                          .inner_text(options.button_text.unwrap_or_else(|| "Submit".to_owned()))
+                          .on_click(move |_e, dispatch| -> Result<(), String> {
+                            check_submit(&state2.draft, dispatch)?;
+                            Ok(())
+                          })
+                          .to_owned(),
+                      ])
+                      .to_owned(),
+                  ])
+                  .to_owned()])
+                .to_owned(),
+              comp_esc_listener(show, close3)?,
+            ])
             .to_owned()
         } else {
           span().attribute("data-name", "placeholder").to_owned()

@@ -6,12 +6,14 @@ mod drawer;
 mod modal;
 mod prompt;
 
+use js_sys::Reflect;
+use std::fmt::Debug;
 use std::rc::Rc;
 use wasm_bindgen::prelude::Closure;
-use wasm_bindgen::JsCast;
-use web_sys::{Element, HtmlElement, Node};
+use wasm_bindgen::{JsCast, JsValue};
+use web_sys::{Element, HtmlElement, KeyboardEvent, KeyboardEventInit, Node};
 
-use crate::{respo, static_styles, RespoEffectType};
+use crate::{input, respo, static_styles, CssDisplay, DispatchFn, RespoEffectType, RespoEvent, RespoNode};
 use crate::{CssColor, CssOverflow, CssPosition, CssSize, RespoEffectArg, RespoStyle};
 
 pub(crate) const BUTTON_NAME: &str = "dialog-button";
@@ -185,6 +187,76 @@ pub(crate) fn effect_drawer_fade(args: Vec<RespoEffectArg>, effect_type: RespoEf
   }
 
   Ok(())
+}
+
+/// put listener on the element, directly on the element
+const TEMP_LISTENER: &str = "temp_listener";
+
+/// listen to global keydown event, dispatch to element
+pub(crate) fn effect_keydown(_args: Vec<RespoEffectArg>, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
+  let el_1 = Rc::new(el.to_owned());
+  let el_2 = el_1.clone();
+  let el_3 = el_1.clone();
+  match effect_type {
+    RespoEffectType::Mounted => {
+      let window = web_sys::window().unwrap();
+      let listener = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+        let mut init_dict: KeyboardEventInit = KeyboardEventInit::new();
+        init_dict
+          .key(&event.key())
+          .code(&event.code())
+          .char_code(event.char_code())
+          .view(event.view().as_ref())
+          .location(event.location())
+          .key_code(event.key_code());
+        let new_event = KeyboardEvent::new_with_keyboard_event_init_dict(&event.type_(), &init_dict).unwrap();
+
+        el_1.dispatch_event(&new_event).unwrap();
+      }) as Box<dyn FnMut(_)>);
+      window
+        .add_event_listener_with_callback("keydown", listener.as_ref().unchecked_ref())
+        .unwrap();
+      let _ = Reflect::set(&el_2, &JsValue::from_str(TEMP_LISTENER), listener.as_ref().unchecked_ref());
+      listener.forget();
+    }
+    RespoEffectType::BeforeUnmount => {
+      let listener = Reflect::get(&el_3, &JsValue::from_str(TEMP_LISTENER)).unwrap();
+      let window = web_sys::window().unwrap();
+      window
+        .remove_event_listener_with_callback("keydown", listener.as_ref().unchecked_ref())
+        .unwrap();
+      let _ = Reflect::set(&el_2, &JsValue::from_str(TEMP_LISTENER), &JsValue::NULL);
+    }
+    _ => {}
+  }
+
+  Ok(())
+}
+
+/// handle global keydown event
+fn comp_esc_listener<T, U>(show: bool, on_close: Rc<U>) -> Result<RespoNode<T>, String>
+where
+  U: Fn(DispatchFn<T>) -> Result<(), String> + 'static,
+  T: Clone + Debug,
+{
+  Ok(
+    RespoNode::new_component(
+      "esc-listener",
+      input()
+        .style(RespoStyle::default().display(CssDisplay::None).to_owned())
+        .on_keydown(move |e, dispatch| -> Result<(), String> {
+          if let RespoEvent::Keyboard { key, .. } = e {
+            if key == "Escape" {
+              on_close(dispatch)?;
+            }
+          }
+          Ok(())
+        })
+        .to_owned(),
+    )
+    .effect(&[show], effect_keydown)
+    .share_with_ref(),
+  )
 }
 
 static_styles!(

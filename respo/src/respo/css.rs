@@ -785,7 +785,7 @@ pub fn css_name_from_path(p: &str) -> String {
   if let Some(x) = s.strip_suffix(".rs") {
     s = x.to_owned();
   }
-  s = s.replace(&"::", "_");
+  s = s.replace("::", "_");
   s = s.replace('/', "_");
   s = s.replace('.', "_");
   s

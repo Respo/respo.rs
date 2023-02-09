@@ -11,13 +11,13 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
 
-      - uses: jetli/trunk-action@v0.1.0
+      - uses: jetli/trunk-action@v0.4.0
         with:
           # Optional version of trunk to install(eg. 'v0.8.1', 'latest')
           version: 'latest'
@@ -29,7 +29,7 @@ jobs:
 
       - name: Deploy to server
         id: deploy
-        uses: Pendect/action-rsyncer@v1.1.0
+        uses: Pendect/action-rsyncer@v2.0.0
         env:
           DEPLOY_KEY: ${{secrets.rsync_private_key}}
         with:

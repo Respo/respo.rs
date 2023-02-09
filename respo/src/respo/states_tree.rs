@@ -47,7 +47,7 @@ impl StatesTree {
   /// in-place mutation of state tree
   pub fn set_in_mut(&mut self, path: &[String], new_state: MaybeState) {
     if path.is_empty() {
-      (*self).data = new_state;
+      self.data = new_state;
     } else {
       let (p_head, p_rest) = path.split_at(1);
       let p0 = p_head[0].to_owned();

@@ -102,16 +102,13 @@ pub fn comp_task(
 
 static_styles!(
   style_task_container,
-  (
-    "$0".to_owned(),
-    RespoStyle::default().margin(4.).background_color(CssColor::Hsl(200, 90, 96)),
-  )
+  ("&", RespoStyle::default().margin(4.).background_color(CssColor::Hsl(200, 90, 96)),)
 );
 
 static_styles!(
   style_done_button,
   (
-    "$0".to_owned(),
+    "&",
     RespoStyle::default()
       .width(CssSize::Px(24.0))
       .height(CssSize::Px(24.0))
@@ -124,7 +121,7 @@ static_styles!(
 static_styles!(
   style_remove_button,
   (
-    "$0".to_owned(),
+    "&",
     RespoStyle::default()
       .width(CssSize::Px(16.0))
       .height(CssSize::Px(16.0))
@@ -133,5 +130,5 @@ static_styles!(
       .margin4(0.0, 0.0, 0.0, 16.0)
       .color(CssColor::Hsl(0, 90, 90)),
   ),
-  ("$0:hover".to_owned(), RespoStyle::default().color(CssColor::Hsl(0, 90, 80))),
+  ("$0:hover", RespoStyle::default().color(CssColor::Hsl(0, 90, 80))),
 );

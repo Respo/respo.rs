@@ -4,3 +4,5 @@ members = [
   "respo",
   "demo_respo",
 ]
+
+resolver = "2"

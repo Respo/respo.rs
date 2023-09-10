@@ -45,6 +45,7 @@ pub struct PromptOptions {
 }
 
 /// wraps validator function
+#[allow(clippy::type_complexity)]
 #[derive(Clone)]
 pub struct PromptValidator(Rc<dyn Fn(&str) -> Result<(), String>>);
 
@@ -390,4 +391,4 @@ where
   }
 }
 
-static_styles!(css_error, ("$0".to_owned(), RespoStyle::default().color(CssColor::Red)));
+static_styles!(css_error, ("&", RespoStyle::default().color(CssColor::Red)));

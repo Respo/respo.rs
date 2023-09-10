@@ -35,7 +35,7 @@ CSS-in-Rust:
 static_styles!(
   style_remove_button,
   (
-    "$0".to_owned(),
+    "&",
     RespoStyle::default()
       .width(CssSize::Px(16.0))
       .height(CssSize::Px(16.0))
@@ -44,7 +44,7 @@ static_styles!(
       .margin4(0.0, 0.0, 0.0, 16.0)
       .color(CssColor::Hsl(0, 90, 90)),
   ),
-  ("$0:hover".to_owned(), RespoStyle::default().color(CssColor::Hsl(0, 90, 80))),
+  ("&:hover", RespoStyle::default().color(CssColor::Hsl(0, 90, 80))),
 );
 ```
 

@@ -262,7 +262,7 @@ where
 static_styles!(
   css_backdrop,
   (
-    "$0".to_owned(),
+    "&",
     RespoStyle::default()
       .background_color(CssColor::Hsla(0.0, 30.0, 10.0, 0.6))
       .position(CssPosition::Fixed)
@@ -273,7 +273,7 @@ static_styles!(
 static_styles!(
   css_modal_card,
   (
-    "$0".to_owned(),
+    "&",
     RespoStyle::default()
       .background_color(CssColor::Hsl(0, 0, 100))
       .max_width(CssSize::Px(600.0))
@@ -290,7 +290,7 @@ static_styles!(
 static_styles!(
   css_drawer_card,
   (
-    "$0".to_owned(),
+    "&",
     RespoStyle::default()
       .background_color(CssColor::Hsl(0, 0, 100))
       .max_width(CssSize::Vw(50.0))
@@ -310,7 +310,7 @@ static_styles!(
 static_styles!(
   css_button,
   (
-    "$0".to_owned(),
+    "&",
     RespoStyle::default()
       .border_radius(4.0)
       .background_color(CssColor::White)

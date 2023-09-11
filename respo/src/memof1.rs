@@ -12,7 +12,7 @@ where
   F: Fn() -> Result<T, String>,
 {
   let mut cache = caches.borrow_mut();
-  let f_dict = cache.entry(address).or_insert_with(HashMap::new);
+  let f_dict = cache.entry(address).or_default();
   let value = f_dict.get(&key);
   if let Some((old_args, v)) = value {
     if old_args == &args {

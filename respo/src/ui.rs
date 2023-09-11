@@ -21,20 +21,20 @@ const NORMAL_FONTS: &str = "Hind, Helvatica, Arial, sans-serif";
 static_styles!(
   ui_global,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .font_family(DEFAULT_FONTS.to_owned())
       .line_height(CssLineHeight::Em(2.))
       .font_size(14.)
       .color(CssColor::Hsl(0, 0, 20)),
   ),
-  ("$0 *", RespoStyle::default().box_sizing(CssBoxSizing::BorderBox))
+  ("& *", RespoStyle::default().box_sizing(CssBoxSizing::BorderBox))
 );
 
 static_styles!(
   ui_input,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .border(Some((1., CssBorderStyle::Solid, CssColor::Hsl(0, 0, 80))))
       .border_radius(4.)
@@ -45,7 +45,7 @@ static_styles!(
       .vertical_align(CssVerticalAlign::Middle),
   ),
   (
-    "$0:focus",
+    "&:focus",
     RespoStyle::default()
       .border(Some((1.0, CssBorderStyle::Solid, CssColor::Hsl(200, 50, 75))))
       .box_shadow(0.0, 0.0, 4.0, 0.0, CssColor::Hsl(200, 70, 50)),
@@ -55,7 +55,7 @@ static_styles!(
 static_styles!(
   ui_button,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .outline(None)
       .background_color(CssColor::White)
@@ -68,9 +68,9 @@ static_styles!(
       .transition_duration(200.)
       .text_align(CssTextAlign::Center),
   ),
-  ("$0:hover", RespoStyle::default().background_color(CssColor::Hsl(0, 0, 98))),
+  ("&:hover", RespoStyle::default().background_color(CssColor::Hsl(0, 0, 98))),
   (
-    "$0:active",
+    "&:active",
     RespoStyle::default()
       .transform(CssTransform::Scale(1.02, 1.02))
       .transition_duration(0.0),
@@ -80,7 +80,7 @@ static_styles!(
 static_styles!(
   ui_button_primary,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .outline(None)
       .color(CssColor::White)
@@ -94,9 +94,9 @@ static_styles!(
       .transition_duration(200.)
       .text_align(CssTextAlign::Center),
   ),
-  ("$0:hover", RespoStyle::default().background_color(CssColor::Hsl(220, 80, 64))),
+  ("&:hover", RespoStyle::default().background_color(CssColor::Hsl(220, 80, 64))),
   (
-    "$0:active",
+    "&:active",
     RespoStyle::default()
       .transform(CssTransform::Scale(1.02, 1.02))
       .background_color(CssColor::Hsl(220, 80, 68))
@@ -107,7 +107,7 @@ static_styles!(
 static_styles!(
   ui_button_danger,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .outline(None)
       .color(CssColor::White)
@@ -121,9 +121,9 @@ static_styles!(
       .transition_duration(200.)
       .text_align(CssTextAlign::Center),
   ),
-  ("$0:hover", RespoStyle::default().background_color(CssColor::Hsl(6, 100, 64))),
+  ("&:hover", RespoStyle::default().background_color(CssColor::Hsl(6, 100, 64))),
   (
-    "$0:active",
+    "&:active",
     RespoStyle::default()
       .transform(CssTransform::Scale(1.02, 1.02))
       .background_color(CssColor::Hsl(6, 100, 68))
@@ -134,7 +134,7 @@ static_styles!(
 static_styles!(
   ui_center,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .display(CssDisplay::Flex)
       .flex_direction(CssFlexDirection::Column)
@@ -146,7 +146,7 @@ static_styles!(
 static_styles!(
   ui_column,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .display(CssDisplay::Flex)
       .flex_direction(CssFlexDirection::Column)
@@ -157,7 +157,7 @@ static_styles!(
 static_styles!(
   ui_column_dispersive,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .display(CssDisplay::Flex)
       .flex_direction(CssFlexDirection::Column)
@@ -169,7 +169,7 @@ static_styles!(
 static_styles!(
   ui_column_evenly,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .display(CssDisplay::Flex)
       .flex_direction(CssFlexDirection::Column)
@@ -181,7 +181,7 @@ static_styles!(
 static_styles!(
   ui_column_parted,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .display(CssDisplay::Flex)
       .flex_direction(CssFlexDirection::Column)
@@ -190,12 +190,12 @@ static_styles!(
   )
 );
 
-static_styles!(ui_expand, ("$0", RespoStyle::default().insert("flex", "1".to_owned())));
+static_styles!(ui_expand, ("&", RespoStyle::default().insert("flex", "1".to_owned())));
 
 static_styles!(
   ui_fullscreen,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .position(CssPosition::Absolute)
       .left(CssSize::Px(0.))
@@ -206,16 +206,16 @@ static_styles!(
   )
 );
 
-static_styles!(ui_font_code, ("$0", RespoStyle::default().font_family(CODE_FONTS.to_owned())));
+static_styles!(ui_font_code, ("&", RespoStyle::default().font_family(CODE_FONTS.to_owned())));
 
-static_styles!(ui_font_fancy, ("$0", RespoStyle::default().font_family(FANCY_FONTS.to_owned())));
+static_styles!(ui_font_fancy, ("&", RespoStyle::default().font_family(FANCY_FONTS.to_owned())));
 
-static_styles!(ui_font_normal, ("$0", RespoStyle::default().font_family(NORMAL_FONTS.to_owned())));
+static_styles!(ui_font_normal, ("&", RespoStyle::default().font_family(NORMAL_FONTS.to_owned())));
 
 static_styles!(
   ui_textarea,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .outline(None)
       .font_size(14.)
@@ -231,7 +231,7 @@ static_styles!(
 static_styles!(
   ui_link,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .text_decoration(CssTextDecoration::Underline)
       .insert("user-select", "no-select".to_owned())
@@ -247,7 +247,7 @@ static_styles!(
 static_styles!(
   ui_row,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .display(CssDisplay::Flex)
       .flex_direction(CssFlexDirection::Row)
@@ -258,7 +258,7 @@ static_styles!(
 static_styles!(
   ui_row_center,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .display(CssDisplay::Flex)
       .flex_direction(CssFlexDirection::Row)
@@ -270,7 +270,7 @@ static_styles!(
 static_styles!(
   ui_row_dispersive,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .display(CssDisplay::Flex)
       .flex_direction(CssFlexDirection::Row)
@@ -282,7 +282,7 @@ static_styles!(
 static_styles!(
   ui_row_evenly,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .display(CssDisplay::Flex)
       .flex_direction(CssFlexDirection::Row)
@@ -294,7 +294,7 @@ static_styles!(
 static_styles!(
   ui_row_middle,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .display(CssDisplay::Flex)
       .flex_direction(CssFlexDirection::Row)
@@ -306,7 +306,7 @@ static_styles!(
 static_styles!(
   ui_row_parted,
   (
-    "$0",
+    "&",
     RespoStyle::default()
       .display(CssDisplay::Flex)
       .flex_direction(CssFlexDirection::Row)

@@ -759,7 +759,12 @@ where
 
     let mut styles = String::from("");
     for (query, properties) in rules {
-      styles.push_str(&query.to_string().replace("$0", &format!(".{}", &name.to_owned().into())));
+      styles.push_str(
+        &query
+          .to_string()
+          .replace("$0", &format!(".{}", &name.to_owned().into()))
+          .replace('&', &format!(".{}", &name.to_owned().into())),
+      );
       styles.push_str(" {\n");
       styles.push_str(&properties.to_string());
       styles.push_str("}\n");
@@ -795,7 +800,7 @@ pub fn css_name_from_path(p: &str) -> String {
 /// ```rust
 /// respo::static_style_seq!(the_name,
 ///   &[
-///     ("$0", &respo::RespoStyle::default())
+///     ("&", &respo::RespoStyle::default())
 ///   ]
 /// );
 /// ```
@@ -818,7 +823,7 @@ pub use static_style_seq;
 /// macro to create a public function of CSS rules(up to 5 tuples) at current file scope,
 /// ```rust
 /// respo::static_styles!(the_name,
-///   ("$0", &respo::RespoStyle::default())
+///   ("&", &respo::RespoStyle::default())
 /// );
 /// ```
 /// gets a function like:

@@ -2,9 +2,6 @@ use std::any::Any;
 use std::fmt::Debug;
 use std::{collections::HashMap, rc::Rc};
 
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use serde_json::Value;
-
 /// Respo maintains states in a tree structure, where the keys are strings,
 /// each child component "picks" a key to attach its own state to the tree,
 /// and it dispatches events to global store to update the state.
@@ -70,10 +67,6 @@ pub struct MaybeState(Option<Rc<dyn Any>>);
 impl MaybeState {
   pub fn new(state: Option<Rc<dyn Any>>) -> Self {
     Self(state)
-  }
-
-  pub fn none() -> Self {
-    Self(None)
   }
 
   pub fn cast_or_default<T>(&self) -> Result<Rc<T>, String>

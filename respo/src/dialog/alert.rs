@@ -2,12 +2,11 @@ use std::fmt::Debug;
 
 use std::marker::PhantomData;
 use std::rc::Rc;
-use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
 use crate::dialog::{css_backdrop, css_button, css_modal_card};
-use crate::ui::{ui_button, ui_center, ui_column, ui_fullscreen, ui_global, ui_row_parted};
+use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_row_parted};
 
 use crate::{
   button, div, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree,
@@ -60,7 +59,7 @@ where
             })
             .children([
               div()
-                .class_list(&[ui_column(), ui_global(), css_modal_card()])
+                .class_list(&[column(), ui_global(), css_modal_card()])
                 .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).to_owned())
                 .style(options.card_style)
                 .on_click(move |e, _dispatch| -> Result<(), String> {

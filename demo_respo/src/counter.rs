@@ -1,12 +1,10 @@
 use std::fmt::Debug;
 
-use serde::{Deserialize, Serialize};
-
 use respo::{button, div, span, ui::ui_button, util, CssColor, DispatchFn, RespoEvent, RespoNode, RespoStyle, StatesTree};
 
 use super::store::ActionOp;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 struct MainState {
   counted: i32,
 }

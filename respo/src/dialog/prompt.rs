@@ -10,7 +10,7 @@ use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
 use crate::dialog::{css_backdrop, css_button, css_modal_card};
-use crate::ui::{ui_button, ui_center, ui_column, ui_fullscreen, ui_global, ui_input, ui_row_parted, ui_textarea};
+use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_input, ui_row_parted, ui_textarea};
 
 use crate::{
   button, div, input, respo, space, span, static_styles, textarea, CssColor, CssLineHeight, CssPosition, CssSize, DispatchFn,
@@ -174,7 +174,7 @@ where
             })
             .children([
               div()
-                .class_list(&[ui_column(), ui_global(), css_modal_card()])
+                .class_list(&[column(), ui_global(), css_modal_card()])
                 .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).to_owned())
                 .style(options.card_style)
                 .style(options.input_style)

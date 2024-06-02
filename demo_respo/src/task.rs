@@ -1,7 +1,5 @@
 use std::fmt::Debug;
 
-use serde::{Deserialize, Serialize};
-
 use respo::{
   button, div, input, space, span, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
@@ -10,7 +8,7 @@ use respo::{
 
 use super::store::*;
 
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default)]
 struct TaskState {
   draft: String,
 }
@@ -23,18 +21,17 @@ pub fn comp_task(
   respo::util::log!("calling task function");
 
   let task_id = task.id.to_owned();
-  let task_id2 = task_id.clone();
-  let task_id3 = task_id.clone();
 
   let cursor = states.path();
   let cursor2 = cursor.clone();
   let state = states.data.cast_or_default::<TaskState>()?;
-  let state2 = state.clone();
-  let state3 = state.clone();
 
-  let on_toggle = move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
-    dispatch.run(ActionOp::ToggleTask(task_id.to_owned()))?;
-    Ok(())
+  let on_toggle = {
+    let tid = task_id.clone();
+    move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
+      dispatch.run(ActionOp::ToggleTask(tid.to_owned()))?;
+      Ok(())
+    }
   };
 
   let on_input = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
@@ -44,16 +41,23 @@ pub fn comp_task(
     Ok(())
   };
 
-  let on_remove = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
-    util::log!("remove button {:?}", e);
-    dispatch.run(ActionOp::RemoveTask(task_id2.to_owned()))?;
-    Ok(())
+  let on_remove = {
+    let tid = task_id.clone();
+    move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+      util::log!("remove button {:?}", e);
+      dispatch.run(ActionOp::RemoveTask(tid.to_owned()))?;
+      Ok(())
+    }
   };
 
-  let on_update = move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
-    dispatch.run(ActionOp::UpdateTask(task_id3.to_owned(), state2.draft.clone()))?;
-    dispatch.run_empty_state(&cursor2)?;
-    Ok(())
+  let on_update = {
+    let tid = task_id.clone();
+    let s = state.clone();
+    move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
+      dispatch.run(ActionOp::UpdateTask(tid.to_owned(), s.draft.clone()))?;
+      dispatch.run_empty_state(&cursor2)?;
+      Ok(())
+    }
   };
 
   Ok(
@@ -82,7 +86,7 @@ pub fn comp_task(
             .to_owned(),
           input()
             .class(ui_input())
-            .attribute("value", state3.draft.to_owned())
+            .attribute("value", state.draft.to_owned())
             .attribute("placeholder", "something to update...")
             .on_input(on_input)
             .to_owned(),

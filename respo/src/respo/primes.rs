@@ -81,9 +81,21 @@ impl From<usize> for RespoIndexKey {
   }
 }
 
+impl From<&usize> for RespoIndexKey {
+  fn from(data: &usize) -> Self {
+    Self(data.to_string())
+  }
+}
+
 impl From<String> for RespoIndexKey {
   fn from(s: String) -> Self {
     Self(s)
+  }
+}
+
+impl From<&String> for RespoIndexKey {
+  fn from(s: &String) -> Self {
+    Self(s.to_owned())
   }
 }
 

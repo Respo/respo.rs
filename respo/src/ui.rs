@@ -144,7 +144,7 @@ static_styles!(
 );
 
 static_styles!(
-  ui_column,
+  column,
   (
     "&",
     RespoStyle::default()

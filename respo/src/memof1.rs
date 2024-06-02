@@ -135,4 +135,3 @@ macro_rules! memo1_call_by {
     $crate::memo1_call_by!($f, $cache, $key, $arg1, $arg2, $arg3, $arg4, $arg5);
   };
 }
-pub use memo1_call_by;

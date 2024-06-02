@@ -75,7 +75,7 @@ impl RespoStore for Store {
         let mut found = false;
         for task in &mut self.tasks {
           if task.id == id {
-            task.content = content.to_owned();
+            task.content.clone_from(&content);
             found = true;
           }
         }

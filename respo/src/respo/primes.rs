@@ -100,7 +100,7 @@ impl Display for RespoIndexKey {
 
 impl From<RespoIndexKey> for Cirru {
   fn from(k: RespoIndexKey) -> Cirru {
-    k.to_string().into()
+    Cirru::from(k.to_string())
   }
 }
 
@@ -427,7 +427,7 @@ pub(crate) type StrDict = HashMap<String, String>;
 fn str_dict_to_cirrus_dict(dict: &StrDict) -> Cirru {
   let mut xs = vec![];
   for (k, v) in dict {
-    xs.push(vec![k.to_owned(), v.to_owned()].into());
+    xs.push(vec![Cirru::from(k), Cirru::from(v)].into());
   }
   Cirru::List(xs)
 }

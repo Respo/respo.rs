@@ -98,7 +98,7 @@ where
           effect_type.into(),
           coord_path_to_cirru(coord),
           dom_path_to_cirru(&dom_path),
-          skip_indexes.iter().map(|x| x.to_string()).collect::<Vec<_>>().into(),
+          skip_indexes.iter().map(|x| Cirru::from(x.to_string())).collect::<Vec<_>>().into(),
         ];
         Cirru::List(xs)
       }
@@ -135,7 +135,7 @@ where
           coord_path_to_cirru(coord),
           dom_path_to_cirru(&dom_path),
           str_dict_to_cirrus_dict(&set),
-          unset.iter().map(|x| x.to_owned()).collect::<Vec<_>>().into(),
+          unset.iter().map(Cirru::from).collect::<Vec<_>>().into(),
         ];
         Cirru::List(xs)
       }
@@ -150,7 +150,7 @@ where
           coord_path_to_cirru(coord),
           dom_path_to_cirru(&dom_path),
           str_dict_to_cirrus_dict(&set),
-          unset.iter().map(|x| x.to_owned()).collect::<Vec<_>>().into(),
+          unset.iter().map(Cirru::from).collect::<Vec<_>>().into(),
         ];
         Cirru::List(xs)
       }
@@ -164,8 +164,8 @@ where
           "::modify-event".into(),
           coord_path_to_cirru(coord),
           dom_path_to_cirru(&dom_path),
-          add.iter().map(|x| x.to_owned()).collect::<Vec<_>>().into(),
-          remove.iter().map(|x| x.to_owned()).collect::<Vec<_>>().into(),
+          add.iter().map(Cirru::from).collect::<Vec<_>>().into(),
+          remove.iter().map(Cirru::from).collect::<Vec<_>>().into(),
         ];
         Cirru::List(xs)
       }
@@ -211,11 +211,11 @@ where
   fn from(op: ChildDomOp<T>) -> Self {
     match op {
       ChildDomOp::InsertAfter(index, key, node) => {
-        let xs = vec!["::insert-after".into(), index.to_string().into(), key.into(), node.into()];
+        let xs = vec!["::insert-after".into(), Cirru::from(index.to_string()), key.into(), node.into()];
         Cirru::List(xs)
       }
       ChildDomOp::RemoveAt(index) => {
-        let xs = vec!["::remove-at".into(), index.to_string().into()];
+        let xs = vec!["::remove-at".into(), Cirru::from(index.to_string())];
         Cirru::List(xs)
       }
       ChildDomOp::Append(key, node) => {
@@ -236,8 +236,12 @@ where
           "::effect".into(),
           effect_type.into(),
           coord_path_to_cirru(nested_coord),
-          nested_dom_path.iter().map(|x| x.to_string()).collect::<Vec<_>>().into(),
-          skip_indexes.iter().map(|x| x.to_string()).collect::<Vec<_>>().into(),
+          nested_dom_path
+            .iter()
+            .map(|x| Cirru::from(x.to_string()))
+            .collect::<Vec<_>>()
+            .into(),
+          skip_indexes.iter().map(|x| Cirru::from(x.to_string())).collect::<Vec<_>>().into(),
         ];
         Cirru::List(xs)
       }
@@ -257,7 +261,7 @@ impl From<RespoCoord> for Cirru {
   fn from(coord: RespoCoord) -> Self {
     match coord {
       RespoCoord::Key(key) => key.into(),
-      RespoCoord::Comp(name) => vec!["::Comp".to_owned(), name].into(),
+      RespoCoord::Comp(name) => vec![Cirru::from("::Comp"), Cirru::from(name)].into(),
     }
   }
 }
@@ -273,7 +277,7 @@ fn coord_path_to_cirru(coord: Vec<RespoCoord>) -> Cirru {
 fn dom_path_to_cirru(dom_path: &[u32]) -> Cirru {
   let mut xs = vec!["::dom-path".into()];
   for c in dom_path {
-    xs.push(c.to_string().into());
+    xs.push(Cirru::from(c.to_string()));
   }
   Cirru::List(xs)
 }

@@ -90,7 +90,7 @@ where
   let cursor3 = cursor.clone();
   let mut state: InputState = states.data.cast_or_default()?;
   if let Some(text) = &options.initial_value {
-    state.draft = text.to_owned();
+    state.draft = text.to_string();
   }
 
   // respo::util::log!("State: {:?}", state);

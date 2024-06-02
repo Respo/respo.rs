@@ -11,7 +11,7 @@ use crate::{render_node, DispatchFn, MemoCache, RespoAction, RespoNode, RespoSto
 /// A template for a Respo app
 pub trait RespoApp {
   /// a type of the store, with a place for states tree
-  type Model: RespoStore + Debug + Clone + PartialEq + 'static;
+  type Model: RespoStore + Debug + Clone + 'static;
   /// actions should include one for updating states tree
   type Action: Debug + Clone + RespoAction + 'static;
 

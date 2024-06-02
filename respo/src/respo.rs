@@ -61,7 +61,7 @@ pub fn render_node<T, U>(
 ) -> Result<(), JsValue>
 where
   T: 'static + Debug + Clone,
-  U: Debug + Clone + PartialEq + 'static,
+  U: Debug + Clone + 'static,
 {
   let prev_store = RefCell::new(get_store());
   let tree0: RespoNode<T> = renderer()?;
@@ -107,10 +107,10 @@ where
         Box::new(move || -> Result<(), String> {
           if drain_rerender_status() {
             let store = get_store();
-            if store == prev_store.borrow().to_owned() {
-              // no need to update if store not changed
-              return Ok(());
-            }
+            // if store == prev_store.borrow().to_owned() {
+            //   // no need to update if store not changed
+            //   return Ok(());
+            // }
 
             prev_store.replace(store);
 

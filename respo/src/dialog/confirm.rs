@@ -153,7 +153,7 @@ where
   T: Clone + Debug,
   U: Fn(DispatchFn<T>) -> Result<(), String> + 'static,
 {
-  state: ConfirmPluginState,
+  state: Rc<ConfirmPluginState>,
   options: ConfirmOptions,
   /// tracking content to display
   text: Option<String>,
@@ -245,7 +245,7 @@ where
 
   fn new(states: StatesTree, options: ConfirmOptions, on_confirm: U) -> Result<Self, String> {
     let cursor = states.path();
-    let state: ConfirmPluginState = states.data.cast_or_default()?;
+    let state = states.data.cast_or_default::<ConfirmPluginState>()?;
 
     let instance = Self {
       state,

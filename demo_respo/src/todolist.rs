@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use respo::{button, div, memo1_call_by, span, ui::ui_button, util, DispatchFn, MemoCache, RespoIndexKey, RespoNode, StatesTree};
+use respo::{button, div, span, ui::ui_button, util, DispatchFn, MemoCache, RespoIndexKey, RespoNode, StatesTree};
 
 use super::{
   store::{ActionOp, Task},
@@ -18,7 +18,8 @@ pub fn comp_todolist(
   tasks: &[Task],
 ) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
-  let state: TodolistState = states.data.cast_or_default()?;
+  let state = states.data.cast_or_default::<TodolistState>()?;
+  let state2 = state.clone();
 
   let mut children: Vec<(RespoIndexKey, RespoNode<_>)> = vec![];
   for task in tasks {
@@ -30,7 +31,7 @@ pub fn comp_todolist(
     //   comp_task(memo_caches.to_owned(), &states.pick(&task.id), task)?,
     // ));
 
-    let m = memo_caches.to_owned();
+    let _m = memo_caches.to_owned();
 
     // children.push((
     //   task.id.to_owned().into(),
@@ -46,7 +47,7 @@ pub fn comp_todolist(
     children.push((
       task.id.to_owned().into(),
       // comp_task(memo_caches.to_owned(), &states.pick(&task.id), task)?,
-      memo1_call_by!(comp_task, m.to_owned(), task.id.to_owned(), &states.pick(&task.id), task)?,
+      comp_task(&states.pick(&task.id), task)?,
     ));
   }
 
@@ -71,7 +72,7 @@ pub fn comp_todolist(
         div()
           .children([
             span()
-              .inner_text(format!("tasks size: {} ... {}", tasks.len(), state.hide_done))
+              .inner_text(format!("tasks size: {} ... {}", tasks.len(), state2.hide_done.to_owned()))
               .to_owned(),
             button().class(ui_button()).inner_text("hide done").on_click(on_hide).to_owned(),
           ])

@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use std::marker::PhantomData;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
@@ -145,7 +146,7 @@ where
   T: Clone + Debug,
   U: Fn(DispatchFn<T>) -> Result<(), String> + 'static,
 {
-  state: AlertPluginState,
+  state: Rc<AlertPluginState>,
   options: AlertOptions,
   /// tracking content to display
   text: Option<String>,
@@ -208,7 +209,7 @@ where
 
   fn new(states: StatesTree, options: AlertOptions, on_read: U) -> Result<Self, String> {
     let cursor = states.path();
-    let state: AlertPluginState = states.data.cast_or_default()?;
+    let state = states.data.cast_or_default::<AlertPluginState>()?;
 
     let instance = Self {
       state,

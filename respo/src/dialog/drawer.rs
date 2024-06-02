@@ -177,7 +177,7 @@ pub struct DrawerPlugin<T>
 where
   T: Clone + Debug,
 {
-  state: DrawerPluginState,
+  state: Rc<DrawerPluginState>,
   options: DrawerOptions<T>,
   /// tracking content to display
   cursor: Vec<String>,
@@ -210,7 +210,7 @@ where
 
   fn new(states: StatesTree, options: DrawerOptions<T>) -> Result<Self, String> {
     let cursor = states.path();
-    let state: DrawerPluginState = states.data.cast_or_default()?;
+    let state = states.data.cast_or_default::<DrawerPluginState>()?;
 
     let instance = Self {
       state,

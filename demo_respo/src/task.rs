@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use respo::{
   button, div, input, space, span, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
-  util, CssColor, CssSize, DispatchFn, MemoCache, RespoEvent, RespoNode, RespoStyle, StatesTree,
+  util, CssColor, CssSize, DispatchFn, RespoEvent, RespoNode, RespoStyle, StatesTree,
 };
 
 use super::store::*;
@@ -16,7 +16,7 @@ struct TaskState {
 }
 
 pub fn comp_task(
-  _memo_caches: MemoCache<RespoNode<ActionOp>>,
+  // _memo_caches: MemoCache<RespoNode<ActionOp>>,
   states: &StatesTree,
   task: &Task,
 ) -> Result<RespoNode<ActionOp>, String> {
@@ -28,8 +28,9 @@ pub fn comp_task(
 
   let cursor = states.path();
   let cursor2 = cursor.clone();
-  let state: TaskState = states.data.cast_or_default()?;
+  let state = states.data.cast_or_default::<TaskState>()?;
   let state2 = state.clone();
+  let state3 = state.clone();
 
   let on_toggle = move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
     dispatch.run(ActionOp::ToggleTask(task_id.to_owned()))?;
@@ -81,7 +82,7 @@ pub fn comp_task(
             .to_owned(),
           input()
             .class(ui_input())
-            .attribute("value", state.draft)
+            .attribute("value", state3.draft.to_owned())
             .attribute("placeholder", "something to update...")
             .on_input(on_input)
             .to_owned(),

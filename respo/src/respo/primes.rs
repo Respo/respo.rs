@@ -1,5 +1,6 @@
 mod dom_change;
 
+use std::any::Any;
 use std::boxed::Box;
 use std::fmt::Display;
 use std::rc::Rc;
@@ -637,12 +638,10 @@ where
   /// dispatch to update local state
   pub fn run_state<U>(&self, cursor: &[String], data: U) -> Result<(), String>
   where
-    U: Serialize,
+    U: ToOwned + Clone + 'static,
   {
-    (self.0)(T::wrap_states_action(
-      cursor,
-      MaybeState::new(Some(serde_json::to_value(data).map_err(|e| e.to_string())?)),
-    ))
+    let a = Rc::new(data.to_owned()) as Rc<dyn Any>;
+    (self.0)(T::wrap_states_action(cursor, MaybeState::new(Some(a))))
   }
   /// reset state to empty
   pub fn run_empty_state(&self, cursor: &[String]) -> Result<(), String> {

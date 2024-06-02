@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use respo::{util, MaybeState, RespoAction, RespoStore, StatesTree};
 
-#[derive(Debug, Clone, Deserialize, Serialize, Default, PartialEq)]
+#[derive(Debug, Clone, Default)]
 pub struct Store {
   pub counted: i32,
   pub tasks: Vec<Task>,
@@ -17,7 +17,7 @@ pub struct Task {
   pub time: f32,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub enum ActionOp {
   Increment,
   Decrement,

@@ -21,7 +21,7 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
   let cursor2 = cursor.clone();
   let cursor3 = cursor.clone();
-  let state: PanelState = states.data.cast_or_default()?;
+  let state = states.data.cast_or_default::<PanelState>()?;
   let state2 = state.clone();
 
   let on_input = move |e, dispatch: DispatchFn<_>| -> _ {

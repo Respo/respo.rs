@@ -1,5 +1,6 @@
-use std::collections::HashMap;
+use std::any::Any;
 use std::fmt::Debug;
+use std::{collections::HashMap, rc::Rc};
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
@@ -7,7 +8,7 @@ use serde_json::Value;
 /// Respo maintains states in a tree structure, where the keys are strings,
 /// each child component "picks" a key to attach its own state to the tree,
 /// and it dispatches events to global store to update the state.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default)]
 pub struct StatesTree {
   /// local data
   pub data: MaybeState,
@@ -62,12 +63,12 @@ impl StatesTree {
   }
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 /// local state in component could be `None` according to the tree structure
-pub struct MaybeState(Option<Value>);
+pub struct MaybeState(Option<Rc<dyn Any>>);
 
 impl MaybeState {
-  pub fn new(state: Option<Value>) -> Self {
+  pub fn new(state: Option<Rc<dyn Any>>) -> Self {
     Self(state)
   }
 
@@ -75,13 +76,16 @@ impl MaybeState {
     Self(None)
   }
 
-  pub fn cast_or_default<T>(&self) -> Result<T, String>
+  pub fn cast_or_default<T>(&self) -> Result<Rc<T>, String>
   where
-    T: DeserializeOwned + Default,
+    T: Clone + Default + 'static,
   {
     match &self.0 {
-      Some(v) => serde_json::from_value(v.to_owned()).map_err(|e| e.to_string()),
-      None => Ok(T::default()),
+      Some(v) => match v.downcast_ref::<T>() {
+        Some(v) => Ok(Rc::new(v.clone())),
+        None => Err(format!("failed to cast state to {}", std::any::type_name::<T>())),
+      },
+      None => Ok(Rc::new(T::default())),
     }
   }
 }

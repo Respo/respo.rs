@@ -177,7 +177,7 @@ pub struct ModalPlugin<T>
 where
   T: Clone + Debug,
 {
-  state: ModalPluginState,
+  state: Rc<ModalPluginState>,
   options: ModalOptions<T>,
   /// tracking content to display
   cursor: Vec<String>,
@@ -210,7 +210,7 @@ where
 
   fn new(states: StatesTree, options: ModalOptions<T>) -> Result<Self, String> {
     let cursor = states.path();
-    let state: ModalPluginState = states.data.cast_or_default()?;
+    let state = states.data.cast_or_default::<ModalPluginState>()?;
 
     let instance = Self {
       state,

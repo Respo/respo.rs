@@ -1,3 +1,5 @@
+use std::hash::Hash;
+
 use serde::{Deserialize, Serialize};
 
 use respo::{util, MaybeState, RespoAction, RespoStore, StatesTree};
@@ -15,6 +17,16 @@ pub struct Task {
   pub done: bool,
   pub content: String,
   pub time: f32,
+}
+
+impl Eq for Task {}
+
+impl Hash for Task {
+  fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    self.id.hash(state);
+    self.done.hash(state);
+    self.content.hash(state);
+  }
 }
 
 #[derive(Clone, Debug)]

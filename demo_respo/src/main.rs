@@ -15,7 +15,7 @@ use web_sys::Node;
 
 use respo::ui::ui_global;
 use respo::{div, util::query_select_node};
-use respo::{MemoCache, RespoApp, RespoNode, RespoStore, RespoStyle};
+use respo::{RespoApp, RespoNode, RespoStore, RespoStyle};
 
 use self::counter::comp_counter;
 pub use self::store::ActionOp;
@@ -29,7 +29,6 @@ use plugins::comp_plugins_demo;
 struct App {
   store: Rc<RefCell<Store>>,
   mount_target: Node,
-  memo_caches: MemoCache<RespoNode<ActionOp>>,
 }
 
 impl RespoApp for App {
@@ -42,15 +41,12 @@ impl RespoApp for App {
   fn get_mount_target(&self) -> &web_sys::Node {
     &self.mount_target
   }
-  fn get_memo_caches(&self) -> MemoCache<RespoNode<Self::Action>> {
-    self.memo_caches.to_owned()
-  }
 
   fn dispatch(store: &mut RefMut<Self::Model>, op: Self::Action) -> Result<(), String> {
     store.update(op)
   }
 
-  fn view(store: Ref<Self::Model>, memo_caches: MemoCache<RespoNode<Self::Action>>) -> Result<RespoNode<Self::Action>, String> {
+  fn view(store: Ref<Self::Model>) -> Result<RespoNode<Self::Action>, String> {
     let states = &store.states;
     // util::log!("global store: {:?}", store);
 
@@ -61,7 +57,7 @@ impl RespoApp for App {
         .children([
           comp_counter(&states.pick("counter"), store.counted)?,
           comp_panel(&states.pick("panel"))?,
-          comp_todolist(memo_caches, &states.pick("todolist"), &store.tasks)?,
+          comp_todolist(&states.pick("todolist"), &store.tasks)?,
           comp_plugins_demo(&states.pick("plugins-demo"))?,
         ])
         .to_owned(),
@@ -92,7 +88,6 @@ fn main() {
     mount_target: query_select_node(".app").expect("mount target"),
     // store: Rc::new(RefCell::new(prev_store.unwrap_or_default())),
     store: Rc::new(RefCell::new(Store::default())),
-    memo_caches: MemoCache::default(),
   };
 
   // let store2 = app.store.clone();

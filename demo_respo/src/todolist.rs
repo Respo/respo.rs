@@ -1,4 +1,4 @@
-use respo::{button, div, span, ui::ui_button, util, DispatchFn, MemoCache, RespoIndexKey, RespoNode, StatesTree};
+use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoIndexKey, RespoNode, StatesTree};
 
 use super::{
   store::{ActionOp, Task},
@@ -10,11 +10,7 @@ struct TodolistState {
   hide_done: bool,
 }
 
-pub fn comp_todolist(
-  memo_caches: MemoCache<RespoNode<ActionOp>>,
-  states: &StatesTree,
-  tasks: &[Task],
-) -> Result<RespoNode<ActionOp>, String> {
+pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
   let state = states.data.cast_or_default::<TodolistState>()?;
 
@@ -27,8 +23,6 @@ pub fn comp_todolist(
     //   task.id.to_owned().into(),
     //   comp_task(memo_caches.to_owned(), &states.pick(&task.id), task)?,
     // ));
-
-    let _m = memo_caches.to_owned();
 
     // children.push((
     //   task.id.to_owned().into(),
@@ -44,7 +38,7 @@ pub fn comp_todolist(
     children.push((
       RespoIndexKey::from(&task.id),
       // comp_task(memo_caches.to_owned(), &states.pick(&task.id), task)?,
-      comp_task(&states.pick(&task.id), task)?,
+      comp_task(states.pick(&task.id), task.to_owned())?,
     ));
   }
 

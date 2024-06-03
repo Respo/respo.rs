@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+use memoize::memoize;
 use respo::{
   button, div, input, space, span, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
@@ -8,15 +9,16 @@ use respo::{
 
 use super::store::*;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Hash)]
 struct TaskState {
   draft: String,
 }
 
+#[memoize(Capacity: 40)]
 pub fn comp_task(
   // _memo_caches: MemoCache<RespoNode<ActionOp>>,
-  states: &StatesTree,
-  task: &Task,
+  states: StatesTree,
+  task: Task,
 ) -> Result<RespoNode<ActionOp>, String> {
   respo::util::log!("calling task function");
 

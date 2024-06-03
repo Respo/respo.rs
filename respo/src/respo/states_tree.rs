@@ -31,6 +31,7 @@ impl Hash for StatesTree {
 
 impl PartialEq for StatesTree {
   fn eq(&self, other: &Self) -> bool {
+    // data and revision to simulate state change
     self.cursor == other.cursor && self.data_type_name == other.data_type_name && self.data_revision == other.data_revision
   }
 }
@@ -72,7 +73,8 @@ impl StatesTree {
   pub fn set_in_mut(&mut self, path: &[String], new_state: MaybeState) {
     if path.is_empty() {
       new_state.clone_into(&mut self.data);
-      self.data_type_name = new_state.0.as_ref().map(|v| v.type_id().to_owned())
+      self.data_type_name = new_state.0.as_ref().map(|v| v.type_id().to_owned());
+      self.data_revision += 1;
     } else {
       let (p_head, p_rest) = path.split_at(1);
       let p0 = p_head[0].to_owned();

@@ -1,4 +1,6 @@
 mod dom_change;
+mod effect;
+mod listener;
 
 use std::any::Any;
 use std::boxed::Box;
@@ -7,16 +9,18 @@ use std::rc::Rc;
 use std::{collections::HashMap, fmt::Debug};
 
 use cirru_parser::Cirru;
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use web_sys::{FocusEvent, InputEvent, KeyboardEvent, MouseEvent, Node};
+pub use effect::RespoEffectArg;
+pub use listener::{RespoEvent, RespoEventMark, RespoListenerFn};
+use serde::Serialize;
+use web_sys::Node;
 
 use crate::{MaybeState, StatesTree};
 
 use super::css::RespoStyle;
 
 pub use dom_change::{changes_to_cirru, ChildDomOp, DomChange, RespoCoord};
+
+pub use effect::{RespoEffect, RespoEffectType};
 
 /// an `Element` or a `Component`
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -445,178 +449,6 @@ fn str_dict_to_cirrus_dict(dict: &StrDict) -> Cirru {
   Cirru::List(xs)
 }
 
-/// (internal) struct to store event handler function on the tree
-#[derive(Clone)]
-pub struct RespoListenerFn<T>(Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>)
-where
-  T: Debug + Clone;
-
-impl<T> PartialEq for RespoListenerFn<T>
-where
-  T: Debug + Clone,
-{
-  /// returns true since informations are erased when attaching to the DOM
-  fn eq(&self, _: &Self) -> bool {
-    true
-  }
-}
-
-impl<T> Eq for RespoListenerFn<T> where T: Debug + Clone {}
-
-impl<T> Debug for RespoListenerFn<T>
-where
-  T: Debug + Clone,
-{
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "RespoEventHandler(...)")
-  }
-}
-
-impl<T> RespoListenerFn<T>
-where
-  T: Debug + Clone,
-{
-  pub fn new<U>(handler: U) -> Self
-  where
-    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
-  {
-    Self(Rc::new(handler))
-  }
-  pub fn run(&self, event: RespoEvent, dispatch: DispatchFn<T>) -> Result<(), String> {
-    (self.0)(event, dispatch)
-  }
-}
-
-/// marks on virtual DOM to declare that there's an event
-/// event handler is HIDDEN from this mark.
-#[derive(Debug, Clone)]
-pub struct RespoEventMark {
-  /// location of element in the tree
-  pub coord: Vec<RespoCoord>,
-  /// TODO event type
-  pub name: String,
-  /// partial copy of DOM events, that shares across threads,
-  /// but being async, methods like `.prevent_default()` and `.stop_propagation()` will not work
-  pub event_info: RespoEvent,
-}
-
-impl RespoEventMark {
-  pub fn new(name: &str, coord: &[RespoCoord], event: RespoEvent) -> Self {
-    Self {
-      name: name.to_owned(),
-      coord: coord.to_vec(),
-      event_info: event,
-    }
-  }
-}
-
-/// event wraps on top of DOM events
-#[derive(Debug, Clone)]
-pub enum RespoEvent {
-  Click {
-    client_x: f64,
-    client_y: f64,
-    original_event: MouseEvent,
-  },
-  Keyboard {
-    key: String,
-    key_code: u32,
-    shift_key: bool,
-    ctrl_key: bool,
-    alt_key: bool,
-    meta_key: bool,
-    repeat: bool,
-    original_event: KeyboardEvent,
-  },
-  Input {
-    value: String,
-    original_event: InputEvent,
-  },
-  Focus(FocusEvent),
-  Blur(FocusEvent),
-}
-
-/// effects that attached to components
-#[derive(Clone)]
-pub struct RespoEffect {
-  /// arguments passed to this effect.
-  /// the events `WillUpdate` and `Updated` are triggered when these arguments are changed
-  pub args: Vec<RespoEffectArg>,
-  handler: Rc<RespoEffectHandler>,
-}
-
-type RespoEffectHandler = dyn Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String>;
-
-impl PartialEq for RespoEffect {
-  /// closure are not compared, changes happen in and passed via args
-  fn eq(&self, other: &Self) -> bool {
-    self.args == other.args
-  }
-}
-
-impl Eq for RespoEffect {}
-
-impl RespoEffect {
-  pub fn run(&self, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
-    (*self.handler)(self.args.to_owned(), effect_type, el)
-  }
-  pub fn new<U, V>(args: Vec<V>, handler: U) -> Self
-  where
-    U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
-    V: Serialize,
-  {
-    Self {
-      args: args
-        .iter()
-        .map(|v| RespoEffectArg::new(serde_json::to_value(v).expect("to json")))
-        .collect(),
-      handler: Rc::new(handler),
-    }
-  }
-
-  /// no need to have args, only handler
-  pub fn new_insular<U>(handler: U) -> Self
-  where
-    U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
-  {
-    Self {
-      args: vec![],
-      handler: Rc::new(handler),
-    }
-  }
-}
-
-impl Debug for RespoEffect {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "RespoEffect(")?;
-    write!(f, "args: {:?}", self.args)?;
-    write!(f, "...)")
-  }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RespoEffectType {
-  /// called after mounting happened, use effect handlers from new trees
-  Mounted,
-  /// called before effect arguments changed, use effect hanles from new trees
-  BeforeUpdate,
-  /// called after effect arguments changed, use effect handles from new trees
-  Updated,
-  /// called before unmounting, use effect handles from **old** trees
-  BeforeUnmount,
-}
-
-impl From<RespoEffectType> for Cirru {
-  fn from(effect_type: RespoEffectType) -> Self {
-    match effect_type {
-      RespoEffectType::Mounted => "::mounted".into(),
-      RespoEffectType::BeforeUpdate => "::before-update".into(),
-      RespoEffectType::Updated => "::updated".into(),
-      RespoEffectType::BeforeUnmount => "::before-unmount".into(),
-    }
-  }
-}
-
 /// dispatch function passed from root of renderer,
 /// call it like `dispatch.run(op)`
 #[derive(Clone)]
@@ -692,22 +524,6 @@ impl RespoEventMarkFn {
 impl From<Rc<dyn Fn(RespoEventMark) -> Result<(), String>>> for RespoEventMarkFn {
   fn from(f: Rc<dyn Fn(RespoEventMark) -> Result<(), String>>) -> Self {
     Self(f)
-  }
-}
-
-/// (internal) abstraction on effect argument
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct RespoEffectArg(Value);
-
-impl RespoEffectArg {
-  pub fn new(v: Value) -> Self {
-    Self(v)
-  }
-  pub fn cast_into<U>(&self) -> Result<U, String>
-  where
-    U: DeserializeOwned,
-  {
-    serde_json::from_value(self.0.clone()).map_err(|e| e.to_string())
   }
 }
 

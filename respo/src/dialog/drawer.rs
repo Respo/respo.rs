@@ -3,10 +3,8 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-use serde::{Deserialize, Serialize};
-
 use crate::dialog::{css_backdrop, css_drawer_card};
-use crate::ui::{ui_center, column, ui_fullscreen, ui_global};
+use crate::ui::{column, ui_center, ui_fullscreen, ui_global};
 
 use crate::{div, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree};
 
@@ -166,7 +164,7 @@ where
   fn share_with_ref(&self) -> Rc<Self>;
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 struct DrawerPluginState {
   show: bool,
 }

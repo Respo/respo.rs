@@ -1,9 +1,7 @@
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-use serde_json::Value;
 use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
+use web_sys::console::log_1;
 use web_sys::Node;
 
 #[allow(dead_code)]
@@ -90,16 +88,9 @@ macro_rules! log {
 
 pub use log;
 
-pub fn cast_from_json<T>(data: &Value) -> T
-where
-  T: DeserializeOwned + Clone,
-{
-  serde_json::from_value(data.to_owned()).expect("should be json")
-}
-
-pub fn cast_into_json<T>(data: T) -> Value
-where
-  T: Serialize,
-{
-  serde_json::to_value(data).expect("should be json")
+/// display type of a variable, as a debug tool
+#[allow(dead_code)]
+pub fn print_type_of<T>(_: &T) {
+  // println!("{}", std::any::type_name::<T>())
+  log_1(&std::any::type_name::<T>().to_string().into());
 }

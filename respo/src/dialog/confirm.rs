@@ -4,7 +4,6 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 
 use js_sys::{Array, Function, Reflect};
-use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
@@ -140,7 +139,7 @@ where
   fn share_with_ref(&self) -> Rc<Self>;
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 struct ConfirmPluginState {
   show: bool,
   text: Option<String>,

@@ -9,9 +9,9 @@ use std::rc::Rc;
 use std::{collections::HashMap, fmt::Debug};
 
 use cirru_parser::Cirru;
+use effect::DynEq;
 pub use effect::RespoEffectArg;
 pub use listener::{RespoEvent, RespoEventMark, RespoListenerFn};
-use serde::Serialize;
 use web_sys::Node;
 
 use crate::{MaybeState, StatesTree};
@@ -325,7 +325,7 @@ where
   pub fn effect<U, V>(&mut self, args: &[V], handler: U) -> &mut Self
   where
     U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
-    V: Serialize + Clone,
+    V: Clone + DynEq + Debug + 'static,
   {
     match self {
       RespoNode::Component(_, ref mut effects, _) => {

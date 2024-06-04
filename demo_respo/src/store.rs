@@ -1,7 +1,5 @@
 use std::hash::Hash;
 
-use serde::{Deserialize, Serialize};
-
 use respo::{util, MaybeState, RespoAction, RespoStore, StatesTree};
 
 #[derive(Debug, Clone, Default)]
@@ -11,7 +9,7 @@ pub struct Store {
   pub states: StatesTree,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Task {
   pub id: String,
   pub done: bool,

@@ -71,8 +71,6 @@ dependencies = [
  "js-sys",
  "memoize",
  "respo",
- "serde",
- "serde_json",
  "uuid",
  "wasm-bindgen",
  "web-sys",
@@ -99,12 +97,6 @@ checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
 dependencies = [
  "ahash",
 ]
-
-[[package]]
-name = "itoa"
-version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "112c678d4050afce233f4f2852bb2eb519230b3cf12f33585275537d7e41578d"
 
 [[package]]
 name = "js-sys"
@@ -200,8 +192,6 @@ dependencies = [
  "js-sys",
  "lazy_static",
  "rust-hsluv",
- "serde",
- "serde_json",
  "wasm-bindgen",
  "web-sys",
 ]
@@ -211,12 +201,6 @@ name = "rust-hsluv"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "efe2374f2385cdd8755a446f80b2a646de603c9d8539ca38734879b5c71e378b"
-
-[[package]]
-name = "ryu"
-version = "1.0.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3f6f92acf49d1b98f7a81226834412ada05458b7364277387724a237f062695"
 
 [[package]]
 name = "serde"
@@ -236,17 +220,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.66",
-]
-
-[[package]]
-name = "serde_json"
-version = "1.0.117"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "455182ea6142b14f93f4bc5320a2b31c1f266b66a4a5c858b013302a5d8cbfc3"
-dependencies = [
- "itoa",
- "ryu",
- "serde",
 ]
 
 [[package]]

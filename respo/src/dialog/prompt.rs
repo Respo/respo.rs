@@ -5,7 +5,6 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 
 use js_sys::{Array, Function, Reflect};
-use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
@@ -67,7 +66,7 @@ impl PromptValidator {
   }
 }
 
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default)]
 struct InputState {
   draft: String,
   error: Option<String>,
@@ -265,7 +264,7 @@ where
   fn share_with_ref(&self) -> Rc<Self>;
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 struct PromptPluginState {
   show: bool,
   text: Option<String>,

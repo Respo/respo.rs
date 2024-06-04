@@ -3,8 +3,6 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-use serde::{Deserialize, Serialize};
-
 use crate::dialog::{css_backdrop, css_modal_card};
 use crate::ui::{column, ui_center, ui_fullscreen, ui_global};
 
@@ -166,7 +164,7 @@ where
   fn share_with_ref(&self) -> Rc<Self>;
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 struct ModalPluginState {
   show: bool,
 }

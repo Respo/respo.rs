@@ -1,8 +1,6 @@
-use std::{fmt::Debug, rc::Rc};
+use std::{any::Any, fmt::Debug, rc::Rc};
 
 use cirru_parser::Cirru;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use serde_json::Value;
 use web_sys::Node;
 
 /// effects that attached to components
@@ -32,13 +30,10 @@ impl RespoEffect {
   pub fn new<U, V>(args: Vec<V>, handler: U) -> Self
   where
     U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
-    V: Serialize,
+    V: Clone + DynEq + Debug + 'static,
   {
     Self {
-      args: args
-        .iter()
-        .map(|v| RespoEffectArg::new(serde_json::to_value(v).expect("to json")))
-        .collect(),
+      args: args.into_iter().map(RespoEffectArg::new).collect(),
       handler: Rc::new(handler),
     }
   }
@@ -86,18 +81,68 @@ impl From<RespoEffectType> for Cirru {
   }
 }
 
+/// https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=c39e1eef6c8c10e973fa629103b4a0b1
+pub trait DynEq: Debug {
+  fn as_any(&self) -> &dyn Any;
+  fn do_eq(&self, rhs: &dyn DynEq) -> bool;
+}
+
+impl<T> DynEq for T
+where
+  T: PartialEq + Debug + 'static,
+{
+  fn as_any(&self) -> &dyn Any {
+    self
+  }
+
+  fn do_eq(&self, rhs: &dyn DynEq) -> bool {
+    if let Some(rhs_concrete) = rhs.as_any().downcast_ref::<Self>() {
+      self == rhs_concrete
+    } else {
+      false
+    }
+  }
+}
+
+impl PartialEq for dyn DynEq {
+  fn eq(&self, rhs: &Self) -> bool {
+    self.do_eq(rhs)
+  }
+}
+
 /// (internal) abstraction on effect argument
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct RespoEffectArg(Value);
+#[derive(Debug, Clone)]
+pub struct RespoEffectArg(pub Rc<dyn DynEq>);
+
+impl PartialEq for RespoEffectArg {
+  fn eq(&self, other: &Self) -> bool {
+    self.0.eq(&other.0)
+  }
+}
+
+impl Eq for RespoEffectArg {}
 
 impl RespoEffectArg {
-  pub fn new(v: Value) -> Self {
-    Self(v)
+  pub fn new<T: ToOwned + DynEq + 'static>(v: T) -> Self {
+    Self(Rc::new(v))
   }
-  pub fn cast_into<U>(&self) -> Result<U, String>
+  pub fn cast_into<T>(&self) -> Result<T, String>
   where
-    U: DeserializeOwned,
+    T: Debug + DynEq + Clone + 'static,
   {
-    serde_json::from_value(self.0.clone()).map_err(|e| e.to_string())
+    // log_1(&format!("cast {:?} {:?}", self.0, type_name::<T>()).into());
+    // print_type_of(&self.0.as_ref());
+    // log_1(&format!("expected type {:?}", type_name::<T>()).into());
+    // if let Some(v) = self.0.as_ref().as_any().downcast_ref::<bool>() {
+    //   log_1(&format!("Casted to &bool {:?}", v).into());
+    // } else {
+    //   log_1(&format!("failed to cast &bool {:?}", self.0).into());
+    // }
+    if let Some(v) = self.0.as_ref().as_any().downcast_ref::<T>() {
+      // need to call .as_ref() to get the reference inside Rc<T>
+      Ok(v.to_owned())
+    } else {
+      Err(format!("failed to cast, {:?}", self))
+    }
   }
 }

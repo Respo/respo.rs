@@ -1,20 +1,21 @@
 use std::fmt::Debug;
 
-use serde::{Deserialize, Serialize};
-
 use respo::{button, div, span, ui::ui_button, util, CssColor, DispatchFn, RespoEvent, RespoNode, RespoStyle, StatesTree};
 
 use super::store::ActionOp;
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default)]
 struct MainState {
   counted: i32,
 }
 
-pub fn comp_counter(states: &StatesTree, counted: i32) -> Result<RespoNode<ActionOp>, String> {
+pub fn comp_counter(states: &StatesTree, _counted: i32) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
 
-  let state: MainState = states.data.cast_or_default()?;
+  let state = states.data.cast_or_default::<MainState>()?;
+  let state2 = state.clone();
+  let counted = state.counted;
+  let cursor2 = cursor.clone();
 
   let on_inc = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
     util::log!("click {:?}", e);
@@ -35,6 +36,12 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> Result<RespoNode<Actio
   let on_dec = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
     util::log!("click {:?}", e);
     dispatch.run(ActionOp::Decrement)?;
+    dispatch.run_state(
+      &cursor2,
+      MainState {
+        counted: state2.counted - 1,
+      },
+    )?;
     Ok(())
   };
 
@@ -70,7 +77,7 @@ pub fn comp_counter(states: &StatesTree, counted: i32) -> Result<RespoNode<Actio
             .to_owned()])
           .to_owned(),
         div()
-          .children([span().inner_text(format!("local state: {}", state.counted)).to_owned()])
+          .children([span().inner_text(format!("local state: {}", counted)).to_owned()])
           .to_owned(),
       ])
       .to_owned(),

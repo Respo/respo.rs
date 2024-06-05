@@ -1,24 +1,18 @@
-use serde::{Deserialize, Serialize};
-
-use respo::{button, div, memo1_call_by, span, ui::ui_button, util, DispatchFn, MemoCache, RespoIndexKey, RespoNode, StatesTree};
+use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoIndexKey, RespoNode, StatesTree};
 
 use super::{
   store::{ActionOp, Task},
   task::comp_task,
 };
 
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default)]
 struct TodolistState {
   hide_done: bool,
 }
 
-pub fn comp_todolist(
-  memo_caches: MemoCache<RespoNode<ActionOp>>,
-  states: &StatesTree,
-  tasks: &[Task],
-) -> Result<RespoNode<ActionOp>, String> {
+pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
-  let state: TodolistState = states.data.cast_or_default()?;
+  let state = states.data.cast_or_default::<TodolistState>()?;
 
   let mut children: Vec<(RespoIndexKey, RespoNode<_>)> = vec![];
   for task in tasks {
@@ -29,8 +23,6 @@ pub fn comp_todolist(
     //   task.id.to_owned().into(),
     //   comp_task(memo_caches.to_owned(), &states.pick(&task.id), task)?,
     // ));
-
-    let m = memo_caches.to_owned();
 
     // children.push((
     //   task.id.to_owned().into(),
@@ -44,25 +36,23 @@ pub fn comp_todolist(
     // ));
 
     children.push((
-      task.id.to_owned().into(),
+      RespoIndexKey::from(&task.id),
       // comp_task(memo_caches.to_owned(), &states.pick(&task.id), task)?,
-      memo1_call_by!(comp_task, m.to_owned(), task.id.to_owned(), &states.pick(&task.id), task)?,
+      comp_task(states.pick(&task.id), task.to_owned())?,
     ));
   }
 
   // util::log!("{:?}", &tasks);
 
-  let on_hide = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
-    util::log!("click {:?}", e);
+  let on_hide = {
+    let s = state.to_owned();
+    move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+      util::log!("click {:?}", e);
 
-    dispatch.run_state(
-      &cursor,
-      TodolistState {
-        hide_done: !state.hide_done,
-      },
-    )?;
+      dispatch.run_state(&cursor, TodolistState { hide_done: !s.hide_done })?;
 
-    Ok(())
+      Ok(())
+    }
   };
 
   Ok(
@@ -71,7 +61,7 @@ pub fn comp_todolist(
         div()
           .children([
             span()
-              .inner_text(format!("tasks size: {} ... {}", tasks.len(), state.hide_done))
+              .inner_text(format!("tasks size: {} ... {}", tasks.len(), state.hide_done.to_owned()))
               .to_owned(),
             button().class(ui_button()).inner_text("hide done").on_click(on_hide).to_owned(),
           ])

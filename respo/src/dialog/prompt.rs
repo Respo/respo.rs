@@ -10,7 +10,7 @@ use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
 use crate::dialog::{css_backdrop, css_button, css_modal_card};
-use crate::ui::{ui_button, ui_center, ui_column, ui_fullscreen, ui_global, ui_input, ui_row_parted, ui_textarea};
+use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_input, ui_row_parted, ui_textarea};
 
 use crate::{
   button, div, input, respo, space, span, static_styles, textarea, CssColor, CssLineHeight, CssPosition, CssSize, DispatchFn,
@@ -88,9 +88,12 @@ where
   let cursor = states.path();
   let cursor2 = cursor.clone();
   let cursor3 = cursor.clone();
-  let mut state: InputState = states.data.cast_or_default()?;
+  let mut state = states.data.cast_or_default::<InputState>()?;
   if let Some(text) = &options.initial_value {
-    state.draft = text.to_owned();
+    state = Rc::new(InputState {
+      draft: text.to_string(),
+      error: None,
+    });
   }
 
   // respo::util::log!("State: {:?}", state);
@@ -171,7 +174,7 @@ where
             })
             .children([
               div()
-                .class_list(&[ui_column(), ui_global(), css_modal_card()])
+                .class_list(&[column(), ui_global(), css_modal_card()])
                 .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).to_owned())
                 .style(options.card_style)
                 .style(options.input_style)
@@ -195,7 +198,7 @@ where
                         .style(RespoStyle::default().width(CssSize::Percent(100.0)).to_owned())
                         .attribute("placeholder", "Content...")
                         .attribute("autoFocus", "autofocus")
-                        .value(state.draft)
+                        .value(state.draft.to_owned())
                         .on_input(on_text_input)
                         .to_owned()])
                       .to_owned(),
@@ -276,7 +279,7 @@ where
   U: Fn(String, DispatchFn<T>) -> Result<(), String> + 'static,
 {
   states: StatesTree,
-  state: PromptPluginState,
+  state: Rc<PromptPluginState>,
   options: PromptOptions,
   /// tracking content to display
   text: Option<String>,
@@ -371,7 +374,7 @@ where
 
   fn new(states: StatesTree, options: PromptOptions, on_submit: U) -> Result<Self, String> {
     let cursor = states.path();
-    let state: PromptPluginState = states.data.cast_or_default()?;
+    let state = states.data.cast_or_default::<PromptPluginState>()?;
 
     let instance = Self {
       states,

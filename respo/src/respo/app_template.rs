@@ -6,12 +6,12 @@ use std::{
 
 use web_sys::Node;
 
-use crate::{render_node, DispatchFn, MemoCache, RespoAction, RespoNode, RespoStore};
+use crate::{render_node, DispatchFn, RespoAction, RespoNode, RespoStore};
 
 /// A template for a Respo app
 pub trait RespoApp {
   /// a type of the store, with a place for states tree
-  type Model: RespoStore + Debug + Clone + PartialEq + 'static;
+  type Model: RespoStore + Debug + Clone + 'static;
   /// actions should include one for updating states tree
   type Action: Debug + Clone + RespoAction + 'static;
 
@@ -22,8 +22,6 @@ pub trait RespoApp {
   fn get_mount_target(&self) -> &Node;
   /// bridge to store
   fn get_store(&self) -> Rc<RefCell<Self::Model>>;
-  /// bridge to memo caches
-  fn get_memo_caches(&self) -> MemoCache<RespoNode<Self::Action>>;
   /// default interval in milliseconds, by default 100ms,
   /// pass `None` to use raq directly, pass `Some(200)` to redice cost
   fn get_loop_delay() -> Option<i32> {
@@ -31,12 +29,11 @@ pub trait RespoApp {
   }
 
   /// DSL for building a view
-  fn view(store: Ref<Self::Model>, memo_caches: MemoCache<RespoNode<Self::Action>>) -> Result<RespoNode<Self::Action>, String>;
+  fn view(store: Ref<Self::Model>) -> Result<RespoNode<Self::Action>, String>;
   /// start a requestAnimationFrame loop for rendering updated store
   fn render_loop(&self) -> Result<(), String> {
     let mount_target = self.get_mount_target();
     let global_store = self.get_store();
-    let memo_caches = self.get_memo_caches();
 
     let store_to_action = global_store.clone();
     let store_to_action2 = global_store.clone();
@@ -55,7 +52,7 @@ pub trait RespoApp {
       Box::new(move || -> Result<RespoNode<Self::Action>, String> {
         // util::log!("global store: {:?}", store);
 
-        Self::view(global_store.borrow(), memo_caches.clone())
+        Self::view(global_store.borrow())
       }),
       DispatchFn::new(dispatch_action),
       Self::get_loop_delay(),

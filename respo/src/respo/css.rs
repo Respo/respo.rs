@@ -785,10 +785,10 @@ where
 pub fn css_name_from_path(p: &str) -> String {
   let mut s = p.to_owned();
   if let Some(x) = s.strip_prefix("src/") {
-    s = x.to_owned();
+    s = x.to_string();
   }
   if let Some(x) = s.strip_suffix(".rs") {
-    s = x.to_owned();
+    s = x.to_string();
   }
   s = s.replace("::", "_");
   s = s.replace('/', "_");
@@ -818,7 +818,6 @@ macro_rules! static_style_seq {
     }
   };
 }
-pub use static_style_seq;
 
 /// macro to create a public function of CSS rules(up to 5 tuples) at current file scope,
 /// ```rust

@@ -1,8 +1,10 @@
+use std::hash::Hash;
+
 use serde::{Deserialize, Serialize};
 
 use respo::{util, MaybeState, RespoAction, RespoStore, StatesTree};
 
-#[derive(Debug, Clone, Deserialize, Serialize, Default, PartialEq)]
+#[derive(Debug, Clone, Default)]
 pub struct Store {
   pub counted: i32,
   pub tasks: Vec<Task>,
@@ -17,7 +19,17 @@ pub struct Task {
   pub time: f32,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+impl Eq for Task {}
+
+impl Hash for Task {
+  fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    self.id.hash(state);
+    self.done.hash(state);
+    self.content.hash(state);
+  }
+}
+
+#[derive(Clone, Debug)]
 pub enum ActionOp {
   Increment,
   Decrement,
@@ -75,7 +87,7 @@ impl RespoStore for Store {
         let mut found = false;
         for task in &mut self.tasks {
           if task.id == id {
-            task.content = content.to_owned();
+            task.content.clone_from(&content);
             found = true;
           }
         }

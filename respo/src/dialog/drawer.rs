@@ -6,7 +6,7 @@ use std::rc::Rc;
 use serde::{Deserialize, Serialize};
 
 use crate::dialog::{css_backdrop, css_drawer_card};
-use crate::ui::{ui_center, ui_column, ui_fullscreen, ui_global};
+use crate::ui::{ui_center, column, ui_fullscreen, ui_global};
 
 use crate::{div, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree};
 
@@ -103,7 +103,7 @@ where
             })
             .children([
               div()
-                .class_list(&[ui_column(), ui_global(), css_drawer_card()])
+                .class_list(&[column(), ui_global(), css_drawer_card()])
                 .style(RespoStyle::default().padding(0.0).line_height(CssLineHeight::Px(32.0)).to_owned())
                 .style(options.card_style)
                 .on_click(move |e, _dispatch| -> Result<(), String> {
@@ -115,7 +115,7 @@ where
                   Ok(())
                 })
                 .children([div()
-                  .class(ui_column())
+                  .class(column())
                   .children([
                     div()
                       .class(ui_center())
@@ -177,7 +177,7 @@ pub struct DrawerPlugin<T>
 where
   T: Clone + Debug,
 {
-  state: DrawerPluginState,
+  state: Rc<DrawerPluginState>,
   options: DrawerOptions<T>,
   /// tracking content to display
   cursor: Vec<String>,
@@ -210,7 +210,7 @@ where
 
   fn new(states: StatesTree, options: DrawerOptions<T>) -> Result<Self, String> {
     let cursor = states.path();
-    let state: DrawerPluginState = states.data.cast_or_default()?;
+    let state = states.data.cast_or_default::<DrawerPluginState>()?;
 
     let instance = Self {
       state,

@@ -6,7 +6,7 @@ use std::rc::Rc;
 use serde::{Deserialize, Serialize};
 
 use crate::dialog::{css_backdrop, css_button, css_modal_card};
-use crate::ui::{ui_button, ui_center, ui_column, ui_fullscreen, ui_global, ui_row_parted};
+use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_row_parted};
 
 use crate::{
   button, div, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree,
@@ -59,7 +59,7 @@ where
             })
             .children([
               div()
-                .class_list(&[ui_column(), ui_global(), css_modal_card()])
+                .class_list(&[column(), ui_global(), css_modal_card()])
                 .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).to_owned())
                 .style(options.card_style)
                 .on_click(move |e, _dispatch| -> Result<(), String> {
@@ -145,7 +145,7 @@ where
   T: Clone + Debug,
   U: Fn(DispatchFn<T>) -> Result<(), String> + 'static,
 {
-  state: AlertPluginState,
+  state: Rc<AlertPluginState>,
   options: AlertOptions,
   /// tracking content to display
   text: Option<String>,
@@ -208,7 +208,7 @@ where
 
   fn new(states: StatesTree, options: AlertOptions, on_read: U) -> Result<Self, String> {
     let cursor = states.path();
-    let state: AlertPluginState = states.data.cast_or_default()?;
+    let state = states.data.cast_or_default::<AlertPluginState>()?;
 
     let instance = Self {
       state,

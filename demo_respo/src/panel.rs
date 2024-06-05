@@ -20,11 +20,11 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
   let state = states.data.cast_or_default::<PanelState>()?;
 
   let on_input = {
-    let c = cursor.clone();
+    let cursor = cursor.to_owned();
     move |e, dispatch: DispatchFn<_>| -> _ {
       util::log!("input event: {:?}", e);
       if let RespoEvent::Input { value, .. } = e {
-        dispatch.run_state(&c, PanelState { content: value })?;
+        dispatch.run_state(&cursor, PanelState { content: value })?;
       }
       Ok(())
     }
@@ -32,7 +32,7 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
 
   let on_submit = {
     let state = state.to_owned();
-    let cursor = cursor.clone();
+    let cursor = cursor.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("add button {:?}", e);
       dispatch.run(ActionOp::AddTask(Uuid::new_v4().to_string(), state.content.to_owned()))?;

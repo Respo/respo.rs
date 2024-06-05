@@ -90,7 +90,7 @@ where
             .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
             .style(options.backdrop_style)
             .on_click({
-              let close = close.clone();
+              let close = close.to_owned();
               move |e, dispatch| -> Result<(), String> {
                 if let RespoEvent::Click { original_event, .. } = e {
                   // stop propagation to prevent closing the drawer
@@ -122,7 +122,7 @@ where
                       .to_owned(),
                     space(None, Some(8)),
                     options.render.run({
-                      let close = close.clone();
+                      let close = close.to_owned();
                       move |dispatch| -> Result<(), String> {
                         close(dispatch)?;
                         Ok(())
@@ -190,7 +190,7 @@ where
   T: Clone + Debug + RespoAction,
 {
   fn render(&self) -> Result<RespoNode<T>, String> {
-    let cursor = self.cursor.clone();
+    let cursor = self.cursor.to_owned();
 
     comp_drawer(self.options.to_owned(), self.state.show, move |dispatch: DispatchFn<_>| {
       let s = DrawerPluginState { show: false };
@@ -224,6 +224,6 @@ where
   }
 
   fn share_with_ref(&self) -> Rc<Self> {
-    Rc::new(self.clone())
+    Rc::new(self.to_owned())
   }
 }

@@ -99,7 +99,7 @@ where
   let close = Rc::new(on_close);
 
   let on_text_input = {
-    let cursor = cursor.clone();
+    let cursor = cursor.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       if let RespoEvent::Input { value, .. } = e {
         dispatch.run_state(&cursor, InputState { draft: value, error: None })?;
@@ -109,8 +109,8 @@ where
   };
 
   let check_submit = {
-    let close = close.clone();
-    let cursor = cursor.clone();
+    let close = close.to_owned();
+    let cursor = cursor.to_owned();
     move |text: &str, dispatch: DispatchFn<_>| -> Result<(), String> {
       respo::util::log!("validator: {:?}", &options.validator);
       if let Some(validator) = &options.validator {
@@ -118,9 +118,9 @@ where
         let result = validator.run(text);
         match result {
           Ok(()) => {
-            submit(text.to_owned(), dispatch.clone())?;
-            close(dispatch.clone())?;
-            dispatch.clone().run_empty_state(&cursor)?;
+            submit(text.to_owned(), dispatch.to_owned())?;
+            close(dispatch.to_owned())?;
+            dispatch.to_owned().run_empty_state(&cursor)?;
           }
           Err(message) => {
             // dispatch.run_state(&cursor, InputState { draft: text.to_owned() })?;
@@ -134,8 +134,8 @@ where
           }
         }
       } else {
-        submit(text.to_owned(), dispatch.clone())?;
-        close(dispatch.clone())?;
+        submit(text.to_owned(), dispatch.to_owned())?;
+        close(dispatch.to_owned())?;
         dispatch.run_empty_state(&cursor)?;
       }
       Ok(())
@@ -165,7 +165,7 @@ where
                   original_event.stop_propagation();
                 }
                 {
-                  let dispatch = dispatch.clone();
+                  let dispatch = dispatch.to_owned();
                   close(dispatch)?;
                 }
                 dispatch.run_empty_state(&cursor)?;
@@ -295,7 +295,7 @@ where
 {
   fn render(&self) -> Result<RespoNode<T>, String> {
     let on_submit = self.on_submit;
-    let cursor = self.cursor.clone();
+    let cursor = self.cursor.to_owned();
     let state = self.state.to_owned();
 
     comp_prompt_modal(
@@ -303,10 +303,10 @@ where
       self.options.to_owned(),
       self.state.show,
       {
-        let cursor = cursor.clone();
-        let state = state.clone();
+        let cursor = cursor.to_owned();
+        let state = state.to_owned();
         move |content, dispatch| {
-          on_submit(content.to_owned(), dispatch.clone())?;
+          on_submit(content.to_owned(), dispatch.to_owned())?;
           let window = web_sys::window().expect("window");
           // TODO dirty global variable
           let task = Reflect::get(&window, &JsValue::from_str(NEXT_TASK_NAME));
@@ -367,7 +367,7 @@ where
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String> {
     let s = PromptPluginState {
       show: false,
-      text: self.text.clone(),
+      text: self.text.to_owned(),
     };
     dispatch.run_state(&self.cursor, s)?;
     Ok(())
@@ -391,7 +391,7 @@ where
   }
 
   fn share_with_ref(&self) -> Rc<Self> {
-    Rc::new(self.clone())
+    Rc::new(self.to_owned())
   }
 }
 

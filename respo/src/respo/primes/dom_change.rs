@@ -61,22 +61,22 @@ where
 {
   pub fn get_coord(&self) -> Vec<RespoCoord> {
     match self {
-      DomChange::ReplaceElement { coord, .. } => coord.clone(),
-      DomChange::ModifyChildren { coord, .. } => coord.clone(),
-      DomChange::ModifyAttrs { coord, .. } => coord.clone(),
-      DomChange::ModifyStyle { coord, .. } => coord.clone(),
-      DomChange::ModifyEvent { coord, .. } => coord.clone(),
-      DomChange::Effect { coord, .. } => coord.clone(),
+      DomChange::ReplaceElement { coord, .. } => coord.to_owned(),
+      DomChange::ModifyChildren { coord, .. } => coord.to_owned(),
+      DomChange::ModifyAttrs { coord, .. } => coord.to_owned(),
+      DomChange::ModifyStyle { coord, .. } => coord.to_owned(),
+      DomChange::ModifyEvent { coord, .. } => coord.to_owned(),
+      DomChange::Effect { coord, .. } => coord.to_owned(),
     }
   }
   pub fn get_dom_path(&self) -> Vec<u32> {
     match self {
-      DomChange::ReplaceElement { dom_path, .. } => dom_path.clone(),
-      DomChange::ModifyChildren { dom_path, .. } => dom_path.clone(),
-      DomChange::ModifyAttrs { dom_path, .. } => dom_path.clone(),
-      DomChange::ModifyStyle { dom_path, .. } => dom_path.clone(),
-      DomChange::ModifyEvent { dom_path, .. } => dom_path.clone(),
-      DomChange::Effect { dom_path, .. } => dom_path.clone(),
+      DomChange::ReplaceElement { dom_path, .. } => dom_path.to_owned(),
+      DomChange::ModifyChildren { dom_path, .. } => dom_path.to_owned(),
+      DomChange::ModifyAttrs { dom_path, .. } => dom_path.to_owned(),
+      DomChange::ModifyStyle { dom_path, .. } => dom_path.to_owned(),
+      DomChange::ModifyEvent { dom_path, .. } => dom_path.to_owned(),
+      DomChange::Effect { dom_path, .. } => dom_path.to_owned(),
     }
   }
 }

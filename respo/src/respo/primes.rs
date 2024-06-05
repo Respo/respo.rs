@@ -434,7 +434,7 @@ where
   }
   /// wrap with a `Rc<RefCell<T>>` to enable memory reuse and skipping in diff
   pub fn share_with_ref(&self) -> Self {
-    Self::Referenced(Rc::new(self.clone()))
+    Self::Referenced(Rc::new(self.to_owned()))
   }
 }
 

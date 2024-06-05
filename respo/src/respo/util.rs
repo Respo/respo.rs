@@ -6,7 +6,7 @@ use web_sys::Node;
 #[allow(dead_code)]
 pub fn raf_loop(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
   let f_ = Rc::new(RefCell::new(None));
-  let g = f_.clone();
+  let g = f_.to_owned();
 
   *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
     if let Err(e) = cb() {
@@ -34,7 +34,7 @@ fn window() -> web_sys::Window {
 #[allow(dead_code)]
 pub fn raf_loop_slow(interval: i32, mut cb: Box<dyn FnMut() -> Result<(), String>>) {
   let f = Rc::new(RefCell::new(None));
-  let g = f.clone();
+  let g = f.to_owned();
 
   *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
     if let Err(e) = cb() {
@@ -42,7 +42,7 @@ pub fn raf_loop_slow(interval: i32, mut cb: Box<dyn FnMut() -> Result<(), String
     }
 
     let h = Closure::wrap(Box::new({
-      let f = f.clone();
+      let f = f.to_owned();
       move || {
         request_animation_frame(f.borrow().as_ref().expect("call raq"));
       }

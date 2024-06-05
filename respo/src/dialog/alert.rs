@@ -46,7 +46,7 @@ where
             .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
             .style(options.backdrop_style)
             .on_click({
-              let close = close.clone();
+              let close = close.to_owned();
               move |e, dispatch| -> Result<(), String> {
                 if let RespoEvent::Click { original_event, .. } = e {
                   // stop propagation to prevent closing the modal
@@ -83,7 +83,7 @@ where
                           .on_click({
                             let close = close.to_owned();
                             move |_e, dispatch| -> Result<(), String> {
-                              read(dispatch.clone())?;
+                              read(dispatch.to_owned())?;
                               close(dispatch)?;
                               Ok(())
                             }
@@ -162,12 +162,12 @@ where
 {
   fn render(&self) -> Result<RespoNode<T>, String> {
     let on_read = self.on_read;
-    let cursor = self.cursor.clone();
+    let cursor = self.cursor.to_owned();
     let state = self.state.to_owned();
 
     let mut options = self.options.to_owned();
     options.text = {
-      let state = state.clone();
+      let state = state.to_owned();
       state.text.as_deref().or(options.text.as_deref()).map(ToOwned::to_owned)
     };
 
@@ -175,10 +175,10 @@ where
       options,
       self.state.show,
       {
-        let cursor = cursor.clone();
+        let cursor = cursor.to_owned();
         let state = state.to_owned();
         move |dispatch| {
-          on_read(dispatch.clone())?;
+          on_read(dispatch.to_owned())?;
           let s = AlertPluginState {
             show: false,
             text: state.text.to_owned(),
@@ -188,7 +188,7 @@ where
         }
       },
       {
-        let cursor = cursor.clone();
+        let cursor = cursor.to_owned();
         let state = state.to_owned();
         move |dispatch| {
           let s = AlertPluginState {
@@ -209,7 +209,7 @@ where
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String> {
     let s = AlertPluginState {
       show: false,
-      text: self.text.clone(),
+      text: self.text.to_owned(),
     };
     dispatch.run_state(&self.cursor, s)?;
     Ok(())
@@ -232,6 +232,6 @@ where
   }
 
   fn share_with_ref(&self) -> Rc<Self> {
-    Rc::new(self.clone())
+    Rc::new(self.to_owned())
   }
 }

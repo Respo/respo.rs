@@ -28,7 +28,7 @@ pub fn comp_task(
   let state = states.data.cast_or_default::<TaskState>()?;
 
   let on_toggle = {
-    let tid = task_id.clone();
+    let tid = task_id.to_owned();
     move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
       dispatch.run(ActionOp::ToggleTask(tid.to_owned()))?;
       Ok(())
@@ -36,7 +36,7 @@ pub fn comp_task(
   };
 
   let on_input = {
-    let c = cursor.clone();
+    let c = cursor.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       if let RespoEvent::Input { value, .. } = e {
         dispatch.run_state(&c, TaskState { draft: value })?;
@@ -46,7 +46,7 @@ pub fn comp_task(
   };
 
   let on_remove = {
-    let tid = task_id.clone();
+    let tid = task_id.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("remove button {:?}", e);
       dispatch.run(ActionOp::RemoveTask(tid.to_owned()))?;
@@ -55,11 +55,11 @@ pub fn comp_task(
   };
 
   let on_update = {
-    let tid = task_id.clone();
-    let cursor = cursor.clone();
-    let state = state.clone();
+    let tid = task_id.to_owned();
+    let cursor = cursor.to_owned();
+    let state = state.to_owned();
     move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
-      dispatch.run(ActionOp::UpdateTask(tid.to_owned(), state.draft.clone()))?;
+      dispatch.run(ActionOp::UpdateTask(tid.to_owned(), state.draft.to_owned()))?;
       dispatch.run_empty_state(&cursor)?;
       Ok(())
     }

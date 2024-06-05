@@ -29,7 +29,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   .share_with_ref();
 
   let on_alert = {
-    let alert_plugin = alert_plugin.clone();
+    let alert_plugin = alert_plugin.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("click {:?}", e);
 
@@ -51,7 +51,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   .share_with_ref();
 
   let on_confirm = {
-    let confirm_plugin = confirm_plugin.clone();
+    let confirm_plugin = confirm_plugin.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("click {:?}", e);
 
@@ -88,7 +88,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   .share_with_ref();
 
   let on_prompt = {
-    let prompt_plugin = prompt_plugin.clone();
+    let prompt_plugin = prompt_plugin.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("click {:?}", e);
 
@@ -131,7 +131,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   .share_with_ref();
 
   let on_modal = {
-    let modal_plugin = modal_plugin.clone();
+    let modal_plugin = modal_plugin.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("click {:?}", e);
 
@@ -173,7 +173,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   .share_with_ref();
 
   let on_drawer = {
-    let drawer_plugin = drawer_plugin.clone();
+    let drawer_plugin = drawer_plugin.to_owned();
     move |e: RespoEvent, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("click {:?}", e);
 

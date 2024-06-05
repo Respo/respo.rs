@@ -68,7 +68,7 @@ pub(crate) fn effect_modal_fade(args: Vec<RespoEffectArg>, effect_type: RespoEff
             // setTimeout
             let window = web_sys::window().unwrap();
             let immediate_call: Closure<dyn FnMut()> = Closure::once({
-              let cloned = cloned.clone();
+              let cloned = cloned.to_owned();
               move || {
                 let style = cloned.style();
                 style.set_property("opacity", "0").unwrap();
@@ -138,7 +138,7 @@ pub(crate) fn effect_drawer_fade(args: Vec<RespoEffectArg>, effect_type: RespoEf
             // setTimeout
             let window = web_sys::window().unwrap();
             let immediate_call: Closure<dyn FnMut()> = Closure::once({
-              let cloned = cloned.clone();
+              let cloned = cloned.to_owned();
               move || {
                 let style = cloned.style();
                 style.set_property("opacity", "0").unwrap();
@@ -204,7 +204,7 @@ pub(crate) fn effect_keydown(_args: Vec<RespoEffectArg>, effect_type: RespoEffec
     RespoEffectType::Mounted => {
       let window = web_sys::window().unwrap();
       let listener = Closure::wrap(Box::new({
-        let el = el.clone();
+        let el = el.to_owned();
         move |event: web_sys::KeyboardEvent| {
           let mut init_dict: KeyboardEventInit = KeyboardEventInit::new();
           init_dict

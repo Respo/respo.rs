@@ -133,7 +133,7 @@ impl RespoApp for App {
   type Action = ActionOp;
 
   fn get_store(&self) -> Rc<RefCell<Self::Model>> {
-    self.store.clone()
+    self.store.to_owned()
   }
   fn get_mount_target(&self) -> &web_sys::Node {
     &self.mount_target

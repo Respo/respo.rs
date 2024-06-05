@@ -65,12 +65,12 @@ where
 {
   let prev_store = RefCell::new(get_store());
   let tree0: RespoNode<T> = renderer()?;
-  let prev_tree = Rc::new(RefCell::new(tree0.clone()));
+  let prev_tree = Rc::new(RefCell::new(tree0.to_owned()));
 
-  let to_prev_tree = prev_tree.clone();
+  let to_prev_tree = prev_tree.to_owned();
   let handle_event = RespoEventMarkFn::new(move |mark: RespoEventMark| -> Result<(), String> {
     match request_for_target_handler(&to_prev_tree.borrow(), &mark.name, &mark.coord) {
-      Ok(handler) => match handler.run(mark.event_info, dispatch_action.clone()) {
+      Ok(handler) => match handler.run(mark.event_info, dispatch_action.to_owned()) {
         Ok(()) => {
           // util::log!("finished event: {} {:?}", mark.name, mark.coord);
           mark_need_rerender();
@@ -87,7 +87,7 @@ where
     Ok(())
   });
 
-  let handler = handle_event.clone();
+  let handler = handle_event.to_owned();
   let element = build_dom_tree(&tree0, &[], handler)?;
 
   // collection mounted effects
@@ -95,11 +95,11 @@ where
   collect_effects_outside_in_as(&tree0, &[], &[], RespoEffectType::Mounted, &mut mount_changes)?;
 
   mount_target.append_child(&element)?;
-  let handler = handle_event.clone();
+  let handler = handle_event.to_owned();
   // util::log!("mounted changed: {:?}", mount_changes);
   patch_tree(&tree0, &prev_tree.borrow(), &mount_target, &mount_changes, handler)?;
 
-  let to_prev_tree = prev_tree.clone();
+  let to_prev_tree = prev_tree.to_owned();
   match interval {
     Some(v) => {
       util::raf_loop_slow(
@@ -131,7 +131,7 @@ where
             //   cirru_parser::format(&[changes_to_cirru(&changes)], cirru_parser::CirruWriterOptions { use_inline: true }).unwrap()
             // );
 
-            let handler = handle_event.clone();
+            let handler = handle_event.to_owned();
             patch_tree(&new_tree, &prev_tree.borrow(), &mount_target, &changes, handler)?;
             prev_tree.replace(new_tree);
           }
@@ -147,7 +147,7 @@ where
           let mut changes: Vec<DomChange<T>> = vec![];
           diff_tree(&new_tree, &to_prev_tree.borrow(), &Vec::new(), &Vec::new(), &mut changes)?;
 
-          let handler = handle_event.clone();
+          let handler = handle_event.to_owned();
           patch_tree(&new_tree, &prev_tree.borrow(), &mount_target, &changes, handler)?;
           prev_tree.replace(new_tree);
         }
@@ -167,8 +167,8 @@ where
   // util::log!("looking for {:?}\n  {}", coord, &tree);
   if coord.is_empty() {
     match tree {
-      RespoNode::Referenced(cell) => Ok((**cell).clone()),
-      _ => Ok(tree.clone()),
+      RespoNode::Referenced(cell) => Ok((**cell).to_owned()),
+      _ => Ok(tree.to_owned()),
     }
   } else {
     let branch = coord.first().ok_or("to get first branch of coord")?;
@@ -227,7 +227,7 @@ where
   match tree {
     RespoNode::Component(name, _, child) => {
       let mut next_coord: Vec<RespoCoord> = coord.to_owned();
-      next_coord.push(RespoCoord::Comp(name.clone()));
+      next_coord.push(RespoCoord::Comp(name.to_owned()));
       build_dom_tree(child, &next_coord, handle_event)
     }
     RespoNode::Element {
@@ -257,7 +257,7 @@ where
       for (k, child) in children {
         let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Key(k.to_owned()));
-        let handler = handle_event.clone();
+        let handler = handle_event.to_owned();
         element.append_child(&build_dom_tree(child, &next_coord, handler)?)?;
       }
 
@@ -265,11 +265,11 @@ where
 
       for key in event.keys() {
         let coord = coord.to_owned();
-        let handler = handle_event.clone();
+        let handler = handle_event.to_owned();
         attach_event(&element, key.as_str(), &coord, handler)?;
       }
 
-      Ok(element.dyn_ref::<Node>().expect("converting to Node").clone())
+      Ok(element.dyn_ref::<Node>().expect("converting to Node").to_owned())
     }
     RespoNode::Referenced(cell) => build_dom_tree(cell, coord, handle_event),
   }

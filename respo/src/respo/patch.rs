@@ -130,7 +130,7 @@ where
       DomChange::ModifyEvent { add, remove, coord, .. } => {
         let el = target.dyn_ref::<Element>().expect("to element");
         for k in add.iter() {
-          let handler = handle_event.clone();
+          let handler = handle_event.to_owned();
           attach_event(el, k, coord, handler)?;
         }
         let el = el.dyn_ref::<HtmlElement>().expect("html element");
@@ -148,7 +148,7 @@ where
       }
       DomChange::ReplaceElement { node, .. } => {
         let parent = target.parent_element().expect("load parent");
-        let handler = handle_event.clone();
+        let handler = handle_event.to_owned();
         let new_element = build_dom_tree(node, &coord, handler).expect("build element");
         parent
           .dyn_ref::<Node>()
@@ -161,7 +161,7 @@ where
         let base_tree = load_coord_target_tree(tree, coord)?;
         let old_base_tree = load_coord_target_tree(old_tree, coord)?;
         for op in operations {
-          let handler = handle_event.clone();
+          let handler = handle_event.to_owned();
           match op {
             ChildDomOp::Append(k, node) => {
               let mut next_coord = coord.to_owned();
@@ -206,7 +206,7 @@ where
               if idx >= &children.length() {
                 return Err(format!("child to insert not found at {}", &idx));
               } else {
-                let handler = handle_event.clone();
+                let handler = handle_event.to_owned();
                 let mut next_coord = coord.to_owned();
                 next_coord.push(RespoCoord::Key(k.to_owned()));
                 let new_element = build_dom_tree(node, &next_coord, handler).expect("new element");
@@ -281,7 +281,7 @@ where
 }
 
 fn find_coord_dom_target(mount_target: &Node, coord: &[u32]) -> Result<Node, String> {
-  let mut target = mount_target.clone();
+  let mut target = mount_target.to_owned();
   for idx in coord {
     let child = target.child_nodes().item(idx.to_owned());
     if child.is_none() {

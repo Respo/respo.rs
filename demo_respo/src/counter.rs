@@ -16,8 +16,8 @@ pub fn comp_counter(states: &StatesTree, _counted: i32) -> Result<RespoNode<Acti
   let counted = state.counted;
 
   let on_inc = {
-    let cursor = cursor.clone();
-    let state = state.clone();
+    let cursor = cursor.to_owned();
+    let state = state.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("click {:?}", e);
       if let RespoEvent::Click { original_event, .. } = e {
@@ -36,8 +36,8 @@ pub fn comp_counter(states: &StatesTree, _counted: i32) -> Result<RespoNode<Acti
   };
 
   let on_dec = {
-    let cursor = cursor.clone();
-    let state = state.clone();
+    let cursor = cursor.to_owned();
+    let state = state.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("click {:?}", e);
       dispatch.run(ActionOp::Decrement)?;

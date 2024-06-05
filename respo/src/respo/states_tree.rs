@@ -25,22 +25,22 @@ pub struct StatesTree {
 impl StatesTree {
   /// get cursor
   pub fn path(&self) -> Vec<String> {
-    self.cursor.clone()
+    self.cursor.to_owned()
   }
 
   /// pick a child branch as new cursor
   pub fn pick(&self, name: &str) -> StatesTree {
-    let mut next_cursor = self.cursor.clone();
+    let mut next_cursor = self.cursor.to_owned();
     next_cursor.push(name.to_owned());
 
     if self.branches.contains_key(name) {
       let prev = &self.branches[name];
       Self {
-        data: prev.data.clone(),
+        data: prev.data.to_owned(),
         // data_revision: prev.data_revision,
         // data_type_name: prev.data_type_name.to_owned(),
         cursor: next_cursor,
-        branches: prev.branches.clone(),
+        branches: prev.branches.to_owned(),
       }
     } else {
       Self {
@@ -111,7 +111,7 @@ impl MaybeState {
   {
     match &self.0 {
       Some(v) => match v.as_ref().as_any().downcast_ref::<T>() {
-        Some(v) => Ok(Rc::new(v.clone())),
+        Some(v) => Ok(Rc::new(v.to_owned())),
         None => Err(format!("failed to cast state to {}", std::any::type_name::<T>())),
       },
       None => Ok(Rc::new(T::default())),

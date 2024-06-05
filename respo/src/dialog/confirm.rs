@@ -52,7 +52,7 @@ where
             .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
             .style(options.backdrop_style)
             .on_click({
-              let close = close.clone();
+              let close = close.to_owned();
               move |e, dispatch| -> Result<(), String> {
                 if let RespoEvent::Click { original_event, .. } = e {
                   // stop propagation to prevent closing the modal
@@ -89,9 +89,9 @@ where
                           .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
                           .inner_text(options.button_text.unwrap_or_else(|| "Confirm".to_owned()))
                           .on_click({
-                            let close = close.clone();
+                            let close = close.to_owned();
                             move |_e, dispatch| -> Result<(), String> {
-                              confirm(dispatch.clone())?;
+                              confirm(dispatch.to_owned())?;
                               close(dispatch)?;
                               Ok(())
                             }
@@ -171,7 +171,7 @@ where
 {
   fn render(&self) -> Result<RespoNode<T>, String> {
     let on_confirm = self.on_confirm;
-    let cursor = self.cursor.clone();
+    let cursor = self.cursor.to_owned();
     let state = self.state.to_owned();
 
     comp_confirm_modal(
@@ -179,9 +179,9 @@ where
       state.show.to_owned(),
       {
         let c = cursor.to_owned();
-        let st = state.clone();
+        let st = state.to_owned();
         move |dispatch| {
-          on_confirm(dispatch.clone())?;
+          on_confirm(dispatch.to_owned())?;
           let window = web_sys::window().expect("window");
           // TODO dirty global variable
           let task = Reflect::get(&window, &JsValue::from_str(NEXT_TASK_NAME));
@@ -207,8 +207,8 @@ where
         }
       },
       {
-        let st = state.clone();
-        let c = cursor.clone();
+        let st = state.to_owned();
+        let c = cursor.to_owned();
         move |dispatch| {
           let s = ConfirmPluginState {
             show: false,
@@ -244,7 +244,7 @@ where
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String> {
     let s = ConfirmPluginState {
       show: false,
-      text: self.text.clone(),
+      text: self.text.to_owned(),
     };
     dispatch.run_state(&self.cursor, s)?;
     Ok(())
@@ -267,6 +267,6 @@ where
   }
 
   fn share_with_ref(&self) -> Rc<Self> {
-    Rc::new(self.clone())
+    Rc::new(self.to_owned())
   }
 }

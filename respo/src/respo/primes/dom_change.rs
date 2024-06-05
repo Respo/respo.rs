@@ -59,24 +59,14 @@ impl<T> DomChange<T>
 where
   T: Debug + Clone,
 {
-  pub fn get_coord(&self) -> Vec<RespoCoord> {
+  pub fn get_dom_path(&self) -> &Vec<u32> {
     match self {
-      DomChange::ReplaceElement { coord, .. } => coord.to_owned(),
-      DomChange::ModifyChildren { coord, .. } => coord.to_owned(),
-      DomChange::ModifyAttrs { coord, .. } => coord.to_owned(),
-      DomChange::ModifyStyle { coord, .. } => coord.to_owned(),
-      DomChange::ModifyEvent { coord, .. } => coord.to_owned(),
-      DomChange::Effect { coord, .. } => coord.to_owned(),
-    }
-  }
-  pub fn get_dom_path(&self) -> Vec<u32> {
-    match self {
-      DomChange::ReplaceElement { dom_path, .. } => dom_path.to_owned(),
-      DomChange::ModifyChildren { dom_path, .. } => dom_path.to_owned(),
-      DomChange::ModifyAttrs { dom_path, .. } => dom_path.to_owned(),
-      DomChange::ModifyStyle { dom_path, .. } => dom_path.to_owned(),
-      DomChange::ModifyEvent { dom_path, .. } => dom_path.to_owned(),
-      DomChange::Effect { dom_path, .. } => dom_path.to_owned(),
+      DomChange::ReplaceElement { dom_path, .. } => dom_path,
+      DomChange::ModifyChildren { dom_path, .. } => dom_path,
+      DomChange::ModifyAttrs { dom_path, .. } => dom_path,
+      DomChange::ModifyStyle { dom_path, .. } => dom_path,
+      DomChange::ModifyEvent { dom_path, .. } => dom_path,
+      DomChange::Effect { dom_path, .. } => dom_path,
     }
   }
 }

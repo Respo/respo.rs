@@ -45,7 +45,7 @@ where
     } = op
     {
       if effect_type == &RespoEffectType::BeforeUpdate {
-        let target = find_coord_dom_target(&mount_target.first_child().ok_or("mount position")?, &op.get_dom_path())?;
+        let target = find_coord_dom_target(&mount_target.first_child().ok_or("mount position")?, op.get_dom_path())?;
         let target_tree = if effect_type == &RespoEffectType::BeforeUnmount {
           load_coord_target_tree(old_tree, coord)?
         } else {
@@ -66,8 +66,7 @@ where
 
   for op in changes {
     // crate::util::log!("op: {:?}", op);
-    let coord = op.get_coord();
-    let target = find_coord_dom_target(&mount_target.first_child().ok_or("mount position")?, &op.get_dom_path())?;
+    let target = find_coord_dom_target(&mount_target.first_child().ok_or("mount position")?, op.get_dom_path())?;
     match op {
       DomChange::ModifyAttrs { set, unset, .. } => {
         let el = target.dyn_ref::<Element>().expect("load as element");
@@ -146,10 +145,10 @@ where
           }
         }
       }
-      DomChange::ReplaceElement { node, .. } => {
+      DomChange::ReplaceElement { node, coord, .. } => {
         let parent = target.parent_element().expect("load parent");
         let handler = handle_event.to_owned();
-        let new_element = build_dom_tree(node, &coord, handler).expect("build element");
+        let new_element = build_dom_tree(node, coord, handler).expect("build element");
         parent
           .dyn_ref::<Node>()
           .expect("to node")

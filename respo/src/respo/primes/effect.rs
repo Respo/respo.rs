@@ -3,6 +3,8 @@ use std::{any::Any, fmt::Debug, rc::Rc};
 use cirru_parser::Cirru;
 use web_sys::Node;
 
+// use crate::{log, util::print_type_of};
+
 /// effects that attached to components
 #[derive(Clone)]
 pub struct RespoEffect {
@@ -130,13 +132,13 @@ impl RespoEffectArg {
   where
     T: Debug + DynEq + Clone + 'static,
   {
-    // log_1(&format!("cast {:?} {:?}", self.0, type_name::<T>()).into());
+    // log!("cast {:?} {:?}", self.0, type_name::<T>());
     // print_type_of(&self.0.as_ref());
-    // log_1(&format!("expected type {:?}", type_name::<T>()).into());
+    // log!("expected type {:?}", type_name::<T>());
     // if let Some(v) = self.0.as_ref().as_any().downcast_ref::<bool>() {
-    //   log_1(&format!("Casted to &bool {:?}", v).into());
+    //   log!("Casted to &bool {:?}", v);
     // } else {
-    //   log_1(&format!("failed to cast &bool {:?}", self.0).into());
+    //   log!("failed to cast &bool {:?}", self.0);
     // }
     if let Some(v) = self.0.as_ref().as_any().downcast_ref::<T>() {
       // need to call .as_ref() to get the reference inside Rc<T>

@@ -36,19 +36,21 @@ pub trait RespoApp {
     let global_store = self.get_store();
 
     let store_to_action = global_store.clone();
-    let store_to_action2 = global_store.clone();
-    let dispatch_action = move |op: Self::Action| -> Result<(), String> {
-      // util::log!("action {:?} store, {:?}", op, store_to_action.borrow());
-      let mut store = store_to_action.borrow_mut();
+    let dispatch_action = {
+      let store_to_action = store_to_action.clone();
+      move |op: Self::Action| -> Result<(), String> {
+        // util::log!("action {:?} store, {:?}", op, store_to_action.borrow());
+        let mut store = store_to_action.borrow_mut();
 
-      Self::dispatch(&mut store, op)?;
-      // util::log!("store after action {:?}", store);
-      Ok(())
+        Self::dispatch(&mut store, op)?;
+        // util::log!("store after action {:?}", store);
+        Ok(())
+      }
     };
 
     render_node(
       mount_target.to_owned(),
-      Box::new(move || store_to_action2.borrow().clone()),
+      Box::new(move || store_to_action.borrow().clone()),
       Box::new(move || -> Result<RespoNode<Self::Action>, String> {
         // util::log!("global store: {:?}", store);
 

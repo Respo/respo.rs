@@ -85,8 +85,6 @@ where
   T: Clone + Debug + RespoAction,
 {
   let cursor = states.path();
-  let cursor2 = cursor.clone();
-  let cursor3 = cursor.clone();
   let mut state = states.data.cast_or_default::<InputState>()?;
   if let Some(text) = &options.initial_value {
     state = Rc::new(InputState {
@@ -97,51 +95,51 @@ where
 
   // respo::util::log!("State: {:?}", state);
 
-  let state2 = state.clone();
-
   let submit = Rc::new(on_submit);
   let close = Rc::new(on_close);
-  let close2 = close.clone();
-  let close3 = close.clone();
 
-  let on_text_input = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
-    if let RespoEvent::Input { value, .. } = e {
-      dispatch.run_state(&cursor, InputState { draft: value, error: None })?;
+  let on_text_input = {
+    let cursor = cursor.clone();
+    move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+      if let RespoEvent::Input { value, .. } = e {
+        dispatch.run_state(&cursor, InputState { draft: value, error: None })?;
+      }
+      Ok(())
     }
-    Ok(())
   };
 
-  let check_submit = move |text: &str, dispatch: DispatchFn<_>| -> Result<(), String> {
-    let dispatch2 = dispatch.clone();
-    let dispatch3 = dispatch.clone();
-    let dispatch4 = dispatch.clone();
-    respo::util::log!("validator: {:?}", &options.validator);
-    if let Some(validator) = &options.validator {
-      // let validator = validator.borrow();
-      let result = validator.run(text);
-      match result {
-        Ok(()) => {
-          submit(text.to_owned(), dispatch)?;
-          close2(dispatch3)?;
-          dispatch4.run_empty_state(&cursor2)?;
+  let check_submit = {
+    let close = close.clone();
+    let cursor = cursor.clone();
+    move |text: &str, dispatch: DispatchFn<_>| -> Result<(), String> {
+      respo::util::log!("validator: {:?}", &options.validator);
+      if let Some(validator) = &options.validator {
+        // let validator = validator.borrow();
+        let result = validator.run(text);
+        match result {
+          Ok(()) => {
+            submit(text.to_owned(), dispatch.clone())?;
+            close(dispatch.clone())?;
+            dispatch.clone().run_empty_state(&cursor)?;
+          }
+          Err(message) => {
+            // dispatch.run_state(&cursor, InputState { draft: text.to_owned() })?;
+            dispatch.run_state(
+              &cursor,
+              InputState {
+                draft: text.to_owned(),
+                error: Some(message),
+              },
+            )?;
+          }
         }
-        Err(message) => {
-          // dispatch.run_state(&cursor2, InputState { draft: text.to_owned() })?;
-          dispatch4.run_state(
-            &cursor2,
-            InputState {
-              draft: text.to_owned(),
-              error: Some(message),
-            },
-          )?;
-        }
+      } else {
+        submit(text.to_owned(), dispatch.clone())?;
+        close(dispatch.clone())?;
+        dispatch.run_empty_state(&cursor)?;
       }
-    } else {
-      submit(text.to_owned(), dispatch)?;
-      close2(dispatch2)?;
-      dispatch4.run_empty_state(&cursor2)?;
+      Ok(())
     }
-    Ok(())
   };
 
   let mut input_el = if options.multilines {
@@ -159,17 +157,20 @@ where
           div()
             .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
             .style(options.backdrop_style)
-            .on_click(move |e, dispatch| -> Result<(), String> {
-              if let RespoEvent::Click { original_event, .. } = e {
-                // stop propagation to prevent closing the modal
-                original_event.stop_propagation();
+            .on_click({
+              let close = close.to_owned();
+              move |e, dispatch| -> Result<(), String> {
+                if let RespoEvent::Click { original_event, .. } = e {
+                  // stop propagation to prevent closing the modal
+                  original_event.stop_propagation();
+                }
+                {
+                  let dispatch = dispatch.clone();
+                  close(dispatch)?;
+                }
+                dispatch.run_empty_state(&cursor)?;
+                Ok(())
               }
-              {
-                let dispatch = dispatch.clone();
-                close(dispatch)?;
-              }
-              dispatch.run_empty_state(&cursor3)?;
-              Ok(())
             })
             .children([
               div()
@@ -214,7 +215,7 @@ where
                           .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
                           .inner_text(options.button_text.unwrap_or_else(|| "Submit".to_owned()))
                           .on_click(move |_e, dispatch| -> Result<(), String> {
-                            check_submit(&state2.draft, dispatch)?;
+                            check_submit(&state.draft, dispatch)?;
                             Ok(())
                           })
                           .to_owned(),
@@ -223,7 +224,7 @@ where
                   ])
                   .to_owned()])
                 .to_owned(),
-              comp_esc_listener(show, close3)?,
+              comp_esc_listener(show, close)?,
             ])
             .to_owned()
         } else {
@@ -295,48 +296,49 @@ where
   fn render(&self) -> Result<RespoNode<T>, String> {
     let on_submit = self.on_submit;
     let cursor = self.cursor.clone();
-    let cursor2 = self.cursor.clone();
     let state = self.state.to_owned();
-    let state2 = self.state.to_owned();
 
     comp_prompt_modal(
       self.states.pick("plugin"),
       self.options.to_owned(),
       self.state.show,
-      move |content, dispatch| {
-        let d2 = dispatch.clone();
-        on_submit(content.to_owned(), dispatch)?;
-        let window = web_sys::window().expect("window");
-        // TODO dirty global variable
-        let task = Reflect::get(&window, &JsValue::from_str(NEXT_TASK_NAME));
-        if let Ok(f) = task {
-          if f.is_function() {
-            let f = f.dyn_into::<Function>().unwrap();
-            let arr = Array::new();
-            arr.push(&JsValue::from_str(&content));
-            let _ = f.apply(&JsValue::NULL, &arr);
+      {
+        let cursor = cursor.clone();
+        let state = state.clone();
+        move |content, dispatch| {
+          on_submit(content.to_owned(), dispatch.clone())?;
+          let window = web_sys::window().expect("window");
+          // TODO dirty global variable
+          let task = Reflect::get(&window, &JsValue::from_str(NEXT_TASK_NAME));
+          if let Ok(f) = task {
+            if f.is_function() {
+              let f = f.dyn_into::<Function>().unwrap();
+              let arr = Array::new();
+              arr.push(&JsValue::from_str(&content));
+              let _ = f.apply(&JsValue::NULL, &arr);
+            } else {
+              return Err("_NEXT_TASK is not a function".to_owned());
+            }
           } else {
-            return Err("_NEXT_TASK is not a function".to_owned());
-          }
-        } else {
-          respo::util::log!("next task is None");
-        };
-        let s = PromptPluginState {
-          show: false,
-          text: state.text.to_owned(),
-        };
-        d2.run_state(&cursor, s)?;
-        // clean up leaked closure
-        let window = web_sys::window().expect("window");
-        let _ = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), &JsValue::NULL);
-        Ok(())
+            respo::util::log!("next task is None");
+          };
+          let s = PromptPluginState {
+            show: false,
+            text: state.text.to_owned(),
+          };
+          dispatch.run_state(&cursor, s)?;
+          // clean up leaked closure
+          let window = web_sys::window().expect("window");
+          let _ = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), &JsValue::NULL);
+          Ok(())
+        }
       },
       move |dispatch| {
         let s = PromptPluginState {
           show: false,
-          text: state2.text.to_owned(),
+          text: state.text.to_owned(),
         };
-        dispatch.run_state(&cursor2, s)?;
+        dispatch.run_state(&cursor, s)?;
         // clean up leaked closure
         let window = web_sys::window().expect("window");
         let _ = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), &JsValue::NULL);

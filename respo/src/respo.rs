@@ -118,7 +118,6 @@ where
             let mut changes: Vec<DomChange<T>> = vec![];
             diff_tree(&new_tree, &to_prev_tree.borrow(), &Vec::new(), &Vec::new(), &mut changes)?;
 
-            // let to_prev_tree2 = to_prev_tree.clone();
             // util::log!(
             //   "prev tree: {}",
             //   cirru_parser::format(
@@ -143,7 +142,6 @@ where
     }
     None => {
       util::raf_loop(Box::new(move || -> Result<(), String> {
-        // let to_prev_tree2 = to_prev_tree.clone();
         if drain_rerender_status() {
           let new_tree = renderer()?;
           let mut changes: Vec<DomChange<T>> = vec![];

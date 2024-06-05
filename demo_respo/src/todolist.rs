@@ -45,11 +45,16 @@ pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<Ac
   // util::log!("{:?}", &tasks);
 
   let on_hide = {
-    let s = state.to_owned();
+    let state = state.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("click {:?}", e);
 
-      dispatch.run_state(&cursor, TodolistState { hide_done: !s.hide_done })?;
+      dispatch.run_state(
+        &cursor,
+        TodolistState {
+          hide_done: !state.hide_done,
+        },
+      )?;
 
       Ok(())
     }

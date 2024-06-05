@@ -1,7 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
-use web_sys::console::log_1;
 use web_sys::Node;
 
 #[allow(dead_code)]
@@ -42,9 +41,11 @@ pub fn raf_loop_slow(interval: i32, mut cb: Box<dyn FnMut() -> Result<(), String
       crate::log!("failed in slow loop: {}", e);
     }
 
-    let f2 = f.clone();
-    let h = Closure::wrap(Box::new(move || {
-      request_animation_frame(f2.borrow().as_ref().expect("call raq"));
+    let h = Closure::wrap(Box::new({
+      let f = f.clone();
+      move || {
+        request_animation_frame(f.borrow().as_ref().expect("call raq"));
+      }
     }) as Box<dyn FnMut()>);
     web_sys::Window::set_timeout_with_callback_and_timeout_and_arguments_0(&window(), h.as_ref().unchecked_ref(), interval)
       .expect("call set timeout");
@@ -92,5 +93,5 @@ pub use log;
 #[allow(dead_code)]
 pub fn print_type_of<T>(_: &T) {
   // println!("{}", std::any::type_name::<T>())
-  log_1(&std::any::type_name::<T>().to_string().into());
+  log!("{}", &std::any::type_name::<T>().to_string());
 }

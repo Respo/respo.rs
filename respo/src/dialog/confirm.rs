@@ -41,8 +41,6 @@ where
 {
   let confirm = Rc::new(on_confirm);
   let close = Rc::new(on_close);
-  let close2 = close.clone();
-  let close3 = close.clone();
 
   Ok(
     RespoNode::new_component(
@@ -53,13 +51,16 @@ where
           div()
             .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
             .style(options.backdrop_style)
-            .on_click(move |e, dispatch| -> Result<(), String> {
-              if let RespoEvent::Click { original_event, .. } = e {
-                // stop propagation to prevent closing the modal
-                original_event.stop_propagation();
+            .on_click({
+              let close = close.clone();
+              move |e, dispatch| -> Result<(), String> {
+                if let RespoEvent::Click { original_event, .. } = e {
+                  // stop propagation to prevent closing the modal
+                  original_event.stop_propagation();
+                }
+                close(dispatch)?;
+                Ok(())
               }
-              close(dispatch)?;
-              Ok(())
             })
             .children([
               div()
@@ -87,11 +88,13 @@ where
                         button()
                           .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
                           .inner_text(options.button_text.unwrap_or_else(|| "Confirm".to_owned()))
-                          .on_click(move |_e, dispatch| -> Result<(), String> {
-                            let d2 = dispatch.clone();
-                            confirm(dispatch)?;
-                            close2(d2)?;
-                            Ok(())
+                          .on_click({
+                            let close = close.clone();
+                            move |_e, dispatch| -> Result<(), String> {
+                              confirm(dispatch.clone())?;
+                              close(dispatch)?;
+                              Ok(())
+                            }
                           })
                           .to_owned(),
                       ])
@@ -99,7 +102,7 @@ where
                   ])
                   .to_owned()])
                 .to_owned(),
-              comp_esc_listener(show, close3)?,
+              comp_esc_listener(show, close)?,
             ])
             .to_owned()
         } else {
@@ -169,49 +172,54 @@ where
   fn render(&self) -> Result<RespoNode<T>, String> {
     let on_confirm = self.on_confirm;
     let cursor = self.cursor.clone();
-    let cursor2 = self.cursor.clone();
     let state = self.state.to_owned();
-    let state2 = self.state.to_owned();
 
     comp_confirm_modal(
       self.options.to_owned(),
-      self.state.show,
-      move |dispatch| {
-        let d2 = dispatch.clone();
-        on_confirm(dispatch)?;
-        let window = web_sys::window().expect("window");
-        // TODO dirty global variable
-        let task = Reflect::get(&window, &JsValue::from_str(NEXT_TASK_NAME));
-        if let Ok(f) = task {
-          if f.is_function() {
-            let f = f.dyn_into::<Function>().unwrap();
-            let _ = f.apply(&JsValue::NULL, &Array::new());
+      state.show.to_owned(),
+      {
+        let c = cursor.to_owned();
+        let st = state.clone();
+        move |dispatch| {
+          on_confirm(dispatch.clone())?;
+          let window = web_sys::window().expect("window");
+          // TODO dirty global variable
+          let task = Reflect::get(&window, &JsValue::from_str(NEXT_TASK_NAME));
+          if let Ok(f) = task {
+            if f.is_function() {
+              let f = f.dyn_into::<Function>().unwrap();
+              let _ = f.apply(&JsValue::NULL, &Array::new());
+            } else {
+              return Err("_NEXT_TASK is not a function".to_owned());
+            }
           } else {
-            return Err("_NEXT_TASK is not a function".to_owned());
-          }
-        } else {
-          respo::util::log!("next task is None");
-        };
-        let s = ConfirmPluginState {
-          show: false,
-          text: state.text.to_owned(),
-        };
-        d2.run_state(&cursor, s)?;
-        // clean up leaked closure
-        let window = web_sys::window().expect("window");
-        let _ = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), &JsValue::NULL);
-        Ok(())
+            respo::util::log!("next task is None");
+          };
+          let s = ConfirmPluginState {
+            show: false,
+            text: st.text.to_owned(),
+          };
+          dispatch.run_state(&c, s)?;
+          // clean up leaked closure
+          let window = web_sys::window().expect("window");
+          let _ = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), &JsValue::NULL);
+          Ok(())
+        }
       },
-      move |dispatch| {
-        let s = ConfirmPluginState {
-          show: false,
-          text: state2.text.to_owned(),
-        };
-        dispatch.run_state(&cursor2, s)?;
-        // clean up leaked closure
-        let window = web_sys::window().expect("window");
-        let _ = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), &JsValue::NULL);
-        Ok(())
+      {
+        let st = state.clone();
+        let c = cursor.clone();
+        move |dispatch| {
+          let s = ConfirmPluginState {
+            show: false,
+            text: st.text.to_owned(),
+          };
+          dispatch.run_state(&c, s)?;
+          // clean up leaked closure
+          let window = web_sys::window().expect("window");
+          let _ = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), &JsValue::NULL);
+          Ok(())
+        }
       },
     )
   }

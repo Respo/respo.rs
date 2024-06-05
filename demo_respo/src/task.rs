@@ -25,7 +25,6 @@ pub fn comp_task(
   let task_id = task.id.to_owned();
 
   let cursor = states.path();
-  let cursor2 = cursor.clone();
   let state = states.data.cast_or_default::<TaskState>()?;
 
   let on_toggle = {
@@ -36,11 +35,14 @@ pub fn comp_task(
     }
   };
 
-  let on_input = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
-    if let RespoEvent::Input { value, .. } = e {
-      dispatch.run_state(&cursor, TaskState { draft: value })?;
+  let on_input = {
+    let c = cursor.clone();
+    move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+      if let RespoEvent::Input { value, .. } = e {
+        dispatch.run_state(&c, TaskState { draft: value })?;
+      }
+      Ok(())
     }
-    Ok(())
   };
 
   let on_remove = {
@@ -54,10 +56,11 @@ pub fn comp_task(
 
   let on_update = {
     let tid = task_id.clone();
-    let s = state.clone();
+    let cursor = cursor.clone();
+    let state = state.clone();
     move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
-      dispatch.run(ActionOp::UpdateTask(tid.to_owned(), s.draft.clone()))?;
-      dispatch.run_empty_state(&cursor2)?;
+      dispatch.run(ActionOp::UpdateTask(tid.to_owned(), state.draft.clone()))?;
+      dispatch.run_empty_state(&cursor)?;
       Ok(())
     }
   };

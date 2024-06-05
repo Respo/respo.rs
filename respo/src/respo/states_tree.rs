@@ -6,7 +6,6 @@ use std::rc::Rc;
 use crate::DynEq;
 
 // use wasm_bindgen::JsValue;
-// use web_sys::console::log_1;
 
 /// Respo maintains states in a tree structure, where the keys are strings,
 /// each child component "picks" a key to attach its own state to the tree,

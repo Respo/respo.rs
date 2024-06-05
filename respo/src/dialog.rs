@@ -63,25 +63,27 @@ pub(crate) fn effect_modal_fade(args: Vec<RespoEffectArg>, effect_type: RespoEff
           Some(target) => {
             let d = target.clone_node_with_deep(true).unwrap();
             let cloned = Rc::new(d.dyn_ref::<HtmlElement>().unwrap().to_owned()); // outlive
-            let cloned2 = cloned.clone();
             let document = el.owner_document().unwrap();
             document.body().unwrap().append_child(&cloned).unwrap();
             // setTimeout
             let window = web_sys::window().unwrap();
-            let immediate_call: Closure<dyn FnMut()> = Closure::once(move || {
-              let style = cloned.style();
-              style.set_property("opacity", "0").unwrap();
-              let card = cloned.first_child().unwrap();
-              let card_style = card.dyn_ref::<HtmlElement>().unwrap().style();
-              card_style.set_property("transition-duration", "240ms").unwrap();
-              card_style.set_property("transform", "scale(0.94) translate(0px,-20px)").unwrap();
+            let immediate_call: Closure<dyn FnMut()> = Closure::once({
+              let cloned = cloned.clone();
+              move || {
+                let style = cloned.style();
+                style.set_property("opacity", "0").unwrap();
+                let card = cloned.first_child().unwrap();
+                let card_style = card.dyn_ref::<HtmlElement>().unwrap().style();
+                card_style.set_property("transition-duration", "240ms").unwrap();
+                card_style.set_property("transform", "scale(0.94) translate(0px,-20px)").unwrap();
+              }
             });
             window
               .set_timeout_with_callback_and_timeout_and_arguments_0(immediate_call.as_ref().unchecked_ref(), 10)
               .unwrap();
             immediate_call.forget();
             let delay_call: Closure<dyn FnMut()> = Closure::once(move || {
-              cloned2.remove();
+              cloned.remove();
             });
             window
               .set_timeout_with_callback_and_timeout_and_arguments_0(delay_call.as_ref().unchecked_ref(), 250)
@@ -131,25 +133,27 @@ pub(crate) fn effect_drawer_fade(args: Vec<RespoEffectArg>, effect_type: RespoEf
           Some(target) => {
             let d = target.clone_node_with_deep(true).unwrap();
             let cloned = Rc::new(d.dyn_ref::<HtmlElement>().unwrap().to_owned()); // outlive
-            let cloned2 = cloned.clone();
             let document = el.owner_document().unwrap();
             document.body().unwrap().append_child(&cloned).unwrap();
             // setTimeout
             let window = web_sys::window().unwrap();
-            let immediate_call: Closure<dyn FnMut()> = Closure::once(move || {
-              let style = cloned.style();
-              style.set_property("opacity", "0").unwrap();
-              let card = cloned.first_child().unwrap();
-              let card_style = card.dyn_ref::<HtmlElement>().unwrap().style();
-              card_style.set_property("transition-duration", "240ms").unwrap();
-              card_style.set_property("transform", "translate(100%,0px)").unwrap();
+            let immediate_call: Closure<dyn FnMut()> = Closure::once({
+              let cloned = cloned.clone();
+              move || {
+                let style = cloned.style();
+                style.set_property("opacity", "0").unwrap();
+                let card = cloned.first_child().unwrap();
+                let card_style = card.dyn_ref::<HtmlElement>().unwrap().style();
+                card_style.set_property("transition-duration", "240ms").unwrap();
+                card_style.set_property("transform", "translate(100%,0px)").unwrap();
+              }
             });
             window
               .set_timeout_with_callback_and_timeout_and_arguments_0(immediate_call.as_ref().unchecked_ref(), 10)
               .unwrap();
             immediate_call.forget();
             let delay_call: Closure<dyn FnMut()> = Closure::once(move || {
-              cloned2.remove();
+              cloned.remove();
             });
             window
               .set_timeout_with_callback_and_timeout_and_arguments_0(delay_call.as_ref().unchecked_ref(), 250)
@@ -194,38 +198,40 @@ const TEMP_LISTENER: &str = "temp_listener";
 
 /// listen to global keydown event, dispatch to element
 pub(crate) fn effect_keydown(_args: Vec<RespoEffectArg>, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
-  let el_1 = Rc::new(el.to_owned());
-  let el_2 = el_1.clone();
-  let el_3 = el_1.clone();
+  let el = Rc::new(el.to_owned());
+
   match effect_type {
     RespoEffectType::Mounted => {
       let window = web_sys::window().unwrap();
-      let listener = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
-        let mut init_dict: KeyboardEventInit = KeyboardEventInit::new();
-        init_dict
-          .key(&event.key())
-          .code(&event.code())
-          .char_code(event.char_code())
-          .view(event.view().as_ref())
-          .location(event.location())
-          .key_code(event.key_code());
-        let new_event = KeyboardEvent::new_with_keyboard_event_init_dict(&event.type_(), &init_dict).unwrap();
+      let listener = Closure::wrap(Box::new({
+        let el = el.clone();
+        move |event: web_sys::KeyboardEvent| {
+          let mut init_dict: KeyboardEventInit = KeyboardEventInit::new();
+          init_dict
+            .key(&event.key())
+            .code(&event.code())
+            .char_code(event.char_code())
+            .view(event.view().as_ref())
+            .location(event.location())
+            .key_code(event.key_code());
+          let new_event = KeyboardEvent::new_with_keyboard_event_init_dict(&event.type_(), &init_dict).unwrap();
 
-        el_1.dispatch_event(&new_event).unwrap();
+          el.dispatch_event(&new_event).unwrap();
+        }
       }) as Box<dyn FnMut(_)>);
       window
         .add_event_listener_with_callback("keydown", listener.as_ref().unchecked_ref())
         .unwrap();
-      let _ = Reflect::set(&el_2, &JsValue::from_str(TEMP_LISTENER), listener.as_ref().unchecked_ref());
+      let _ = Reflect::set(&el, &JsValue::from_str(TEMP_LISTENER), listener.as_ref().unchecked_ref());
       listener.forget();
     }
     RespoEffectType::BeforeUnmount => {
-      let listener = Reflect::get(&el_3, &JsValue::from_str(TEMP_LISTENER)).unwrap();
+      let listener = Reflect::get(&el, &JsValue::from_str(TEMP_LISTENER)).unwrap();
       let window = web_sys::window().unwrap();
       window
         .remove_event_listener_with_callback("keydown", listener.as_ref().unchecked_ref())
         .unwrap();
-      let _ = Reflect::set(&el_2, &JsValue::from_str(TEMP_LISTENER), &JsValue::NULL);
+      let _ = Reflect::set(&el, &JsValue::from_str(TEMP_LISTENER), &JsValue::NULL);
     }
     _ => {}
   }

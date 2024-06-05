@@ -90,7 +90,6 @@ fn main() {
     store: Rc::new(RefCell::new(Store::default())),
   };
 
-  // let store2 = app.store.clone();
   // let beforeunload = Closure::wrap(Box::new(move |_e: BeforeUnloadEvent| {
   //   respo::util::log!("before unload.");
   //   let s: &Store = &store2.borrow();

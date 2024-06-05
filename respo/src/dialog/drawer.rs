@@ -79,8 +79,6 @@ where
   T: Clone + Debug,
 {
   let close = Rc::new(on_close);
-  let close2 = close.clone();
-  let close3 = close.clone();
 
   Ok(
     RespoNode::new_component(
@@ -91,13 +89,16 @@ where
           div()
             .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
             .style(options.backdrop_style)
-            .on_click(move |e, dispatch| -> Result<(), String> {
-              if let RespoEvent::Click { original_event, .. } = e {
-                // stop propagation to prevent closing the drawer
-                original_event.stop_propagation();
+            .on_click({
+              let close = close.clone();
+              move |e, dispatch| -> Result<(), String> {
+                if let RespoEvent::Click { original_event, .. } = e {
+                  // stop propagation to prevent closing the drawer
+                  original_event.stop_propagation();
+                }
+                close(dispatch)?;
+                Ok(())
               }
-              close(dispatch)?;
-              Ok(())
             })
             .children([
               div()
@@ -120,15 +121,17 @@ where
                       .children([span().inner_text(options.title.unwrap_or_else(|| "Drawer".to_owned())).to_owned()])
                       .to_owned(),
                     space(None, Some(8)),
-                    options.render.run(move |dispatch| -> Result<(), String> {
-                      let close = close2.clone();
-                      close(dispatch)?;
-                      Ok(())
+                    options.render.run({
+                      let close = close.clone();
+                      move |dispatch| -> Result<(), String> {
+                        close(dispatch)?;
+                        Ok(())
+                      }
                     })?,
                   ])
                   .to_owned()])
                 .to_owned(),
-              comp_esc_listener(show, close3)?,
+              comp_esc_listener(show, close)?,
             ])
             .to_owned()
         } else {

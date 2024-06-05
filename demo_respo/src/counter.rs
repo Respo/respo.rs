@@ -13,36 +13,42 @@ pub fn comp_counter(states: &StatesTree, _counted: i32) -> Result<RespoNode<Acti
   let cursor = states.path();
 
   let state = states.data.cast_or_default::<MainState>()?;
-  let state2 = state.clone();
   let counted = state.counted;
-  let cursor2 = cursor.clone();
 
-  let on_inc = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
-    util::log!("click {:?}", e);
-    if let RespoEvent::Click { original_event, .. } = e {
-      original_event.prevent_default();
+  let on_inc = {
+    let cursor = cursor.clone();
+    let state = state.clone();
+    move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+      util::log!("click {:?}", e);
+      if let RespoEvent::Click { original_event, .. } = e {
+        original_event.prevent_default();
+      }
+
+      dispatch.run(ActionOp::Increment)?;
+      dispatch.run_state(
+        &cursor,
+        MainState {
+          counted: state.counted + 2,
+        },
+      )?;
+      Ok(())
     }
-
-    dispatch.run(ActionOp::Increment)?;
-    dispatch.run_state(
-      &cursor,
-      MainState {
-        counted: state.counted + 2,
-      },
-    )?;
-    Ok(())
   };
 
-  let on_dec = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
-    util::log!("click {:?}", e);
-    dispatch.run(ActionOp::Decrement)?;
-    dispatch.run_state(
-      &cursor2,
-      MainState {
-        counted: state2.counted - 1,
-      },
-    )?;
-    Ok(())
+  let on_dec = {
+    let cursor = cursor.clone();
+    let state = state.clone();
+    move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+      util::log!("click {:?}", e);
+      dispatch.run(ActionOp::Decrement)?;
+      dispatch.run_state(
+        &cursor,
+        MainState {
+          counted: state.counted - 1,
+        },
+      )?;
+      Ok(())
+    }
   };
 
   Ok(

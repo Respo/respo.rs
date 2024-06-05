@@ -4,7 +4,7 @@ use respo::{button, div, span, ui::ui_button, util, CssColor, DispatchFn, RespoE
 
 use super::store::ActionOp;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 struct MainState {
   counted: i32,
 }

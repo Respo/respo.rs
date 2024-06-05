@@ -2,14 +2,13 @@ mod dom_change;
 mod effect;
 mod listener;
 
-use std::any::Any;
 use std::boxed::Box;
 use std::fmt::Display;
 use std::rc::Rc;
 use std::{collections::HashMap, fmt::Debug};
 
 use cirru_parser::Cirru;
-use effect::DynEq;
+pub use effect::DynEq;
 pub use effect::RespoEffectArg;
 pub use listener::{RespoEvent, RespoEventMark, RespoListenerFn};
 use web_sys::Node;
@@ -482,9 +481,9 @@ where
   /// dispatch to update local state
   pub fn run_state<U>(&self, cursor: &[String], data: U) -> Result<(), String>
   where
-    U: ToOwned + Clone + 'static,
+    U: DynEq + ToOwned + Clone + PartialEq + Eq + 'static,
   {
-    let a = Rc::new(data.to_owned()) as Rc<dyn Any>;
+    let a = Rc::new(data);
     (self.0)(T::wrap_states_action(cursor, MaybeState::new(Some(a))))
   }
   /// reset state to empty

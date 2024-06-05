@@ -66,7 +66,7 @@ impl PromptValidator {
   }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 struct InputState {
   draft: String,
   error: Option<String>,
@@ -264,7 +264,7 @@ where
   fn share_with_ref(&self) -> Rc<Self>;
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 struct PromptPluginState {
   show: bool,
   text: Option<String>,

@@ -3,6 +3,8 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::{collections::HashMap, rc::Rc};
 
+use crate::DynEq;
+
 // use wasm_bindgen::JsValue;
 // use web_sys::console::log_1;
 
@@ -24,6 +26,7 @@ pub struct StatesTree {
 impl Hash for StatesTree {
   fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
     self.cursor.hash(state);
+    // self.branches.hash(state);
     self.data_type_name.hash(state);
     self.data_revision.hash(state);
   }
@@ -32,7 +35,7 @@ impl Hash for StatesTree {
 impl PartialEq for StatesTree {
   fn eq(&self, other: &Self) -> bool {
     // data and revision to simulate state change
-    self.cursor == other.cursor && self.data_type_name == other.data_type_name && self.data_revision == other.data_revision
+    self.cursor == other.cursor && self.data == other.data && self.branches == other.branches
   }
 }
 
@@ -91,10 +94,21 @@ impl StatesTree {
 
 #[derive(Debug, Clone, Default)]
 /// local state in component could be `None` according to the tree structure
-pub struct MaybeState(Option<Rc<dyn Any>>);
+pub struct MaybeState(Option<Rc<dyn DynEq>>);
+
+impl PartialEq for MaybeState {
+  fn eq(&self, other: &Self) -> bool {
+    match (&self.0, &other.0) {
+      (None, None) => true,
+      (Some(a), Some(b)) => a.do_eq(b),
+      _ => false,
+    }
+  }
+}
+impl Eq for MaybeState {}
 
 impl MaybeState {
-  pub fn new(state: Option<Rc<dyn Any>>) -> Self {
+  pub fn new(state: Option<Rc<dyn DynEq>>) -> Self {
     Self(state)
   }
 
@@ -103,7 +117,7 @@ impl MaybeState {
     T: Clone + Default + 'static,
   {
     match &self.0 {
-      Some(v) => match v.downcast_ref::<T>() {
+      Some(v) => match v.as_ref().as_any().downcast_ref::<T>() {
         Some(v) => Ok(Rc::new(v.clone())),
         None => Err(format!("failed to cast state to {}", std::any::type_name::<T>())),
       },

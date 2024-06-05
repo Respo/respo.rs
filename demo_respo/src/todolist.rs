@@ -5,7 +5,7 @@ use super::{
   task::comp_task,
 };
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 struct TodolistState {
   hide_done: bool,
 }

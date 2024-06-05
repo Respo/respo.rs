@@ -11,7 +11,7 @@ use respo::{
   util, DispatchFn, RespoEvent, RespoNode, StatesTree,
 };
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 struct PanelState {
   content: String,
 }

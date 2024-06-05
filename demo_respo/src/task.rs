@@ -9,7 +9,7 @@ use respo::{
 
 use super::store::*;
 
-#[derive(Debug, Clone, Default, Hash)]
+#[derive(Debug, Clone, Default, Hash, PartialEq, Eq)]
 struct TaskState {
   draft: String,
 }

@@ -1,7 +1,7 @@
-use std::any::{Any, TypeId};
+use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::hash::Hash;
-use std::{collections::HashMap, rc::Rc};
+use std::rc::Rc;
 
 use crate::DynEq;
 
@@ -11,35 +11,17 @@ use crate::DynEq;
 /// Respo maintains states in a tree structure, where the keys are strings,
 /// each child component "picks" a key to attach its own state to the tree,
 /// and it dispatches events to global store to update the state.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub struct StatesTree {
   /// local data
   pub data: MaybeState,
   /// the path to the current state in the tree, use in updating
   pub cursor: Vec<String>,
-  pub data_type_name: Option<TypeId>,
-  pub data_revision: usize,
+  // pub data_type_name: Option<TypeId>,
+  // pub data_revision: usize,
   /// holding children states
-  pub branches: HashMap<String, Box<StatesTree>>,
+  pub branches: BTreeMap<String, Box<StatesTree>>,
 }
-
-impl Hash for StatesTree {
-  fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-    self.cursor.hash(state);
-    // self.branches.hash(state);
-    self.data_type_name.hash(state);
-    self.data_revision.hash(state);
-  }
-}
-
-impl PartialEq for StatesTree {
-  fn eq(&self, other: &Self) -> bool {
-    // data and revision to simulate state change
-    self.cursor == other.cursor && self.data == other.data && self.branches == other.branches
-  }
-}
-
-impl Eq for StatesTree {}
 
 impl StatesTree {
   /// get cursor
@@ -56,8 +38,8 @@ impl StatesTree {
       let prev = &self.branches[name];
       Self {
         data: prev.data.clone(),
-        data_revision: prev.data_revision,
-        data_type_name: prev.data_type_name.to_owned(),
+        // data_revision: prev.data_revision,
+        // data_type_name: prev.data_type_name.to_owned(),
         cursor: next_cursor,
         branches: prev.branches.clone(),
       }
@@ -65,9 +47,9 @@ impl StatesTree {
       Self {
         data: MaybeState::new(None),
         cursor: next_cursor,
-        data_type_name: None,
-        data_revision: 0,
-        branches: HashMap::new(),
+        // data_type_name: None,
+        // data_revision: 0,
+        branches: BTreeMap::new(),
       }
     }
   }
@@ -76,8 +58,8 @@ impl StatesTree {
   pub fn set_in_mut(&mut self, path: &[String], new_state: MaybeState) {
     if path.is_empty() {
       new_state.clone_into(&mut self.data);
-      self.data_type_name = new_state.0.as_ref().map(|v| v.type_id().to_owned());
-      self.data_revision += 1;
+      // self.data_type_name = new_state.0.as_ref().map(|v| v.type_id().to_owned());
+      // self.data_revision += 1;
     } else {
       let (p_head, p_rest) = path.split_at(1);
       let p0 = p_head[0].to_owned();
@@ -106,6 +88,18 @@ impl PartialEq for MaybeState {
   }
 }
 impl Eq for MaybeState {}
+
+impl Hash for MaybeState {
+  fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    match &self.0 {
+      Some(v) => {
+        // TODO better hash DynEq object, acceptable for now
+        state.write_usize(Rc::as_ptr(v) as *const () as usize);
+      }
+      None => 0.hash(state),
+    }
+  }
+}
 
 impl MaybeState {
   pub fn new(state: Option<Rc<dyn DynEq>>) -> Self {

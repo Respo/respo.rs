@@ -150,7 +150,7 @@ where
   options: AlertOptions,
   /// tracking content to display
   text: Option<String>,
-  cursor: Vec<String>,
+  cursor: Vec<Rc<str>>,
   on_read: U,
   phantom: PhantomData<T>,
 }

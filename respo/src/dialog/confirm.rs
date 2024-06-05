@@ -159,7 +159,7 @@ where
   options: ConfirmOptions,
   /// tracking content to display
   text: Option<String>,
-  cursor: Vec<String>,
+  cursor: Vec<Rc<str>>,
   on_confirm: U,
   phantom: PhantomData<T>,
 }

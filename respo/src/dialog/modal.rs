@@ -181,7 +181,7 @@ where
   state: Rc<ModalPluginState>,
   options: ModalOptions<T>,
   /// tracking content to display
-  cursor: Vec<String>,
+  cursor: Vec<Rc<str>>,
   phantom: PhantomData<T>,
 }
 

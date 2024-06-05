@@ -1,7 +1,7 @@
 use std::{
   collections::HashSet,
-  fmt::Write,
-  fmt::{self, Display, Formatter},
+  fmt::{self, Display, Formatter, Write},
+  rc::Rc,
   sync::RwLock,
 };
 
@@ -18,11 +18,11 @@ lazy_static::lazy_static! {
 /// and when it's sent to JS APIs, it's still in strings, which is also dynamic.
 /// TODO order of rules might matter in edge cases
 #[derive(Debug, Clone, PartialEq, Default, Eq)]
-pub struct RespoStyle(pub Vec<(String, String)>);
+pub struct RespoStyle(pub Vec<(Rc<str>, String)>);
 
 impl RespoStyle {
   pub fn insert(&mut self, property: &str, value: String) -> &mut Self {
-    self.0.push((property.to_owned(), value));
+    self.0.push((Rc::from(property), value));
     self
   }
 

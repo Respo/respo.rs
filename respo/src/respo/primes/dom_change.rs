@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, rc::Rc};
 
 use std::fmt::Debug;
 
@@ -30,19 +30,19 @@ where
     coord: Vec<RespoCoord>,
     dom_path: Vec<u32>,
     set: StrDict,
-    unset: HashSet<String>,
+    unset: HashSet<Rc<str>>,
   },
   ModifyStyle {
     coord: Vec<RespoCoord>,
     dom_path: Vec<u32>,
     set: StrDict,
-    unset: HashSet<String>,
+    unset: HashSet<Rc<str>>,
   },
   ModifyEvent {
     coord: Vec<RespoCoord>,
     dom_path: Vec<u32>,
-    add: HashSet<String>,
-    remove: HashSet<String>,
+    add: HashSet<Rc<str>>,
+    remove: HashSet<Rc<str>>,
   },
   /// this is only part of effects.
   /// effects that collected while diffing children are nested inside
@@ -125,7 +125,7 @@ where
           coord_path_to_cirru(coord),
           dom_path_to_cirru(&dom_path),
           str_dict_to_cirrus_dict(&set),
-          unset.iter().map(Cirru::from).collect::<Vec<_>>().into(),
+          unset.iter().map(|x| Cirru::from(x.as_ref())).collect::<Vec<_>>().into(),
         ];
         Cirru::List(xs)
       }
@@ -140,7 +140,7 @@ where
           coord_path_to_cirru(coord),
           dom_path_to_cirru(&dom_path),
           str_dict_to_cirrus_dict(&set),
-          unset.iter().map(Cirru::from).collect::<Vec<_>>().into(),
+          unset.iter().map(|x| Cirru::from(x.as_ref())).collect::<Vec<_>>().into(),
         ];
         Cirru::List(xs)
       }
@@ -154,8 +154,8 @@ where
           "::modify-event".into(),
           coord_path_to_cirru(coord),
           dom_path_to_cirru(&dom_path),
-          add.iter().map(Cirru::from).collect::<Vec<_>>().into(),
-          remove.iter().map(Cirru::from).collect::<Vec<_>>().into(),
+          add.iter().map(|x| Cirru::from(x.as_ref())).collect::<Vec<_>>().into(),
+          remove.iter().map(|x| Cirru::from(x.as_ref())).collect::<Vec<_>>().into(),
         ];
         Cirru::List(xs)
       }
@@ -244,14 +244,14 @@ where
 pub enum RespoCoord {
   Key(RespoIndexKey),
   /// for indexing by component name, even though there's only one of that
-  Comp(String),
+  Comp(Rc<str>),
 }
 
 impl From<RespoCoord> for Cirru {
   fn from(coord: RespoCoord) -> Self {
     match coord {
       RespoCoord::Key(key) => key.into(),
-      RespoCoord::Comp(name) => vec![Cirru::from("::Comp"), Cirru::from(name)].into(),
+      RespoCoord::Comp(name) => vec![Cirru::from("::Comp"), Cirru::from(name.as_ref())].into(),
     }
   }
 }

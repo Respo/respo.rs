@@ -1,4 +1,4 @@
-use std::hash::Hash;
+use std::{hash::Hash, rc::Rc};
 
 use respo::{util, MaybeState, RespoAction, RespoStore, StatesTree};
 
@@ -31,7 +31,7 @@ impl Hash for Task {
 pub enum ActionOp {
   Increment,
   Decrement,
-  StatesChange(Vec<String>, MaybeState),
+  StatesChange(Vec<Rc<str>>, MaybeState),
   AddTask(String, String),
   RemoveTask(String),
   UpdateTask(String, String),
@@ -47,7 +47,7 @@ impl Default for ActionOp {
 }
 
 impl RespoAction for ActionOp {
-  fn wrap_states_action(cursor: &[String], a: MaybeState) -> Self {
+  fn wrap_states_action(cursor: &[Rc<str>], a: MaybeState) -> Self {
     Self::StatesChange(cursor.to_vec(), a)
   }
 }

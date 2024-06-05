@@ -20,7 +20,7 @@ where
     (RespoNode::Component(name, effects, new_child), RespoNode::Component(name_old, old_effects, old_child)) => {
       if name == name_old {
         let mut next_coord = coord.to_owned();
-        next_coord.push(RespoCoord::Comp(String::from(name)));
+        next_coord.push(RespoCoord::Comp(name.to_owned()));
         diff_tree(new_child, old_child, &next_coord, dom_path, changes)?;
         let mut skipped = HashSet::new();
         for (idx, effect) in effects.iter().enumerate() {
@@ -131,8 +131,8 @@ where
 }
 
 fn diff_attrs<T>(
-  new_attrs: &HashMap<String, String>,
-  old_attrs: &HashMap<String, String>,
+  new_attrs: &HashMap<Rc<str>, String>,
+  old_attrs: &HashMap<Rc<str>, String>,
   coord: &[RespoCoord],
   dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
@@ -140,7 +140,7 @@ fn diff_attrs<T>(
   T: Debug + Clone,
 {
   let mut added: StrDict = HashMap::new();
-  let mut removed: HashSet<String> = HashSet::new();
+  let mut removed: HashSet<Rc<str>> = HashSet::new();
   for (key, value) in new_attrs {
     if old_attrs.contains_key(key) {
       if &old_attrs[key] != value {
@@ -168,8 +168,8 @@ fn diff_attrs<T>(
 }
 
 fn diff_style<T>(
-  new_style: &HashMap<String, String>,
-  old_style: &HashMap<String, String>,
+  new_style: &HashMap<Rc<str>, String>,
+  old_style: &HashMap<Rc<str>, String>,
   coord: &[RespoCoord],
   dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
@@ -177,7 +177,7 @@ fn diff_style<T>(
   T: Debug + Clone,
 {
   let mut added: StrDict = HashMap::new();
-  let mut removed: HashSet<String> = HashSet::new();
+  let mut removed: HashSet<Rc<str>> = HashSet::new();
   for (key, value) in new_style {
     if old_style.contains_key(key) {
       if &old_style[key] != value {
@@ -205,16 +205,16 @@ fn diff_style<T>(
 }
 
 fn diff_event<T, U>(
-  new_event: &HashMap<String, U>,
-  old_event: &HashMap<String, U>,
+  new_event: &HashMap<Rc<str>, U>,
+  old_event: &HashMap<Rc<str>, U>,
   coord: &[RespoCoord],
   dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
 ) where
   T: Debug + Clone,
 {
-  let new_keys: HashSet<String> = new_event.keys().map(ToOwned::to_owned).collect();
-  let old_keys: HashSet<String> = old_event.keys().map(ToOwned::to_owned).collect();
+  let new_keys: HashSet<Rc<str>> = new_event.keys().map(ToOwned::to_owned).collect();
+  let old_keys: HashSet<Rc<str>> = old_event.keys().map(ToOwned::to_owned).collect();
 
   if new_keys != old_keys {
     changes.push(DomChange::ModifyEvent {

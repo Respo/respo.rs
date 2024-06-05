@@ -71,6 +71,7 @@ where
       DomChange::ModifyAttrs { set, unset, .. } => {
         let el = target.dyn_ref::<Element>().expect("load as element");
         for (k, v) in set {
+          let k = k.as_ref();
           if k == "innerText" {
             el.dyn_ref::<HtmlElement>().ok_or("to html element")?.set_inner_text(v);
           } else if k == "innerHTML" {
@@ -102,6 +103,7 @@ where
           }
         }
         for k in unset {
+          let k = k.as_ref();
           if k == "innerText" {
             el.dyn_ref::<HtmlElement>().ok_or("to html element")?.set_inner_text("");
           } else if k == "innerHTML" {
@@ -134,7 +136,7 @@ where
         }
         let el = el.dyn_ref::<HtmlElement>().expect("html element");
         for k in remove {
-          match k.as_str() {
+          match k.as_ref() {
             "click" => {
               el.set_onclick(None);
             }

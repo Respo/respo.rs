@@ -239,6 +239,7 @@ where
     } => {
       let element = document.create_element(name)?;
       for (key, value) in attrs {
+        let key = key.as_ref();
         if key == "style" {
           warn_1(&"style is handled outside attrs".into());
         } else if key == "innerText" {
@@ -266,7 +267,7 @@ where
       for key in event.keys() {
         let coord = coord.to_owned();
         let handler = handle_event.to_owned();
-        attach_event(&element, key.as_str(), &coord, handler)?;
+        attach_event(&element, key.as_ref(), &coord, handler)?;
       }
 
       Ok(element.dyn_ref::<Node>().expect("converting to Node").to_owned())

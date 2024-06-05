@@ -15,23 +15,23 @@ pub struct StatesTree {
   /// local data
   pub data: MaybeState,
   /// the path to the current state in the tree, use in updating
-  pub cursor: Vec<String>,
+  pub cursor: Vec<Rc<str>>,
   // pub data_type_name: Option<TypeId>,
   // pub data_revision: usize,
   /// holding children states
-  pub branches: BTreeMap<String, Box<StatesTree>>,
+  pub branches: BTreeMap<Rc<str>, Box<StatesTree>>,
 }
 
 impl StatesTree {
   /// get cursor
-  pub fn path(&self) -> Vec<String> {
+  pub fn path(&self) -> Vec<Rc<str>> {
     self.cursor.to_owned()
   }
 
   /// pick a child branch as new cursor
   pub fn pick(&self, name: &str) -> StatesTree {
     let mut next_cursor = self.cursor.to_owned();
-    next_cursor.push(name.to_owned());
+    next_cursor.push(Rc::from(name));
 
     if self.branches.contains_key(name) {
       let prev = &self.branches[name];
@@ -54,7 +54,7 @@ impl StatesTree {
   }
 
   /// in-place mutation of state tree
-  pub fn set_in_mut(&mut self, path: &[String], new_state: MaybeState) {
+  pub fn set_in_mut(&mut self, path: &[Rc<str>], new_state: MaybeState) {
     if path.is_empty() {
       new_state.clone_into(&mut self.data);
       // self.data_type_name = new_state.0.as_ref().map(|v| v.type_id().to_owned());

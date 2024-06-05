@@ -181,7 +181,7 @@ where
   state: Rc<DrawerPluginState>,
   options: DrawerOptions<T>,
   /// tracking content to display
-  cursor: Vec<String>,
+  cursor: Vec<Rc<str>>,
   phantom: PhantomData<T>,
 }
 

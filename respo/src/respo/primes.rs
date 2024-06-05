@@ -27,13 +27,13 @@ pub enum RespoNode<T>
 where
   T: Debug + Clone,
 {
-  Component(String, Vec<RespoEffect>, Box<RespoNode<T>>),
+  Component(Rc<str>, Vec<RespoEffect>, Box<RespoNode<T>>),
   /// corresponding to DOM elements
   Element {
     /// tagName
-    name: String,
-    attrs: HashMap<String, String>,
-    event: HashMap<String, RespoListenerFn<T>>,
+    name: Rc<str>,
+    attrs: HashMap<Rc<str>, String>,
+    event: HashMap<Rc<str>, RespoListenerFn<T>>,
     /// inlines styles, partially typed.
     /// there's also a macro called `static_styles` for inserting CSS rules
     style: RespoStyle,
@@ -51,10 +51,10 @@ where
   fn from(value: RespoNode<T>) -> Self {
     match value {
       RespoNode::Component(name, _eff, tree) => {
-        Cirru::List(vec![Cirru::Leaf("::Component".into()), Cirru::Leaf(name.into()), (*tree).into()])
+        Cirru::List(vec![Cirru::Leaf("::Component".into()), Cirru::from(name.as_ref()), (*tree).into()])
       }
       RespoNode::Element { name, children, .. } => {
-        let mut xs = vec![Cirru::Leaf(name.into())];
+        let mut xs = vec![Cirru::from(name.as_ref())];
         for (k, child) in children {
           xs.push(Cirru::List(vec![Cirru::Leaf(k.to_string().into()), child.to_owned().into()]));
         }
@@ -127,7 +127,7 @@ where
   /// create an element node
   pub fn new_tag(name: &str) -> Self {
     Self::Element {
-      name: name.to_owned(),
+      name: name.into(),
       attrs: HashMap::new(),
       event: HashMap::new(),
       style: RespoStyle::default(),
@@ -136,7 +136,7 @@ where
   }
   /// create a new component
   pub fn new_component(name: &str, tree: RespoNode<T>) -> Self {
-    Self::Component(name.to_owned(), Vec::new(), Box::new(tree))
+    Self::Component(name.into(), Vec::new(), Box::new(tree))
   }
   /// attach styles
   /// ```ignore
@@ -186,7 +186,7 @@ where
   /// set an attribute on element
   pub fn attribute<U, V>(&mut self, property: U, value: V) -> &mut Self
   where
-    U: Into<String> + ToOwned,
+    U: Into<Rc<str>> + ToOwned,
     V: Display,
   {
     match self {
@@ -205,7 +205,7 @@ where
   /// set an attribute on element, but using `None` indicates noting
   pub fn maybe_attribute<U, V>(&mut self, property: U, value: Option<V>) -> &mut Self
   where
-    U: Into<String> + ToOwned,
+    U: Into<Rc<str>> + ToOwned,
     V: Display,
   {
     if let Some(v) = value {
@@ -438,12 +438,12 @@ where
   }
 }
 
-pub(crate) type StrDict = HashMap<String, String>;
+pub(crate) type StrDict = HashMap<Rc<str>, String>;
 
 fn str_dict_to_cirrus_dict(dict: &StrDict) -> Cirru {
   let mut xs = vec![];
   for (k, v) in dict {
-    xs.push(vec![Cirru::from(k), Cirru::from(v)].into());
+    xs.push(vec![Cirru::from(k.as_ref()), Cirru::from(v)].into());
   }
   Cirru::List(xs)
 }
@@ -467,7 +467,7 @@ where
 /// it has special support for states
 pub trait RespoAction {
   /// to provide syntax sugar to dispatch.run_state
-  fn wrap_states_action(cursor: &[String], a: MaybeState) -> Self;
+  fn wrap_states_action(cursor: &[Rc<str>], a: MaybeState) -> Self;
 }
 
 impl<T> DispatchFn<T>
@@ -479,7 +479,7 @@ where
     (self.0)(op)
   }
   /// dispatch to update local state
-  pub fn run_state<U>(&self, cursor: &[String], data: U) -> Result<(), String>
+  pub fn run_state<U>(&self, cursor: &[Rc<str>], data: U) -> Result<(), String>
   where
     U: DynEq + ToOwned + Clone + PartialEq + Eq + 'static,
   {
@@ -487,7 +487,7 @@ where
     (self.0)(T::wrap_states_action(cursor, MaybeState::new(Some(a))))
   }
   /// reset state to empty
-  pub fn run_empty_state(&self, cursor: &[String]) -> Result<(), String> {
+  pub fn run_empty_state(&self, cursor: &[Rc<str>]) -> Result<(), String> {
     (self.0)(T::wrap_states_action(cursor, MaybeState::new(None)))
   }
   pub fn new<U>(f: U) -> Self

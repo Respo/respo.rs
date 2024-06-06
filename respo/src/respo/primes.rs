@@ -147,11 +147,6 @@ where
       children: Vec::new(),
     })
   }
-
-  /// finish building
-  pub fn end(&self) -> Self {
-    self.to_owned()
-  }
   /// create a new component
   pub fn new_component(name: &str, tree: RespoNode<T>) -> Self {
     Self::Component(RespoComponent(name.into(), Vec::new(), Box::new(tree)))
@@ -160,21 +155,22 @@ where
   /// ```ignore
   /// element.style(RespoStyle::default().margin(10))
   /// ```
-  pub fn style(&mut self, more: RespoStyle) -> &mut Self {
+  pub fn style(self, more: RespoStyle) -> Self {
     match self {
-      RespoNode::Component(RespoComponent(_, _, node)) => {
-        node.style(more);
+      Self::Component(RespoComponent(name, effects, node)) => {
+        Self::Component(RespoComponent(name, effects, Box::new(node.style(more))))
       }
-      RespoNode::Element(RespoElement { ref mut style, .. }) => {
+      Self::Element(el) => {
+        let mut style = el.style.to_owned();
         for (k, v) in more.0.into_iter() {
           style.0.push((k.to_owned(), v.to_owned()));
         }
+        Self::Element(RespoElement { style, ..el })
       }
-      RespoNode::Referenced(_) => {
+      Self::Referenced(_) => {
         unreachable!("should not be called on a referenced node");
       }
     }
-    self
   }
   /// imparative way of updating style
   /// ```ignore
@@ -184,170 +180,180 @@ where
   ///   }
   /// });
   /// ```
-  pub fn modify_style<U>(&mut self, builder: U) -> &mut Self
+  pub fn modify_style<U>(self, builder: U) -> Self
   where
     U: Fn(&mut RespoStyle),
   {
     match self {
-      RespoNode::Component(RespoComponent(_, _, node)) => {
-        node.modify_style(builder);
+      RespoNode::Component(RespoComponent(name, effects, node)) => {
+        Self::Component(RespoComponent(name, effects, Box::new(node.modify_style(builder))))
       }
-      RespoNode::Element(RespoElement { ref mut style, .. }) => {
-        builder(style);
+      RespoNode::Element(el) => {
+        let mut style = el.style.to_owned();
+        builder(&mut style);
+        Self::Element(RespoElement { style, ..el })
       }
       RespoNode::Referenced(_) => {
         unreachable!("should not be called on a referenced node");
       }
     }
-    self
   }
   /// set an attribute on element
-  pub fn attribute<U, V>(&mut self, property: U, value: V) -> &mut Self
+  pub fn attribute<U, V>(self, property: U, value: V) -> Self
   where
     U: Into<Rc<str>> + ToOwned,
     V: Display,
   {
     match self {
-      RespoNode::Component(RespoComponent(_, _, node)) => {
-        node.attribute(property, value);
+      Self::Component(RespoComponent(name, effects, node)) => Self::Component(RespoComponent(
+        name.to_owned(),
+        effects.to_owned(),
+        Box::new(node.attribute(property, value)),
+      )),
+      Self::Element(el) => {
+        let mut a = el.attrs.to_owned();
+        a.insert(property.into(), value.to_string());
+        Self::Element(RespoElement { attrs: a, ..el.to_owned() })
       }
-      RespoNode::Element(RespoElement { ref mut attrs, .. }) => {
-        attrs.insert(property.into(), value.to_string());
-      }
-      RespoNode::Referenced(_) => {
+      Self::Referenced(_) => {
         unreachable!("should not be called on a referenced node");
       }
     }
-    self
   }
   /// set an attribute on element, but using `None` indicates noting
-  pub fn maybe_attribute<U, V>(&mut self, property: U, value: Option<V>) -> &mut Self
+  pub fn maybe_attribute<U, V>(self, property: U, value: Option<V>) -> Self
   where
     U: Into<Rc<str>> + ToOwned,
     V: Display,
   {
     if let Some(v) = value {
       match self {
-        RespoNode::Component(RespoComponent(_, _, node)) => {
-          node.attribute(property, v);
+        RespoNode::Component(RespoComponent(name, effect, node)) => {
+          Self::Component(RespoComponent(name, effect, Box::new(node.attribute(property, v))))
         }
-        RespoNode::Element(RespoElement { ref mut attrs, .. }) => {
-          attrs.insert(property.into(), v.to_string());
+        RespoNode::Element(el) => {
+          let mut a = el.attrs.to_owned();
+          a.insert(property.into(), v.to_string());
+          Self::Element(RespoElement { attrs: a, ..el })
         }
         RespoNode::Referenced(_) => {
           unreachable!("should not be called on a referenced node");
         }
       }
+    } else {
+      self
     }
-    self
   }
-  pub fn on_click<U>(&mut self, handler: U) -> &mut Self
+  pub fn on_click<U>(self, handler: U) -> Self
   where
     U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
   {
-    self.on_named_event("click", handler);
-    self
+    self.on_named_event("click", handler)
   }
-  pub fn on_input<U>(&mut self, handler: U) -> &mut Self
+  pub fn on_input<U>(self, handler: U) -> Self
   where
     U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
   {
-    self.on_named_event("input", handler);
-    self
+    self.on_named_event("input", handler)
   }
   /// handle keydown event
-  pub fn on_keydown<U>(&mut self, handler: U) -> &mut Self
+  pub fn on_keydown<U>(self, handler: U) -> Self
   where
     U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
   {
-    self.on_named_event("keydown", handler);
-    self
+    self.on_named_event("keydown", handler)
   }
   /// handle focus event
-  pub fn on_focus<U>(&mut self, handler: U) -> &mut Self
+  pub fn on_focus<U>(self, handler: U) -> Self
   where
     U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
   {
-    self.on_named_event("focus", handler);
-    self
+    self.on_named_event("focus", handler)
   }
   /// handle change event
-  pub fn on_change<U>(&mut self, handler: U) -> &mut Self
+  pub fn on_change<U>(self, handler: U) -> Self
   where
     U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
   {
-    self.on_named_event("change", handler);
-    self
+    self.on_named_event("change", handler)
   }
   /// attach a listener by event name(only a small set of events are supported)
-  pub fn on_named_event<U>(&mut self, name: &str, handler: U) -> &mut Self
+  pub fn on_named_event<U>(self, name: &str, handler: U) -> Self
   where
     U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
   {
     match self {
-      RespoNode::Component(RespoComponent(_, _, node)) => {
-        node.on_named_event(name, handler);
+      Self::Component(RespoComponent(c_name, effect, node)) => {
+        Self::Component(RespoComponent(c_name, effect, Box::new(node.on_named_event(name, handler))))
       }
-      RespoNode::Element(RespoElement { ref mut event, .. }) => {
-        event.insert(name.into(), RespoListenerFn::new(handler));
+      Self::Element(el) => {
+        let mut e = el.event.to_owned();
+        e.insert(name.into(), RespoListenerFn::new(handler));
+        Self::Element(RespoElement { event: e, ..el })
       }
-      RespoNode::Referenced(_) => {
+      Self::Referenced(_) => {
         unreachable!("should attach event on a referenced node");
       }
     }
-    self
   }
   /// add children elements,
   /// index key are generated from index number
-  pub fn children<U>(&mut self, more: U) -> &mut Self
+  pub fn children<U>(self, more: U) -> Self
   where
     U: IntoIterator<Item = RespoNode<T>>,
   {
     match self {
-      RespoNode::Component(RespoComponent(_, _, node)) => {
-        node.children(more);
+      RespoNode::Component(RespoComponent(name, effects, node)) => {
+        // node.children(more)
+        let n = node.children(more);
+        Self::Component(RespoComponent(name, effects, Box::new(n)))
       }
-      RespoNode::Element(RespoElement { ref mut children, .. }) => {
+      RespoNode::Element(el) => {
+        let mut children = el.children.to_owned();
         for (idx, v) in more.into_iter().enumerate() {
           children.push((idx.into(), v.to_owned()));
         }
+        Self::Element(RespoElement { children, ..el })
       }
       RespoNode::Referenced(_) => {
         unreachable!("should not be called on a referenced node");
       }
     }
-    self
   }
   /// add children elements, with index keys specified
-  pub fn children_indexed<U>(&mut self, more: U) -> &mut Self
+  pub fn children_indexed<U>(self, more: U) -> Self
   where
     U: IntoIterator<Item = (RespoIndexKey, RespoNode<T>)>,
   {
     match self {
-      RespoNode::Component(RespoComponent(_, _, node)) => {
-        node.children_indexed(more);
+      RespoNode::Component(RespoComponent(name, effects, node)) => {
+        let n = node.children_indexed(more);
+        Self::Component(RespoComponent(name, effects, Box::new(n)))
       }
-      RespoNode::Element(RespoElement { ref mut children, .. }) => {
+      RespoNode::Element(el) => {
+        let mut children = el.children.to_owned();
         for (idx, v) in more {
           children.push((idx, v));
         }
+        Self::Element(RespoElement { children, ..el })
       }
       RespoNode::Referenced(_) => {
         unreachable!("should not be called on a referenced node");
       }
     }
-    self
   }
   /// add an effect on component
-  pub fn effect<U, V>(&mut self, args: &[V], handler: U) -> &mut Self
+  pub fn effect<U, V>(self, args: &[V], handler: U) -> Self
   where
     U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
     V: Clone + DynEq + Debug + 'static,
   {
     match self {
-      RespoNode::Component(RespoComponent(_, ref mut effects, _)) => {
-        effects.push(RespoEffect::new(args.to_vec(), handler));
-        self
+      RespoNode::Component(RespoComponent(name, effects, node)) => {
+        // effects.push(RespoEffect::new(args.to_vec(), handler));
+        let mut es = effects.to_owned();
+        es.push(RespoEffect::new(args.to_vec(), handler));
+        Self::Component(RespoComponent(name, es, node))
       }
       RespoNode::Element { .. } => unreachable!("effects are on components"),
       RespoNode::Referenced(_) => {
@@ -356,14 +362,15 @@ where
     }
   }
   /// add an empty args effect on component, which does not update
-  pub fn stable_effect<U>(&mut self, handler: U) -> &mut Self
+  pub fn stable_effect<U>(self, handler: U) -> Self
   where
     U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
   {
     match self {
-      RespoNode::Component(RespoComponent(_, ref mut effects, _)) => {
-        effects.push(RespoEffect::new(vec![] as Vec<()>, handler));
-        self
+      RespoNode::Component(RespoComponent(name, effects, node)) => {
+        let mut es = effects.to_owned();
+        es.push(RespoEffect::new(vec![] as Vec<()>, handler));
+        Self::Component(RespoComponent(name, es, node))
       }
       RespoNode::Element { .. } => unreachable!("effects are on components"),
       RespoNode::Referenced(_) => {
@@ -372,14 +379,15 @@ where
     }
   }
   /// add a list of effects on component
-  pub fn effects<U>(&mut self, more: U) -> &mut Self
+  pub fn effects<U>(self, more: U) -> Self
   where
     U: IntoIterator<Item = RespoEffect>,
   {
     match self {
-      RespoNode::Component(RespoComponent(_, ref mut effects, _)) => {
-        effects.extend(more);
-        self
+      RespoNode::Component(RespoComponent(name, effects, node)) => {
+        let mut es = effects.to_owned();
+        es.extend(more);
+        Self::Component(RespoComponent(name, es, node))
       }
       RespoNode::Element { .. } => unreachable!("effects are on components"),
       RespoNode::Referenced(_) => {
@@ -388,14 +396,14 @@ where
     }
   }
   /// attach a class name for adding styles
-  pub fn class<U>(&mut self, name: U) -> &mut Self
+  pub fn class<U>(self, name: U) -> Self
   where
     U: Into<String>,
   {
     self.attribute("class", name.into())
   }
   /// attach an optional class name for adding styles
-  pub fn maybe_class<U>(&mut self, name: Option<U>) -> &mut Self
+  pub fn maybe_class<U>(self, name: Option<U>) -> Self
   where
     U: Into<String>,
   {
@@ -405,17 +413,18 @@ where
     }
   }
   /// attach a class name, controlled by a boolean
-  pub fn toggle_class<U>(&mut self, name: U, on: bool) -> &mut Self
+  pub fn toggle_class<U>(self, name: U, on: bool) -> Self
   where
     U: Into<String>,
   {
     if on {
-      self.attribute("class", name.into());
+      self.attribute("class", name.into())
+    } else {
+      self
     }
-    self
   }
   /// attach a list of class names for adding styles
-  pub fn class_list<U>(&mut self, names: &[U]) -> &mut Self
+  pub fn class_list<U>(self, names: &[U]) -> Self
   where
     U: Into<String> + Clone,
   {
@@ -423,32 +432,28 @@ where
     for name in names {
       class_name.push((*name).to_owned().into());
     }
-    self.attribute("class", class_name.join(" "));
-    self
+    self.attribute("class", class_name.join(" "))
   }
   /// writes `innerText`
-  pub fn inner_text<U>(&mut self, content: U) -> &mut Self
+  pub fn inner_text<U>(self, content: U) -> Self
   where
     U: Into<String>,
   {
-    self.attribute("innerText", content.into());
-    self
+    self.attribute("innerText", content.into())
   }
   /// writes `innerHTML`
-  pub fn inner_html<U>(&mut self, content: U) -> &mut Self
+  pub fn inner_html<U>(self, content: U) -> Self
   where
     U: Into<String>,
   {
-    self.attribute("innerHTML", content.into());
-    self
+    self.attribute("innerHTML", content.into())
   }
   /// writes `value`
-  pub fn value<U>(&mut self, content: U) -> &mut Self
+  pub fn value<U>(self, content: U) -> Self
   where
     U: Into<String>,
   {
-    self.attribute("value", content.into());
-    self
+    self.attribute("value", content.into())
   }
   /// wrap with a `Rc<RefCell<T>>` to enable memory reuse and skipping in diff
   pub fn share_with_ref(&self) -> Self {

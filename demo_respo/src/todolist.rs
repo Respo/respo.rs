@@ -45,19 +45,11 @@ pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<Ac
     }
   };
 
-  Ok(
-    div()
-      .children([
-        div()
-          .children([
-            span()
-              .inner_text(format!("tasks size: {} ... {}", tasks.len(), state.hide_done.to_owned()))
-              .end(),
-            button().class(ui_button()).inner_text("hide done").on_click(on_hide).end(),
-          ])
-          .end(),
-        div().children_indexed(children).end(),
-      ])
-      .end(),
-  )
+  Ok(div().children([
+    div().children([
+      span().inner_text(format!("tasks size: {} ... {}", tasks.len(), state.hide_done.to_owned())),
+      button().class(ui_button()).inner_text("hide done").on_click(on_hide),
+    ]),
+    div().children_indexed(children),
+  ]))
 }

@@ -54,40 +54,28 @@ where
   T: Clone + Debug,
 {
   match (w, h) {
-    (Some(wv), Some(hv)) => div()
-      .style(
-        RespoStyle::default()
-          .width(CssSize::Px(wv as f32))
-          .height(CssSize::Px(hv as f32))
-          .display(crate::CssDisplay::InlineBlock)
-          .end(),
-      )
-      .end(),
-    (Some(wv), None) => span()
-      .style(
-        RespoStyle::default()
-          .width(CssSize::Px(wv as f32))
-          .display(crate::CssDisplay::InlineBlock)
-          .end(),
-      )
-      .end(),
-    (None, Some(hv)) => div()
-      .style(
-        RespoStyle::default()
-          .height(CssSize::Px(hv as f32))
-          .width(CssSize::Px(1.0))
-          .display(crate::CssDisplay::Block)
-          .end(),
-      )
-      .end(),
-    (None, None) => span()
-      .style(
-        RespoStyle::default()
-          .width(CssSize::Px(8.))
-          .height(CssSize::Px(8.))
-          .display(crate::CssDisplay::InlineBlock)
-          .end(),
-      )
-      .end(),
+    (Some(wv), Some(hv)) => div().style(
+      RespoStyle::default()
+        .width(CssSize::Px(wv as f32))
+        .height(CssSize::Px(hv as f32))
+        .display(crate::CssDisplay::InlineBlock),
+    ),
+    (Some(wv), None) => span().style(
+      RespoStyle::default()
+        .width(CssSize::Px(wv as f32))
+        .display(crate::CssDisplay::InlineBlock),
+    ),
+    (None, Some(hv)) => div().style(
+      RespoStyle::default()
+        .height(CssSize::Px(hv as f32))
+        .width(CssSize::Px(1.0))
+        .display(crate::CssDisplay::Block),
+    ),
+    (None, None) => span().style(
+      RespoStyle::default()
+        .width(CssSize::Px(8.))
+        .height(CssSize::Px(8.))
+        .display(crate::CssDisplay::InlineBlock),
+    ),
   }
 }

@@ -46,11 +46,12 @@ where
     RespoNode::new_component(
       "confirm-modal",
       div()
-        .style(RespoStyle::default().position(CssPosition::Absolute).end())
+        .style(RespoStyle::default().position(CssPosition::Absolute))
         .children([if show {
           div()
             .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
             .style(options.backdrop_style)
+            .to_owned()
             .on_click({
               let close = close.to_owned();
               move |e, dispatch| -> Result<(), String> {
@@ -65,8 +66,9 @@ where
             .children([
               div()
                 .class_list(&[column(), ui_global(), css_modal_card()])
-                .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).end())
+                .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)))
                 .style(options.card_style)
+                .to_owned()
                 .on_click(move |e, _dispatch| -> Result<(), String> {
                   // nothing to do
                   if let RespoEvent::Click { original_event, .. } = e {
@@ -75,40 +77,29 @@ where
                   }
                   Ok(())
                 })
-                .children([div()
-                  .children([
-                    span()
-                      .inner_text(options.text.unwrap_or_else(|| "Need confirmation...".to_owned()))
-                      .end(),
-                    space(None, Some(8)),
-                    div()
-                      .class(ui_row_parted())
-                      .children([
-                        span(),
-                        button()
-                          .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
-                          .inner_text(options.button_text.unwrap_or_else(|| "Confirm".to_owned()))
-                          .on_click({
-                            let close = close.to_owned();
-                            move |_e, dispatch| -> Result<(), String> {
-                              confirm(dispatch.to_owned())?;
-                              close(dispatch)?;
-                              Ok(())
-                            }
-                          })
-                          .end(),
-                      ])
-                      .end(),
-                  ])
-                  .end()])
-                .end(),
+                .children([div().children([
+                  span().inner_text(options.text.unwrap_or_else(|| "Need confirmation...".to_owned())),
+                  space(None, Some(8)),
+                  div().class(ui_row_parted()).children([
+                    span(),
+                    button()
+                      .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
+                      .inner_text(options.button_text.unwrap_or_else(|| "Confirm".to_owned()))
+                      .on_click({
+                        let close = close.to_owned();
+                        move |_e, dispatch| -> Result<(), String> {
+                          confirm(dispatch.to_owned())?;
+                          close(dispatch)?;
+                          Ok(())
+                        }
+                      }),
+                  ]),
+                ])]),
               comp_esc_listener(show, close)?,
             ])
-            .end()
         } else {
-          span().attribute("data-name", "placeholder").end()
-        }])
-        .end(),
+          span().attribute("data-name", "placeholder")
+        }]),
     )
     .effect(&[show], effect_focus)
     .effect(&[show], effect_modal_fade)

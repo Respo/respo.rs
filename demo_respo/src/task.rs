@@ -68,35 +68,29 @@ pub fn comp_task(
   Ok(
     RespoNode::new_component(
       "task",
-      div()
-        .class_list(&[ui_row_middle(), style_task_container()])
-        .children([
-          div()
-            .class(style_done_button())
-            .modify_style(|s| {
-              if task.done {
-                s.background_color(CssColor::Blue);
-              }
-            })
-            .on_click(on_toggle)
-            .end(),
-          div().inner_text(task.content.to_owned()).end(),
-          span()
-            .class_list(&[ui_center(), style_remove_button()])
-            .inner_text("✕")
-            .on_click(on_remove)
-            .end(),
-          div().style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0).end()).end(),
-          input()
-            .class(ui_input())
-            .attribute("value", state.draft.to_owned())
-            .attribute("placeholder", "something to update...")
-            .on_input(on_input)
-            .end(),
-          space(Some(8), None),
-          button().class(ui_button()).inner_text("Update").on_click(on_update).end(),
-        ])
-        .end(),
+      div().class_list(&[ui_row_middle(), style_task_container()]).children([
+        div()
+          .class(style_done_button())
+          .modify_style(|s| {
+            if task.done {
+              *s = s.to_owned().background_color(CssColor::Blue);
+            }
+          })
+          .on_click(on_toggle),
+        div().inner_text(task.content.to_owned()),
+        span()
+          .class_list(&[ui_center(), style_remove_button()])
+          .inner_text("✕")
+          .on_click(on_remove),
+        div().style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0)),
+        input()
+          .class(ui_input())
+          .attribute("value", state.draft.to_owned())
+          .attribute("placeholder", "something to update...")
+          .on_input(on_input),
+        space(Some(8), None),
+        button().class(ui_button()).inner_text("Update").on_click(on_update),
+      ]),
     )
     .effect(&[task], move |args, effect_type, _el| -> Result<(), String> {
       let t: Task = args[0].cast_into()?;

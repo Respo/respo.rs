@@ -84,11 +84,12 @@ where
     RespoNode::new_component(
       "modal",
       div()
-        .style(RespoStyle::default().position(CssPosition::Absolute).end())
+        .style(RespoStyle::default().position(CssPosition::Absolute))
         .children([if show {
           div()
             .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
             .style(options.backdrop_style)
+            .to_owned()
             .on_click({
               let close = close.to_owned();
               move |e, dispatch| -> Result<(), String> {
@@ -103,8 +104,9 @@ where
             .children([
               div()
                 .class_list(&[column(), ui_global(), css_modal_card()])
-                .style(RespoStyle::default().padding(0.0).line_height(CssLineHeight::Px(32.0)).end())
+                .style(RespoStyle::default().padding(0.0).line_height(CssLineHeight::Px(32.0)))
                 .style(options.card_style)
+                .to_owned()
                 .on_click(move |e, _dispatch| -> Result<(), String> {
                   // nothing to do
                   if let RespoEvent::Click { original_event, .. } = e {
@@ -113,31 +115,24 @@ where
                   }
                   Ok(())
                 })
-                .children([div()
-                  .class(column())
-                  .children([
-                    div()
-                      .class(ui_center())
-                      .children([span().inner_text(options.title.unwrap_or_else(|| "Modal".to_owned())).end()])
-                      .end(),
-                    space(None, Some(8)),
-                    {
-                      let close = close.to_owned();
-                      options.render.run(move |dispatch| -> Result<(), String> {
-                        close(dispatch)?;
-                        Ok(())
-                      })?
-                    },
-                  ])
-                  .end()])
-                .end(),
+                .children([div().class(column()).children([
+                  div()
+                    .class(ui_center())
+                    .children([span().inner_text(options.title.unwrap_or_else(|| "Modal".to_owned()))]),
+                  space(None, Some(8)),
+                  {
+                    let close = close.to_owned();
+                    options.render.run(move |dispatch| -> Result<(), String> {
+                      close(dispatch)?;
+                      Ok(())
+                    })?
+                  },
+                ])]),
               comp_esc_listener(show, close)?,
             ])
-            .end()
         } else {
-          span().attribute("data-name", "placeholder").end()
-        }])
-        .end(),
+          span().attribute("data-name", "placeholder")
+        }]),
     )
     // .effect(&[show], effect_focus)
     .effect(&[show], effect_modal_fade)

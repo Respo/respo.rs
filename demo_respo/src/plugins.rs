@@ -18,7 +18,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   let alert_plugin = AlertPlugin::new(
     states.pick("info"),
     AlertOptions {
-      // card_style: RespoStyle::default().background_color(CssColor::Blue).end(),
+      // card_style: RespoStyle::default().background_color(CssColor::Blue),
       ..AlertOptions::default()
     },
     |_dispatch: DispatchFn<ActionOp>| {
@@ -113,16 +113,12 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
           close_modal(dispatch)
         };
         Ok(
-          div()
-            .style(RespoStyle::default().padding(8.0).end())
-            .children([
-              div().children([span().inner_text("content in custom modal").end()]).end(),
-              div()
-                .class(ui_row_parted())
-                .children([span(), button().class(ui_button()).inner_text("close").on_click(handler).end()])
-                .end(),
-            ])
-            .end(),
+          div().style(RespoStyle::default().padding(8.0)).children([
+            div().children([span().inner_text("content in custom modal")]),
+            div()
+              .class(ui_row_parted())
+              .children([span(), button().class(ui_button()).inner_text("close").on_click(handler)]),
+          ]),
         )
       }),
       ..ModalOptions::default()
@@ -153,16 +149,12 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
           close_drawer(dispatch)
         };
         Ok(
-          div()
-            .style(RespoStyle::default().padding(8.0).end())
-            .children([
-              div().children([span().inner_text("content in custom drawer").end()]).end(),
-              div()
-                .class(ui_row_parted())
-                .children([span(), button().class(ui_button()).inner_text("close").on_click(handler).end()])
-                .end(),
-            ])
-            .end(),
+          div().style(RespoStyle::default().padding(8.0)).children([
+            div().children([span().inner_text("content in custom drawer")]),
+            div()
+              .class(ui_row_parted())
+              .children([span(), button().class(ui_button()).inner_text("close").on_click(handler)]),
+          ]),
         )
       }),
       ..DrawerOptions::default()
@@ -182,36 +174,30 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   };
 
   Ok(
-    div()
-      .children([
-        div().children([span().inner_text("Dialogs").end()]).end(),
-        div()
-          .children([
-            button().class(ui_button()).inner_text("Try Alert").on_click(on_alert).end(),
-            space(Some(8), None),
-            button().class(ui_button()).inner_text("Try Confirm").on_click(on_confirm).end(),
-            space(Some(8), None),
-            button().class(ui_button()).inner_text("Try Prompt").on_click(on_prompt).end(),
-            space(Some(8), None),
-            button()
-              .class(ui_button_primary())
-              .inner_text("Try Custom Modal")
-              .on_click(on_modal)
-              .end(),
-            space(Some(8), None),
-            button()
-              .class(ui_button_danger())
-              .inner_text("Try Custom Drawer")
-              .on_click(on_drawer)
-              .end(),
-          ])
-          .end(),
-        alert_plugin.render()?,
-        confirm_plugin.render()?,
-        prompt_plugin.render()?,
-        modal_plugin.render()?,
-        drawer_plugin.render()?,
-      ])
-      .end(),
+    div().children([
+      div().children([span().inner_text("Dialogs")]),
+      div().children([
+        button().class(ui_button()).inner_text("Try Alert").on_click(on_alert),
+        space(Some(8), None),
+        button().class(ui_button()).inner_text("Try Confirm").on_click(on_confirm),
+        space(Some(8), None),
+        button().class(ui_button()).inner_text("Try Prompt").on_click(on_prompt),
+        space(Some(8), None),
+        button()
+          .class(ui_button_primary())
+          .inner_text("Try Custom Modal")
+          .on_click(on_modal),
+        space(Some(8), None),
+        button()
+          .class(ui_button_danger())
+          .inner_text("Try Custom Drawer")
+          .on_click(on_drawer),
+      ]),
+      alert_plugin.render()?,
+      confirm_plugin.render()?,
+      prompt_plugin.render()?,
+      modal_plugin.render()?,
+      drawer_plugin.render()?,
+    ]),
   )
 }

@@ -142,21 +142,22 @@ where
     }
   };
 
-  let mut input_el = if options.multilines {
-    textarea().class(ui_textarea()).end()
+  let input_el = if options.multilines {
+    textarea().class(ui_textarea())
   } else {
-    input().class(ui_input()).end()
+    input().class(ui_input())
   };
 
   Ok(
     RespoNode::new_component(
       "prompt-modal",
       div()
-        .style(RespoStyle::default().position(CssPosition::Absolute).end())
+        .style(RespoStyle::default().position(CssPosition::Absolute))
         .children([if show {
           div()
             .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
             .style(options.backdrop_style)
+            .to_owned()
             .on_click({
               let close = close.to_owned();
               move |e, dispatch| -> Result<(), String> {
@@ -175,9 +176,10 @@ where
             .children([
               div()
                 .class_list(&[column(), ui_global(), css_modal_card()])
-                .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).end())
+                .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)))
                 .style(options.card_style)
                 .style(options.input_style)
+                .to_owned()
                 .on_click(move |e, _dispatch| -> Result<(), String> {
                   // nothing to do
                   if let RespoEvent::Click { original_event, .. } = e {
@@ -186,51 +188,38 @@ where
                   }
                   Ok(())
                 })
-                .children([div()
-                  .children([
-                    span()
-                      .inner_text(options.text.unwrap_or_else(|| "Input your text:".to_owned()))
-                      .end(),
-                    space(None, Some(8)),
-                    div()
-                      .children([input_el
-                        .class_list(&[ui_input()])
-                        .style(RespoStyle::default().width(CssSize::Percent(100.0)).end())
-                        .attribute("placeholder", "Content...")
-                        .attribute("autoFocus", "autofocus")
-                        .value(state.draft.to_owned())
-                        .on_input(on_text_input)
-                        .end()])
-                      .end(),
-                    match &state.error {
-                      Some(message) => div().class_list(&[css_error()]).inner_text(message).end(),
-                      None => span(),
-                    },
-                    space(None, Some(8)),
-                    div()
-                      .class(ui_row_parted())
-                      .children([
-                        span(),
-                        button()
-                          .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
-                          .inner_text(options.button_text.unwrap_or_else(|| "Submit".to_owned()))
-                          .on_click(move |_e, dispatch| -> Result<(), String> {
-                            check_submit(&state.draft, dispatch)?;
-                            Ok(())
-                          })
-                          .end(),
-                      ])
-                      .end(),
-                  ])
-                  .end()])
-                .end(),
+                .children([div().children([
+                  span().inner_text(options.text.unwrap_or_else(|| "Input your text:".to_owned())),
+                  space(None, Some(8)),
+                  div().children([input_el
+                    .class_list(&[ui_input()])
+                    .style(RespoStyle::default().width(CssSize::Percent(100.0)))
+                    .to_owned()
+                    .attribute("placeholder", "Content...")
+                    .attribute("autoFocus", "autofocus")
+                    .value(state.draft.to_owned())
+                    .on_input(on_text_input)]),
+                  match &state.error {
+                    Some(message) => div().class_list(&[css_error()]).inner_text(message),
+                    None => span(),
+                  },
+                  space(None, Some(8)),
+                  div().class(ui_row_parted()).children([
+                    span(),
+                    button()
+                      .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
+                      .inner_text(options.button_text.unwrap_or_else(|| "Submit".to_owned()))
+                      .on_click(move |_e, dispatch| -> Result<(), String> {
+                        check_submit(&state.draft, dispatch)?;
+                        Ok(())
+                      }),
+                  ]),
+                ])]),
               comp_esc_listener(show, close)?,
             ])
-            .end()
         } else {
-          span().attribute("data-name", "placeholder").end()
-        }])
-        .end(),
+          span().attribute("data-name", "placeholder")
+        }]),
     )
     // .effect(&[show], effect_focus)
     .effect(&[show], effect_modal_fade)

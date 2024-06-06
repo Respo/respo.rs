@@ -296,7 +296,7 @@ where
       }
       RespoNode::Element { ref mut children, .. } => {
         for (idx, v) in more.into_iter().enumerate() {
-          children.push((idx.into(), v));
+          children.push((idx.into(), v.to_owned()));
         }
       }
       RespoNode::Referenced(_) => {

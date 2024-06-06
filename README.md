@@ -19,8 +19,8 @@ Here is some preview of DOM syntax:
 Ok(
   div()
     .class(ui_global())
-    .add_style(RespoStyle::default().padding(12.0).end())
-    .add_children([
+    .style(RespoStyle::default().padding(12.0).end())
+    .children([
       comp_counter(&states.pick("counter"), store.counted)?,
       comp_panel(&states.pick("panel"))?,
       comp_todolist(memo_caches, &states.pick("todolist"), &store.tasks)?,
@@ -153,8 +153,8 @@ impl RespoApp for App {
     Ok(
       div()
         .class(ui_global())
-        .add_style(RespoStyle::default().padding(12.0).end())
-        .add_children([
+        .style(RespoStyle::default().padding(12.0).end())
+        .children([
           comp_counter(&states.pick("counter"), store.counted)?,
           comp_panel(&states.pick("panel"))?,
           comp_todolist(memo_caches, &states.pick("todolist"), &store.tasks)?,

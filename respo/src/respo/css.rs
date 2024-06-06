@@ -26,6 +26,11 @@ impl RespoStyle {
     self
   }
 
+  /// finish building
+  pub fn end(&self) -> Self {
+    self.to_owned()
+  }
+
   pub fn render_rules(rules: &[(String, Self)]) -> String {
     let mut result = String::new();
     for rule in rules {

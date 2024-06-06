@@ -46,7 +46,7 @@ where
     RespoNode::new_component(
       "confirm-modal",
       div()
-        .style(RespoStyle::default().position(CssPosition::Absolute).to_owned())
+        .style(RespoStyle::default().position(CssPosition::Absolute).end())
         .children([if show {
           div()
             .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
@@ -65,7 +65,7 @@ where
             .children([
               div()
                 .class_list(&[column(), ui_global(), css_modal_card()])
-                .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).to_owned())
+                .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).end())
                 .style(options.card_style)
                 .on_click(move |e, _dispatch| -> Result<(), String> {
                   // nothing to do
@@ -79,7 +79,7 @@ where
                   .children([
                     span()
                       .inner_text(options.text.unwrap_or_else(|| "Need confirmation...".to_owned()))
-                      .to_owned(),
+                      .end(),
                     space(None, Some(8)),
                     div()
                       .class(ui_row_parted())
@@ -96,19 +96,19 @@ where
                               Ok(())
                             }
                           })
-                          .to_owned(),
+                          .end(),
                       ])
-                      .to_owned(),
+                      .end(),
                   ])
-                  .to_owned()])
-                .to_owned(),
+                  .end()])
+                .end(),
               comp_esc_listener(show, close)?,
             ])
-            .to_owned()
+            .end()
         } else {
-          span().attribute("data-name", "placeholder").to_owned()
+          span().attribute("data-name", "placeholder").end()
         }])
-        .to_owned(),
+        .end(),
     )
     .effect(&[show], effect_focus)
     .effect(&[show], effect_modal_fade)

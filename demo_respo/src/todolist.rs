@@ -19,21 +19,6 @@ pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<Ac
     if state.hide_done && task.done {
       continue;
     }
-    // children.push((
-    //   task.id.to_owned().into(),
-    //   comp_task(memo_caches.to_owned(), &states.pick(&task.id), task)?,
-    // ));
-
-    // children.push((
-    //   task.id.to_owned().into(),
-    //   internal_memof1_call_by(
-    //     memo_caches.to_owned(),
-    //     comp_task as usize,
-    //     task.id.to_owned(),
-    //     vec![cast_into_json(states.pick(&task.id)), cast_into_json(task)],
-    //     move || comp_task(m.to_owned(), &states.pick(&task.id), task),
-    //   )?,
-    // ));
 
     children.push((
       RespoIndexKey::from(&task.id),
@@ -67,12 +52,12 @@ pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<Ac
           .children([
             span()
               .inner_text(format!("tasks size: {} ... {}", tasks.len(), state.hide_done.to_owned()))
-              .to_owned(),
-            button().class(ui_button()).inner_text("hide done").on_click(on_hide).to_owned(),
+              .end(),
+            button().class(ui_button()).inner_text("hide done").on_click(on_hide).end(),
           ])
-          .to_owned(),
-        div().children_indexed(children).to_owned(),
+          .end(),
+        div().children_indexed(children).end(),
       ])
-      .to_owned(),
+      .end(),
   )
 }

@@ -60,34 +60,34 @@ where
           .width(CssSize::Px(wv as f32))
           .height(CssSize::Px(hv as f32))
           .display(crate::CssDisplay::InlineBlock)
-          .to_owned(),
+          .end(),
       )
-      .to_owned(),
+      .end(),
     (Some(wv), None) => span()
       .style(
         RespoStyle::default()
           .width(CssSize::Px(wv as f32))
           .display(crate::CssDisplay::InlineBlock)
-          .to_owned(),
+          .end(),
       )
-      .to_owned(),
+      .end(),
     (None, Some(hv)) => div()
       .style(
         RespoStyle::default()
           .height(CssSize::Px(hv as f32))
           .width(CssSize::Px(1.0))
           .display(crate::CssDisplay::Block)
-          .to_owned(),
+          .end(),
       )
-      .to_owned(),
+      .end(),
     (None, None) => span()
       .style(
         RespoStyle::default()
           .width(CssSize::Px(8.))
           .height(CssSize::Px(8.))
           .display(crate::CssDisplay::InlineBlock)
-          .to_owned(),
+          .end(),
       )
-      .to_owned(),
+      .end(),
   }
 }

@@ -143,16 +143,16 @@ where
   };
 
   let mut input_el = if options.multilines {
-    textarea().class(ui_textarea()).to_owned()
+    textarea().class(ui_textarea()).end()
   } else {
-    input().class(ui_input()).to_owned()
+    input().class(ui_input()).end()
   };
 
   Ok(
     RespoNode::new_component(
       "prompt-modal",
       div()
-        .style(RespoStyle::default().position(CssPosition::Absolute).to_owned())
+        .style(RespoStyle::default().position(CssPosition::Absolute).end())
         .children([if show {
           div()
             .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
@@ -175,7 +175,7 @@ where
             .children([
               div()
                 .class_list(&[column(), ui_global(), css_modal_card()])
-                .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).to_owned())
+                .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).end())
                 .style(options.card_style)
                 .style(options.input_style)
                 .on_click(move |e, _dispatch| -> Result<(), String> {
@@ -190,20 +190,20 @@ where
                   .children([
                     span()
                       .inner_text(options.text.unwrap_or_else(|| "Input your text:".to_owned()))
-                      .to_owned(),
+                      .end(),
                     space(None, Some(8)),
                     div()
                       .children([input_el
                         .class_list(&[ui_input()])
-                        .style(RespoStyle::default().width(CssSize::Percent(100.0)).to_owned())
+                        .style(RespoStyle::default().width(CssSize::Percent(100.0)).end())
                         .attribute("placeholder", "Content...")
                         .attribute("autoFocus", "autofocus")
                         .value(state.draft.to_owned())
                         .on_input(on_text_input)
-                        .to_owned()])
-                      .to_owned(),
+                        .end()])
+                      .end(),
                     match &state.error {
-                      Some(message) => div().class_list(&[css_error()]).inner_text(message).to_owned(),
+                      Some(message) => div().class_list(&[css_error()]).inner_text(message).end(),
                       None => span(),
                     },
                     space(None, Some(8)),
@@ -218,19 +218,19 @@ where
                             check_submit(&state.draft, dispatch)?;
                             Ok(())
                           })
-                          .to_owned(),
+                          .end(),
                       ])
-                      .to_owned(),
+                      .end(),
                   ])
-                  .to_owned()])
-                .to_owned(),
+                  .end()])
+                .end(),
               comp_esc_listener(show, close)?,
             ])
-            .to_owned()
+            .end()
         } else {
-          span().attribute("data-name", "placeholder").to_owned()
+          span().attribute("data-name", "placeholder").end()
         }])
-        .to_owned(),
+        .end(),
     )
     // .effect(&[show], effect_focus)
     .effect(&[show], effect_modal_fade)

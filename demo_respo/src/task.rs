@@ -79,26 +79,24 @@ pub fn comp_task(
               }
             })
             .on_click(on_toggle)
-            .to_owned(),
-          div().inner_text(task.content.to_owned()).to_owned(),
+            .end(),
+          div().inner_text(task.content.to_owned()).end(),
           span()
             .class_list(&[ui_center(), style_remove_button()])
             .inner_text("✕")
             .on_click(on_remove)
-            .to_owned(),
-          div()
-            .style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0).to_owned())
-            .to_owned(),
+            .end(),
+          div().style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0).end()).end(),
           input()
             .class(ui_input())
             .attribute("value", state.draft.to_owned())
             .attribute("placeholder", "something to update...")
             .on_input(on_input)
-            .to_owned(),
+            .end(),
           space(Some(8), None),
-          button().class(ui_button()).inner_text("Update").on_click(on_update).to_owned(),
+          button().class(ui_button()).inner_text("Update").on_click(on_update).end(),
         ])
-        .to_owned(),
+        .end(),
     )
     .effect(&[task], move |args, effect_type, _el| -> Result<(), String> {
       let t: Task = args[0].cast_into()?;

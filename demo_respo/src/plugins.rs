@@ -18,7 +18,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   let alert_plugin = AlertPlugin::new(
     states.pick("info"),
     AlertOptions {
-      // card_style: RespoStyle::default().background_color(CssColor::Blue).to_owned(),
+      // card_style: RespoStyle::default().background_color(CssColor::Blue).end(),
       ..AlertOptions::default()
     },
     |_dispatch: DispatchFn<ActionOp>| {
@@ -114,15 +114,15 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
         };
         Ok(
           div()
-            .style(RespoStyle::default().padding(8.0).to_owned())
+            .style(RespoStyle::default().padding(8.0).end())
             .children([
-              div().children([span().inner_text("content in custom modal").to_owned()]).to_owned(),
+              div().children([span().inner_text("content in custom modal").end()]).end(),
               div()
                 .class(ui_row_parted())
-                .children([span(), button().class(ui_button()).inner_text("close").on_click(handler).to_owned()])
-                .to_owned(),
+                .children([span(), button().class(ui_button()).inner_text("close").on_click(handler).end()])
+                .end(),
             ])
-            .to_owned(),
+            .end(),
         )
       }),
       ..ModalOptions::default()
@@ -154,17 +154,15 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
         };
         Ok(
           div()
-            .style(RespoStyle::default().padding(8.0).to_owned())
+            .style(RespoStyle::default().padding(8.0).end())
             .children([
-              div()
-                .children([span().inner_text("content in custom drawer").to_owned()])
-                .to_owned(),
+              div().children([span().inner_text("content in custom drawer").end()]).end(),
               div()
                 .class(ui_row_parted())
-                .children([span(), button().class(ui_button()).inner_text("close").on_click(handler).to_owned()])
-                .to_owned(),
+                .children([span(), button().class(ui_button()).inner_text("close").on_click(handler).end()])
+                .end(),
             ])
-            .to_owned(),
+            .end(),
         )
       }),
       ..DrawerOptions::default()
@@ -186,38 +184,34 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   Ok(
     div()
       .children([
-        div().children([span().inner_text("Dialogs").to_owned()]).to_owned(),
+        div().children([span().inner_text("Dialogs").end()]).end(),
         div()
           .children([
-            button().class(ui_button()).inner_text("Try Alert").on_click(on_alert).to_owned(),
+            button().class(ui_button()).inner_text("Try Alert").on_click(on_alert).end(),
             space(Some(8), None),
-            button()
-              .class(ui_button())
-              .inner_text("Try Confirm")
-              .on_click(on_confirm)
-              .to_owned(),
+            button().class(ui_button()).inner_text("Try Confirm").on_click(on_confirm).end(),
             space(Some(8), None),
-            button().class(ui_button()).inner_text("Try Prompt").on_click(on_prompt).to_owned(),
+            button().class(ui_button()).inner_text("Try Prompt").on_click(on_prompt).end(),
             space(Some(8), None),
             button()
               .class(ui_button_primary())
               .inner_text("Try Custom Modal")
               .on_click(on_modal)
-              .to_owned(),
+              .end(),
             space(Some(8), None),
             button()
               .class(ui_button_danger())
               .inner_text("Try Custom Drawer")
               .on_click(on_drawer)
-              .to_owned(),
+              .end(),
           ])
-          .to_owned(),
+          .end(),
         alert_plugin.render()?,
         confirm_plugin.render()?,
         prompt_plugin.render()?,
         modal_plugin.render()?,
         drawer_plugin.render()?,
       ])
-      .to_owned(),
+      .end(),
   )
 }

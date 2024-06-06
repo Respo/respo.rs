@@ -51,17 +51,17 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
             .attribute("placeholder", "some content...")
             .attribute("value", state.content.to_owned())
             .on_input(on_input)
-            .to_owned(),
+            .end(),
           space(Some(8), None),
-          button().class(ui_button()).inner_text("add").on_click(on_submit).to_owned(),
-          span().inner_text(format!("got panel state: {:?}", state)).to_owned(),
+          button().class(ui_button()).inner_text("add").on_click(on_submit).end(),
+          span().inner_text(format!("got panel state: {:?}", state)).end(),
         ])
-        .to_owned(),
+        .end(),
     )
     .stable_effect(move |_, _dispatch, _el| {
       respo::util::log!("panel effect {:?}", cursor);
       Ok(())
     })
-    .to_owned(),
+    .end(),
   )
 }

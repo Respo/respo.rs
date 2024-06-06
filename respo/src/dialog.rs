@@ -249,7 +249,7 @@ where
     RespoNode::new_component(
       "esc-listener",
       input()
-        .style(RespoStyle::default().display(CssDisplay::None).to_owned())
+        .style(RespoStyle::default().display(CssDisplay::None).end())
         .on_keydown(move |e, dispatch| -> Result<(), String> {
           if let RespoEvent::Keyboard { key, .. } = e {
             if key == "Escape" {
@@ -258,7 +258,7 @@ where
           }
           Ok(())
         })
-        .to_owned(),
+        .end(),
     )
     .effect(&[show], effect_keydown)
     .share_with_ref(),

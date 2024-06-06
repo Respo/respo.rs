@@ -134,6 +134,11 @@ where
       children: Vec::new(),
     }
   }
+
+  /// finish building
+  pub fn end(&self) -> Self {
+    self.to_owned()
+  }
   /// create a new component
   pub fn new_component(name: &str, tree: RespoNode<T>) -> Self {
     Self::Component(name.into(), Vec::new(), Box::new(tree))

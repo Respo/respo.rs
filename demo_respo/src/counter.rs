@@ -59,17 +59,17 @@ pub fn comp_counter(states: &StatesTree, _counted: i32) -> Result<RespoNode<Acti
             button()
               .class(ui_button())
               .inner_text("demo inc")
-              .style(RespoStyle::default().margin(4.).to_owned())
+              .style(RespoStyle::default().margin(4.).end())
               .on_click(on_inc)
-              .to_owned(),
+              .end(),
             button()
               .class(ui_button())
               .inner_text("demo dec")
-              .style(RespoStyle::default().margin(4.).to_owned())
+              .style(RespoStyle::default().margin(4.).end())
               .on_click(on_dec)
-              .to_owned(),
+              .end(),
           ])
-          .to_owned(),
+          .end(),
         div()
           .children([span()
             .inner_text(format!("value is: {}", counted))
@@ -78,14 +78,12 @@ pub fn comp_counter(states: &StatesTree, _counted: i32) -> Result<RespoNode<Acti
                 .color(CssColor::Hsluv(270, 100, 40))
                 .font_family("Menlo".to_owned())
                 .font_size(10. + counted as f32)
-                .to_owned(),
+                .end(),
             )
-            .to_owned()])
-          .to_owned(),
-        div()
-          .children([span().inner_text(format!("local state: {}", counted)).to_owned()])
-          .to_owned(),
+            .end()])
+          .end(),
+        div().children([span().inner_text(format!("local state: {}", counted)).end()]).end(),
       ])
-      .to_owned(),
+      .end(),
   )
 }

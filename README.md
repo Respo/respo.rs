@@ -19,13 +19,13 @@ Here is some preview of DOM syntax:
 Ok(
   div()
     .class(ui_global())
-    .add_style(RespoStyle::default().padding(12.0).to_owned())
+    .add_style(RespoStyle::default().padding(12.0).end())
     .add_children([
       comp_counter(&states.pick("counter"), store.counted)?,
       comp_panel(&states.pick("panel"))?,
       comp_todolist(memo_caches, &states.pick("todolist"), &store.tasks)?,
     ])
-    .to_owned(),
+    .end(),
 )
 ```
 
@@ -153,13 +153,13 @@ impl RespoApp for App {
     Ok(
       div()
         .class(ui_global())
-        .add_style(RespoStyle::default().padding(12.0).to_owned())
+        .add_style(RespoStyle::default().padding(12.0).end())
         .add_children([
           comp_counter(&states.pick("counter"), store.counted)?,
           comp_panel(&states.pick("panel"))?,
           comp_todolist(memo_caches, &states.pick("todolist"), &store.tasks)?,
         ])
-        .to_owned(),
+        .end(),
     )
   }
 }

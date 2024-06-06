@@ -173,14 +173,14 @@ where
   } else {
     let branch = coord.first().ok_or("to get first branch of coord")?;
     match (tree, branch) {
-      (RespoNode::Component(name, _, tree), RespoCoord::Comp(target_name)) => {
+      (RespoNode::Component(RespoComponent(name, _, tree)), RespoCoord::Comp(target_name)) => {
         if name == target_name {
           load_coord_target_tree(tree, &coord[1..])
         } else {
           Err(format!("expected component {} to be {}", &name, &target_name))
         }
       }
-      (RespoNode::Element { children, .. }, RespoCoord::Key(idx)) => match children.iter().position(|(k, _)| idx == k) {
+      (RespoNode::Element(RespoElement { children, .. }), RespoCoord::Key(idx)) => match children.iter().position(|(k, _)| idx == k) {
         Some(i) => {
           let child = &children.get(i).ok_or_else(|| format!("to get child {:?} {}", idx, i))?.1;
           load_coord_target_tree(child, &coord[1..])
@@ -207,8 +207,8 @@ where
   let target_node = load_coord_target_tree(tree, coord)?;
 
   match target_node {
-    RespoNode::Component(name, ..) => Err(format!("expected element, found target being a component: {}", &name)),
-    RespoNode::Element { name: tag_name, event, .. } => match event.get(event_name) {
+    RespoNode::Component(RespoComponent(name, ..)) => Err(format!("expected element, found target being a component: {}", &name)),
+    RespoNode::Element(RespoElement { name: tag_name, event, .. }) => match event.get(event_name) {
       Some(v) => Ok((*v).to_owned()),
       None => Err(format!("no handler for event:{} on {} {:?}", &event_name, tag_name, event,)),
     },
@@ -225,18 +225,18 @@ where
   let document = window.document().expect("should have a document on window");
 
   match tree {
-    RespoNode::Component(name, _, child) => {
+    RespoNode::Component(RespoComponent(name, _, child)) => {
       let mut next_coord: Vec<RespoCoord> = coord.to_owned();
       next_coord.push(RespoCoord::Comp(name.to_owned()));
       build_dom_tree(child, &next_coord, handle_event)
     }
-    RespoNode::Element {
+    RespoNode::Element(RespoElement {
       name,
       attrs,
       style,
       event,
       children,
-    } => {
+    }) => {
       let element = document.create_element(name)?;
       for (key, value) in attrs {
         let key = key.as_ref();

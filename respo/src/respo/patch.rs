@@ -10,7 +10,7 @@ use web_sys::{
 use wasm_bindgen::JsCast;
 use web_sys::console::warn_1;
 
-use crate::RespoEffectType;
+use crate::{RespoComponent, RespoEffectType};
 
 use super::{
   build_dom_tree, load_coord_target_tree, ChildDomOp, DomChange, RespoCoord, RespoEvent, RespoEventMark, RespoEventMarkFn, RespoNode,
@@ -51,7 +51,7 @@ where
         } else {
           load_coord_target_tree(tree, coord)?
         };
-        if let RespoNode::Component(_, effects, _) = target_tree {
+        if let RespoNode::Component(RespoComponent(_, effects, _)) = target_tree {
           for (idx, effect) in effects.iter().enumerate() {
             if !skip_indexes.contains(&(idx as u32)) {
               effect.run(effect_type.to_owned(), &target)?;
@@ -237,7 +237,7 @@ where
                 load_coord_target_tree(&base_tree, nested_coord)?
               };
               let nested_el = find_coord_dom_target(&target, nesteed_dom_path)?;
-              if let RespoNode::Component(_, effects, _) = target_tree {
+              if let RespoNode::Component(RespoComponent(_, effects, _)) = target_tree {
                 for (idx, effect) in effects.iter().enumerate() {
                   if !skip_indexes.contains(&(idx as u32)) {
                     effect.run(effect_type.to_owned(), &nested_el)?;
@@ -266,7 +266,7 @@ where
         } else {
           load_coord_target_tree(tree, coord)?
         };
-        if let RespoNode::Component(_, effects, _) = target_tree {
+        if let RespoNode::Component(RespoComponent(_, effects, _)) = target_tree {
           for (idx, effect) in effects.iter().enumerate() {
             if !skip_indexes.contains(&(idx as u32)) {
               effect.run(effect_type.to_owned(), &target)?;

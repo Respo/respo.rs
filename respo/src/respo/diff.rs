@@ -17,7 +17,10 @@ where
   T: Debug + Clone,
 {
   match (new_tree, old_tree) {
-    (RespoNode::Component(name, effects, new_child), RespoNode::Component(name_old, old_effects, old_child)) => {
+    (
+      RespoNode::Component(RespoComponent(name, effects, new_child)),
+      RespoNode::Component(RespoComponent(name_old, old_effects, old_child)),
+    ) => {
       if name == name_old {
         let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Comp(name.to_owned()));
@@ -74,20 +77,20 @@ where
       collect_effects_outside_in_as(new_tree, coord, dom_path, RespoEffectType::Mounted, changes)?;
     }
     (
-      a @ RespoNode::Element {
+      a @ RespoNode::Element(RespoElement {
         name,
         attrs,
         style,
         event,
         children,
-      },
-      RespoNode::Element {
+      }),
+      RespoNode::Element(RespoElement {
         name: old_name,
         attrs: old_attrs,
         style: old_style,
         event: old_event,
         children: old_children,
-      },
+      }),
     ) => {
       if name != old_name {
         collect_effects_inside_out_as(old_tree, coord, dom_path, RespoEffectType::BeforeUnmount, changes)?;
@@ -374,7 +377,7 @@ where
   T: Debug + Clone,
 {
   match tree {
-    RespoNode::Component(name, effects, tree) => {
+    RespoNode::Component(RespoComponent(name, effects, tree)) => {
       if !effects.is_empty() {
         changes.push(DomChange::Effect {
           coord: coord.to_owned(),
@@ -388,7 +391,7 @@ where
       collect_effects_outside_in_as(tree, &next_coord, dom_path, effect_type, changes)?;
       Ok(())
     }
-    RespoNode::Element { children, .. } => {
+    RespoNode::Element(RespoElement { children, .. }) => {
       for (idx, (k, child)) in children.iter().enumerate() {
         let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Key(k.to_owned()));
@@ -417,7 +420,7 @@ where
   T: Debug + Clone,
 {
   match tree {
-    RespoNode::Component(name, effects, tree) => {
+    RespoNode::Component(RespoComponent(name, effects, tree)) => {
       let mut next_coord = coord.to_owned();
       next_coord.push(RespoCoord::Comp(name.to_owned()));
       collect_effects_inside_out_as(tree, &next_coord, dom_path, effect_type, changes)?;
@@ -431,7 +434,7 @@ where
       }
       Ok(())
     }
-    RespoNode::Element { children, .. } => {
+    RespoNode::Element(RespoElement { children, .. }) => {
       for (idx, (k, child)) in children.iter().enumerate() {
         let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Key(k.to_owned()));
@@ -461,7 +464,7 @@ where
   T: Debug + Clone,
 {
   match tree {
-    RespoNode::Component(name, effects, tree) => {
+    RespoNode::Component(RespoComponent(name, effects, tree)) => {
       if !effects.is_empty() {
         operations.push(ChildDomOp::NestedEffect {
           nested_coord: coord.to_owned(),
@@ -475,7 +478,7 @@ where
       nested_effects_outside_in_as(tree, &next_coord, dom_path, effect_type, operations)?;
       Ok(())
     }
-    RespoNode::Element { children, .. } => {
+    RespoNode::Element(RespoElement { children, .. }) => {
       for (k, child) in children {
         let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Key(k.to_owned()));
@@ -502,7 +505,7 @@ where
   T: Debug + Clone,
 {
   match tree {
-    RespoNode::Component(name, effects, tree) => {
+    RespoNode::Component(RespoComponent(name, effects, tree)) => {
       let mut next_coord = coord.to_owned();
       next_coord.push(RespoCoord::Comp(name.to_owned()));
       nested_effects_inside_out_as(tree, &next_coord, dom_path, effect_type, operations)?;
@@ -516,7 +519,7 @@ where
       }
       Ok(())
     }
-    RespoNode::Element { children, .. } => {
+    RespoNode::Element(RespoElement { children, .. }) => {
       for (k, child) in children {
         let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Key(k.to_owned()));

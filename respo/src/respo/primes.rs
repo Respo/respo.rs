@@ -21,26 +21,39 @@ pub use dom_change::{changes_to_cirru, ChildDomOp, DomChange, RespoCoord};
 
 pub use effect::{RespoEffect, RespoEffectType};
 
+/// internal abstraction for an element
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RespoElement<T>
+where
+  T: Debug + Clone,
+{
+  /// tagName
+  pub name: Rc<str>,
+  pub attrs: HashMap<Rc<str>, String>,
+  pub event: HashMap<Rc<str>, RespoListenerFn<T>>,
+  /// inlines styles, partially typed.
+  /// there's also a macro called `static_styles` for inserting CSS rules
+  pub style: RespoStyle,
+  /// each child as a key like a string, by default generated from index,
+  /// they are used in diffing, so it's better to be distinct, although not required to be.
+  pub children: Vec<(RespoIndexKey, RespoNode<T>)>,
+}
+
+/// internal abstraction for a component
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RespoComponent<T>(pub Rc<str>, pub Vec<RespoEffect>, pub Box<RespoNode<T>>)
+where
+  T: Debug + Clone;
+
 /// an `Element` or a `Component`
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RespoNode<T>
 where
   T: Debug + Clone,
 {
-  Component(Rc<str>, Vec<RespoEffect>, Box<RespoNode<T>>),
+  Component(RespoComponent<T>),
   /// corresponding to DOM elements
-  Element {
-    /// tagName
-    name: Rc<str>,
-    attrs: HashMap<Rc<str>, String>,
-    event: HashMap<Rc<str>, RespoListenerFn<T>>,
-    /// inlines styles, partially typed.
-    /// there's also a macro called `static_styles` for inserting CSS rules
-    style: RespoStyle,
-    /// each child as a key like a string, by default generated from index,
-    /// they are used in diffing, so it's better to be distinct, although not required to be.
-    children: Vec<(RespoIndexKey, RespoNode<T>)>,
-  },
+  Element(RespoElement<T>),
   Referenced(Rc<RespoNode<T>>),
 }
 
@@ -50,10 +63,10 @@ where
 {
   fn from(value: RespoNode<T>) -> Self {
     match value {
-      RespoNode::Component(name, _eff, tree) => {
+      RespoNode::Component(RespoComponent(name, _eff, tree)) => {
         Cirru::List(vec![Cirru::Leaf("::Component".into()), Cirru::from(name.as_ref()), (*tree).into()])
       }
-      RespoNode::Element { name, children, .. } => {
+      RespoNode::Element(RespoElement { name, children, .. }) => {
         let mut xs = vec![Cirru::from(name.as_ref())];
         for (k, child) in children {
           xs.push(Cirru::List(vec![Cirru::Leaf(k.to_string().into()), child.to_owned().into()]));
@@ -126,13 +139,13 @@ where
 {
   /// create an element node
   pub fn new_tag(name: &str) -> Self {
-    Self::Element {
+    Self::Element(RespoElement {
       name: name.into(),
       attrs: HashMap::new(),
       event: HashMap::new(),
       style: RespoStyle::default(),
       children: Vec::new(),
-    }
+    })
   }
 
   /// finish building
@@ -141,7 +154,7 @@ where
   }
   /// create a new component
   pub fn new_component(name: &str, tree: RespoNode<T>) -> Self {
-    Self::Component(name.into(), Vec::new(), Box::new(tree))
+    Self::Component(RespoComponent(name.into(), Vec::new(), Box::new(tree)))
   }
   /// attach styles
   /// ```ignore
@@ -149,10 +162,10 @@ where
   /// ```
   pub fn style(&mut self, more: RespoStyle) -> &mut Self {
     match self {
-      RespoNode::Component(_, _, node) => {
+      RespoNode::Component(RespoComponent(_, _, node)) => {
         node.style(more);
       }
-      RespoNode::Element { ref mut style, .. } => {
+      RespoNode::Element(RespoElement { ref mut style, .. }) => {
         for (k, v) in more.0.into_iter() {
           style.0.push((k.to_owned(), v.to_owned()));
         }
@@ -176,10 +189,10 @@ where
     U: Fn(&mut RespoStyle),
   {
     match self {
-      RespoNode::Component(_, _, node) => {
+      RespoNode::Component(RespoComponent(_, _, node)) => {
         node.modify_style(builder);
       }
-      RespoNode::Element { ref mut style, .. } => {
+      RespoNode::Element(RespoElement { ref mut style, .. }) => {
         builder(style);
       }
       RespoNode::Referenced(_) => {
@@ -195,10 +208,10 @@ where
     V: Display,
   {
     match self {
-      RespoNode::Component(_, _, node) => {
+      RespoNode::Component(RespoComponent(_, _, node)) => {
         node.attribute(property, value);
       }
-      RespoNode::Element { ref mut attrs, .. } => {
+      RespoNode::Element(RespoElement { ref mut attrs, .. }) => {
         attrs.insert(property.into(), value.to_string());
       }
       RespoNode::Referenced(_) => {
@@ -215,10 +228,10 @@ where
   {
     if let Some(v) = value {
       match self {
-        RespoNode::Component(_, _, node) => {
+        RespoNode::Component(RespoComponent(_, _, node)) => {
           node.attribute(property, v);
         }
-        RespoNode::Element { ref mut attrs, .. } => {
+        RespoNode::Element(RespoElement { ref mut attrs, .. }) => {
           attrs.insert(property.into(), v.to_string());
         }
         RespoNode::Referenced(_) => {
@@ -272,10 +285,10 @@ where
     U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
   {
     match self {
-      RespoNode::Component(_, _, node) => {
+      RespoNode::Component(RespoComponent(_, _, node)) => {
         node.on_named_event(name, handler);
       }
-      RespoNode::Element { ref mut event, .. } => {
+      RespoNode::Element(RespoElement { ref mut event, .. }) => {
         event.insert(name.into(), RespoListenerFn::new(handler));
       }
       RespoNode::Referenced(_) => {
@@ -291,10 +304,10 @@ where
     U: IntoIterator<Item = RespoNode<T>>,
   {
     match self {
-      RespoNode::Component(_, _, node) => {
+      RespoNode::Component(RespoComponent(_, _, node)) => {
         node.children(more);
       }
-      RespoNode::Element { ref mut children, .. } => {
+      RespoNode::Element(RespoElement { ref mut children, .. }) => {
         for (idx, v) in more.into_iter().enumerate() {
           children.push((idx.into(), v.to_owned()));
         }
@@ -311,10 +324,10 @@ where
     U: IntoIterator<Item = (RespoIndexKey, RespoNode<T>)>,
   {
     match self {
-      RespoNode::Component(_, _, node) => {
+      RespoNode::Component(RespoComponent(_, _, node)) => {
         node.children_indexed(more);
       }
-      RespoNode::Element { ref mut children, .. } => {
+      RespoNode::Element(RespoElement { ref mut children, .. }) => {
         for (idx, v) in more {
           children.push((idx, v));
         }
@@ -332,7 +345,7 @@ where
     V: Clone + DynEq + Debug + 'static,
   {
     match self {
-      RespoNode::Component(_, ref mut effects, _) => {
+      RespoNode::Component(RespoComponent(_, ref mut effects, _)) => {
         effects.push(RespoEffect::new(args.to_vec(), handler));
         self
       }
@@ -348,7 +361,7 @@ where
     U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
   {
     match self {
-      RespoNode::Component(_, ref mut effects, _) => {
+      RespoNode::Component(RespoComponent(_, ref mut effects, _)) => {
         effects.push(RespoEffect::new(vec![] as Vec<()>, handler));
         self
       }
@@ -364,7 +377,7 @@ where
     U: IntoIterator<Item = RespoEffect>,
   {
     match self {
-      RespoNode::Component(_, ref mut effects, _) => {
+      RespoNode::Component(RespoComponent(_, ref mut effects, _)) => {
         effects.extend(more);
         self
       }

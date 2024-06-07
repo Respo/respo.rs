@@ -744,7 +744,7 @@ pub fn css_name_from_path(p: &str) -> String {
 /// ```rust
 /// respo::static_style_seq!(the_name,
 ///   &[
-///     ("&", &respo::RespoStyle::default())
+///     ("&", respo::RespoStyle::default())
 ///   ]
 /// );
 /// ```
@@ -766,7 +766,7 @@ macro_rules! static_style_seq {
 /// macro to create a public function of CSS rules(up to 5 tuples) at current file scope,
 /// ```rust
 /// respo::static_styles!(the_name,
-///   ("&", &respo::RespoStyle::default())
+///   ("&", respo::RespoStyle::default())
 /// );
 /// ```
 /// gets a function like:

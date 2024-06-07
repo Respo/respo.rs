@@ -169,7 +169,7 @@ where
 {
   let mut xs = vec!["::changes".into()];
   for c in change {
-    xs.push(c.to_owned().into());
+    xs.push(Cirru::from(c.to_owned()));
   }
   Cirru::List(xs)
 }

@@ -61,13 +61,13 @@ impl StatesTree {
       // self.data_revision += 1;
     } else {
       let (p_head, p_rest) = path.split_at(1);
-      let p0 = p_head[0].to_owned();
-      if let Some(branch) = self.branches.get_mut(&p0) {
+      let p0 = &p_head[0];
+      if let Some(branch) = self.branches.get_mut(p0) {
         branch.set_in_mut(p_rest, new_state);
       } else {
-        let mut branch = self.pick(&p0);
+        let mut branch = self.pick(p0);
         branch.set_in_mut(p_rest, new_state);
-        self.branches.insert(p0, Box::new(branch));
+        self.branches.insert(p0.to_owned(), Box::new(branch));
       }
     }
   }

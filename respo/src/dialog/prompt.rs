@@ -179,7 +179,6 @@ where
                 .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)))
                 .style(options.card_style)
                 .style(options.input_style)
-                .to_owned()
                 .on_click(move |e, _dispatch| -> Result<(), String> {
                   // nothing to do
                   if let RespoEvent::Click { original_event, .. } = e {
@@ -194,7 +193,6 @@ where
                   div().children([input_el
                     .class_list(&[ui_input()])
                     .style(RespoStyle::default().width(CssSize::Percent(100.0)))
-                    .to_owned()
                     .attribute("placeholder", "Content...")
                     .attribute("autoFocus", "autofocus")
                     .value(state.draft.to_owned())

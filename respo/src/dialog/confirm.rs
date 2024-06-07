@@ -51,7 +51,6 @@ where
           div()
             .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
             .style(options.backdrop_style)
-            .to_owned()
             .on_click({
               let close = close.to_owned();
               move |e, dispatch| -> Result<(), String> {
@@ -68,7 +67,6 @@ where
                 .class_list(&[column(), ui_global(), css_modal_card()])
                 .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)))
                 .style(options.card_style)
-                .to_owned()
                 .on_click(move |e, _dispatch| -> Result<(), String> {
                   // nothing to do
                   if let RespoEvent::Click { original_event, .. } = e {

@@ -20,11 +20,7 @@ pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<Ac
       continue;
     }
 
-    children.push((
-      RespoIndexKey::from(&task.id),
-      // comp_task(memo_caches.to_owned(), &states.pick(&task.id), task)?,
-      comp_task(states.pick(&task.id), task.to_owned())?,
-    ));
+    children.push((RespoIndexKey::from(&task.id), comp_task(states.pick(&task.id), task.to_owned())?));
   }
 
   // util::log!("{:?}", &tasks);

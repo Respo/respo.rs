@@ -58,13 +58,11 @@ pub fn comp_counter(states: &StatesTree, _counted: i32) -> Result<RespoNode<Acti
           .class(ui_button())
           .inner_text("demo inc")
           .style(RespoStyle::default().margin(4.))
-          .to_owned()
           .on_click(on_inc),
         button()
           .class(ui_button())
           .inner_text("demo dec")
           .style(RespoStyle::default().margin(4.))
-          .to_owned()
           .on_click(on_dec),
       ]),
       div().children([span().inner_text(format!("value is: {}", counted)).style(

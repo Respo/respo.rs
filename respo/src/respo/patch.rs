@@ -131,8 +131,7 @@ where
       DomChange::ModifyEvent { add, remove, coord, .. } => {
         let el = target.dyn_ref::<Element>().expect("to element");
         for k in add.iter() {
-          let handler = handle_event.to_owned();
-          attach_event(el, k, coord, handler)?;
+          attach_event(el, k, coord, handle_event.to_owned())?;
         }
         let el = el.dyn_ref::<HtmlElement>().expect("html element");
         for k in remove {
@@ -149,8 +148,7 @@ where
       }
       DomChange::ReplaceElement { node, coord, .. } => {
         let parent = target.parent_element().expect("load parent");
-        let handler = handle_event.to_owned();
-        let new_element = build_dom_tree(node, coord, handler).expect("build element");
+        let new_element = build_dom_tree(node, coord, handle_event.to_owned()).expect("build element");
         parent
           .dyn_ref::<Node>()
           .expect("to node")

@@ -250,7 +250,6 @@ where
       "esc-listener",
       input()
         .style(RespoStyle::default().display(CssDisplay::None))
-        .to_owned()
         .on_keydown(move |e, dispatch| -> Result<(), String> {
           if let RespoEvent::Keyboard { key, .. } = e {
             if key == "Escape" {

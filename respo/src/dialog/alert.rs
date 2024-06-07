@@ -45,7 +45,6 @@ where
           div()
             .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
             .style(options.backdrop_style)
-            .to_owned()
             .on_click({
               let close = close.to_owned();
               move |e, dispatch| -> Result<(), String> {
@@ -62,7 +61,6 @@ where
                 .class_list(&[column(), ui_global(), css_modal_card()])
                 .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)))
                 .style(options.card_style)
-                .to_owned()
                 .on_click(move |e, _dispatch| -> Result<(), String> {
                   // nothing to do
                   if let RespoEvent::Click { original_event, .. } = e {
@@ -155,8 +153,8 @@ where
 {
   fn render(&self) -> Result<RespoNode<T>, String> {
     let on_read = self.on_read;
-    let cursor = self.cursor.to_owned();
-    let state = self.state.to_owned();
+    let cursor = &self.cursor;
+    let state = &self.state;
 
     let mut options = self.options.to_owned();
     options.text = {

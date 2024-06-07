@@ -22,7 +22,7 @@ pub fn comp_task(
 ) -> Result<RespoNode<ActionOp>, String> {
   respo::util::log!("calling task function");
 
-  let task_id = task.id.to_owned();
+  let task_id = &task.id;
 
   let cursor = states.path();
   let state = states.data.cast_or_default::<TaskState>()?;

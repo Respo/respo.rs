@@ -244,7 +244,7 @@ where
 
   fn new(states: StatesTree, options: ConfirmOptions, on_confirm: U) -> Result<Self, String> {
     let cursor = states.path();
-    let state = states.data.cast_or_default::<ConfirmPluginState>()?;
+    let state = states.cast_branch::<ConfirmPluginState>()?;
 
     let instance = Self {
       state,

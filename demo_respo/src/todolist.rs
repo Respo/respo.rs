@@ -14,7 +14,7 @@ impl RespoState for TodolistState {}
 
 pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
-  let state = states.data.cast_or_default::<TodolistState>()?;
+  let state = states.cast_branch::<TodolistState>()?;
 
   let mut children: Vec<(RespoIndexKey, RespoNode<_>)> = vec![];
   for task in tasks {

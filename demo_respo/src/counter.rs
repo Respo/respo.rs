@@ -14,7 +14,7 @@ impl RespoState for MainState {}
 pub fn comp_counter(states: &StatesTree, _counted: i32) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
 
-  let state = states.data.cast_or_default::<MainState>()?;
+  let state = states.cast_branch::<MainState>()?;
   let counted = state.counted;
 
   let on_inc = {

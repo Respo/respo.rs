@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::rc::Rc;
 
-use crate::DynEq;
+use crate::{log, DynEq};
 
 // use wasm_bindgen::JsValue;
 
@@ -16,7 +16,7 @@ use crate::DynEq;
 pub struct StatesTree {
   /// local data
   #[serde(skip)]
-  pub data: MaybeState,
+  pub data: Option<RespoStateBranch>,
   pub backup: Option<Value>,
   /// the path to the current state in the tree, use in updating
   pub cursor: Vec<Rc<str>>,
@@ -50,6 +50,31 @@ impl StatesTree {
     self.cursor.to_owned()
   }
 
+  /// get shared data from state tree. fallback to backup and then default
+  pub fn cast_branch<T>(&self) -> Result<Rc<T>, String>
+  where
+    T: Clone + Default + RespoState + 'static,
+  {
+    if let Some(v) = &self.data {
+      if let Some(v) = v.0.as_ref().as_any().downcast_ref::<T>() {
+        return Ok(Rc::new(v.to_owned()));
+      } else {
+        log!("failed to cast state to {}", std::any::type_name::<T>());
+      }
+    }
+
+    match &self.backup {
+      Some(v) => {
+        let mut t = T::default();
+        match t.restore_from(v) {
+          Ok(_) => Ok(Rc::new(t)),
+          Err(e) => Err(e),
+        }
+      }
+      None => Ok(Rc::new(T::default())),
+    }
+  }
+
   /// pick a child branch as new cursor
   pub fn pick(&self, name: &str) -> StatesTree {
     let mut next_cursor = self.cursor.to_owned();
@@ -67,7 +92,7 @@ impl StatesTree {
       }
     } else {
       Self {
-        data: MaybeState::new(None),
+        data: None,
         backup: None,
         cursor: next_cursor,
         // data_type_name: None,
@@ -78,7 +103,7 @@ impl StatesTree {
   }
 
   /// in-place mutation of state tree
-  pub fn set_in_mut(&mut self, path: &[Rc<str>], new_state: MaybeState, val: Option<Value>) {
+  pub fn set_in_mut(&mut self, path: &[Rc<str>], new_state: Option<RespoStateBranch>, val: Option<Value>) {
     if path.is_empty() {
       new_state.clone_into(&mut self.data);
       val.clone_into(&mut self.backup);
@@ -98,49 +123,26 @@ impl StatesTree {
   }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 /// local state in component could be `None` according to the tree structure
-pub struct MaybeState(pub Option<Rc<dyn DynEq>>);
+pub struct RespoStateBranch(pub Rc<dyn DynEq>);
 
-impl PartialEq for MaybeState {
+impl PartialEq for RespoStateBranch {
   fn eq(&self, other: &Self) -> bool {
-    match (&self.0, &other.0) {
-      (None, None) => true,
-      (Some(a), Some(b)) => a.as_ref().do_eq(b.as_ref()),
-      _ => false,
-    }
+    self.0.as_ref().do_eq(other.0.as_ref())
   }
 }
-impl Eq for MaybeState {}
+impl Eq for RespoStateBranch {}
 
-impl Hash for MaybeState {
+impl Hash for RespoStateBranch {
   fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-    match &self.0 {
-      Some(v) => {
-        // TODO better hash DynEq object, acceptable for now
-        state.write_usize(Rc::as_ptr(v) as *const () as usize);
-      }
-      None => 0.hash(state),
-    }
+    state.write_usize(Rc::as_ptr(&self.0) as *const () as usize);
   }
 }
 
-impl MaybeState {
-  pub fn new(state: Option<Rc<dyn DynEq>>) -> Self {
+impl RespoStateBranch {
+  pub fn new(state: Rc<dyn DynEq>) -> Self {
     Self(state)
-  }
-
-  pub fn cast_or_default<T>(&self) -> Result<Rc<T>, String>
-  where
-    T: Clone + Default + 'static,
-  {
-    match &self.0 {
-      Some(v) => match v.as_ref().as_any().downcast_ref::<T>() {
-        Some(v) => Ok(Rc::new(v.to_owned())),
-        None => Err(format!("failed to cast state to {}", std::any::type_name::<T>())),
-      },
-      None => Ok(Rc::new(T::default())),
-    }
   }
 }
 

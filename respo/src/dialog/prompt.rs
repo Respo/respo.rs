@@ -87,7 +87,7 @@ where
   T: Clone + Debug + RespoAction,
 {
   let cursor = states.path();
-  let mut state = states.data.cast_or_default::<InputState>()?;
+  let mut state = states.cast_branch::<InputState>()?;
   if let Some(text) = &options.initial_value {
     state = Rc::new(InputState {
       draft: text.to_string(),
@@ -366,7 +366,7 @@ where
 
   fn new(states: StatesTree, options: PromptOptions, on_submit: U) -> Result<Self, String> {
     let cursor = states.path();
-    let state = states.data.cast_or_default::<PromptPluginState>()?;
+    let state = states.cast_branch::<PromptPluginState>()?;
 
     let instance = Self {
       states,

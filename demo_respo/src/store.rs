@@ -1,6 +1,6 @@
 use std::{hash::Hash, rc::Rc};
 
-use respo::{util, MaybeState, RespoAction, RespoState, RespoStore, StatesTree};
+use respo::{util, RespoAction, RespoState, RespoStateBranch, RespoStore, StatesTree};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Default)]
@@ -35,7 +35,7 @@ pub enum ActionOp {
   Increment,
   Decrement,
   /// contains State and Value
-  StatesChange(Vec<Rc<str>>, MaybeState, Option<Value>),
+  StatesChange(Vec<Rc<str>>, Option<RespoStateBranch>, Option<Value>),
   AddTask(String, String),
   RemoveTask(String),
   UpdateTask(String, String),
@@ -51,11 +51,11 @@ impl Default for ActionOp {
 }
 
 impl RespoAction for ActionOp {
-  fn wrap_states_action(cursor: &[Rc<str>], a: MaybeState) -> Self {
+  fn wrap_states_action(cursor: &[Rc<str>], a: Option<RespoStateBranch>) -> Self {
     // val is a backup value from DynEq to Json Value
-    let val = match &a.0 {
+    let val = match &a {
       None => None,
-      Some(v) => v.as_ref().backup(),
+      Some(v) => v.0.as_ref().backup(),
     };
     Self::StatesChange(cursor.to_vec(), a, val)
   }

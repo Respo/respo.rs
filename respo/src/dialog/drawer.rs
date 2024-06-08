@@ -208,7 +208,7 @@ where
 
   fn new(states: StatesTree, options: DrawerOptions<T>) -> Result<Self, String> {
     let cursor = states.path();
-    let state = states.data.cast_or_default::<DrawerPluginState>()?;
+    let state = states.cast_branch::<DrawerPluginState>()?;
 
     let instance = Self {
       state,

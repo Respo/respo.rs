@@ -33,7 +33,7 @@ pub fn comp_task(
   let task_id = &task.id;
 
   let cursor = states.path();
-  let state = states.data.cast_or_default::<TaskState>()?;
+  let state = states.cast_branch::<TaskState>()?;
 
   let on_toggle = {
     let tid = task_id.to_owned();

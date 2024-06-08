@@ -211,7 +211,7 @@ where
 
   fn new(states: StatesTree, options: AlertOptions, on_read: U) -> Result<Self, String> {
     let cursor = states.path();
-    let state = states.data.cast_or_default::<AlertPluginState>()?;
+    let state = states.cast_branch::<AlertPluginState>()?;
 
     let instance = Self {
       state,

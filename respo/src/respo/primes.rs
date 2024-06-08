@@ -13,7 +13,7 @@ pub use effect::RespoEffectArg;
 pub use listener::{RespoEvent, RespoEventMark, RespoListenerFn};
 use web_sys::Node;
 
-use crate::{MaybeState, StatesTree};
+use crate::{RespoStateBranch, StatesTree};
 
 use super::css::RespoStyle;
 
@@ -490,7 +490,7 @@ where
 /// it has special support for states
 pub trait RespoAction {
   /// to provide syntax sugar to dispatch.run_state
-  fn wrap_states_action(cursor: &[Rc<str>], a: MaybeState) -> Self;
+  fn wrap_states_action(cursor: &[Rc<str>], a: Option<RespoStateBranch>) -> Self;
 }
 
 impl<T> DispatchFn<T>
@@ -507,11 +507,11 @@ where
     U: DynEq + ToOwned + Clone + PartialEq + Eq + 'static,
   {
     let a = Rc::new(data);
-    (self.0)(T::wrap_states_action(cursor, MaybeState::new(Some(a))))
+    (self.0)(T::wrap_states_action(cursor, Some(RespoStateBranch::new(a))))
   }
   /// reset state to empty
   pub fn run_empty_state(&self, cursor: &[Rc<str>]) -> Result<(), String> {
-    (self.0)(T::wrap_states_action(cursor, MaybeState::new(None)))
+    (self.0)(T::wrap_states_action(cursor, None))
   }
   pub fn new<U>(f: U) -> Self
   where

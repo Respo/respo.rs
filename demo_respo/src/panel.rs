@@ -19,7 +19,7 @@ impl RespoState for PanelState {}
 
 pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
-  let state = states.data.cast_or_default::<PanelState>()?;
+  let state = states.cast_branch::<PanelState>()?;
 
   let on_input = {
     let cursor = cursor.to_owned();

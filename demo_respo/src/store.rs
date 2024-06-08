@@ -1,6 +1,7 @@
 use std::{hash::Hash, rc::Rc};
 
-use respo::{util, MaybeState, RespoAction, RespoStore, StatesTree};
+use respo::{util, MaybeState, RespoAction, RespoState, RespoStore, StatesTree};
+use serde_json::Value;
 
 #[derive(Debug, Clone, Default)]
 pub struct Store {
@@ -17,6 +18,8 @@ pub struct Task {
   pub time: f32,
 }
 
+impl RespoState for Task {}
+
 impl Eq for Task {}
 
 impl Hash for Task {
@@ -31,7 +34,8 @@ impl Hash for Task {
 pub enum ActionOp {
   Increment,
   Decrement,
-  StatesChange(Vec<Rc<str>>, MaybeState),
+  /// contains State and Value
+  StatesChange(Vec<Rc<str>>, MaybeState, Option<Value>),
   AddTask(String, String),
   RemoveTask(String),
   UpdateTask(String, String),
@@ -48,7 +52,12 @@ impl Default for ActionOp {
 
 impl RespoAction for ActionOp {
   fn wrap_states_action(cursor: &[Rc<str>], a: MaybeState) -> Self {
-    Self::StatesChange(cursor.to_vec(), a)
+    // val is a backup value from DynEq to Json Value
+    let val = match &a.0 {
+      None => None,
+      Some(v) => v.as_ref().backup(),
+    };
+    Self::StatesChange(cursor.to_vec(), a, val)
   }
 }
 
@@ -69,8 +78,8 @@ impl RespoStore for Store {
       ActionOp::Decrement => {
         self.counted -= 1;
       }
-      ActionOp::StatesChange(path, new_state) => {
-        self.states.set_in_mut(&path, new_state);
+      ActionOp::StatesChange(path, new_state, val) => {
+        self.states.set_in_mut(&path, new_state, val);
       }
       ActionOp::AddTask(id, content) => self.tasks.push(Task {
         id,

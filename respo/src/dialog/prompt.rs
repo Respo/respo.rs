@@ -13,7 +13,7 @@ use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_input
 
 use crate::{
   button, div, input, respo, space, span, static_styles, textarea, CssColor, CssLineHeight, CssPosition, CssSize, DispatchFn,
-  RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree,
+  RespoAction, RespoEvent, RespoNode, RespoState, RespoStyle, StatesTree,
 };
 
 use crate::dialog::{effect_modal_fade, BUTTON_NAME};
@@ -71,6 +71,8 @@ struct InputState {
   draft: String,
   error: Option<String>,
 }
+
+impl RespoState for InputState {}
 
 fn comp_prompt_modal<T, U, V>(
   states: StatesTree,
@@ -257,6 +259,8 @@ struct PromptPluginState {
   show: bool,
   text: Option<String>,
 }
+
+impl RespoState for PromptPluginState {}
 
 /// a dialog for prompt, request for some input, and submit
 #[derive(Debug, Clone)]

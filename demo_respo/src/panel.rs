@@ -7,13 +7,15 @@ use crate::store::ActionOp;
 use respo::{
   button, div, input, space, span,
   ui::{ui_button, ui_input},
-  util, DispatchFn, RespoEvent, RespoNode, StatesTree,
+  util, DispatchFn, RespoEvent, RespoNode, RespoState, StatesTree,
 };
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 struct PanelState {
   content: String,
 }
+
+impl RespoState for PanelState {}
 
 pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();

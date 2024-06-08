@@ -11,7 +11,8 @@ use crate::dialog::{css_backdrop, css_button, css_modal_card};
 use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_row_parted};
 
 use crate::{
-  button, div, respo, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree,
+  button, div, respo, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoState, RespoStyle,
+  StatesTree,
 };
 
 use crate::dialog::{effect_focus, effect_modal_fade, BUTTON_NAME};
@@ -136,6 +137,8 @@ struct ConfirmPluginState {
   show: bool,
   text: Option<String>,
 }
+
+impl RespoState for ConfirmPluginState {}
 
 /// Popup a confirmation dialog, confirm to process next task
 #[derive(Debug, Clone)]

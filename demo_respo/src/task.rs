@@ -1,18 +1,26 @@
+use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
 use memoize::memoize;
 use respo::{
   button, div, input, space, span, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
-  util, CssColor, CssSize, DispatchFn, RespoEvent, RespoNode, RespoStyle, StatesTree,
+  util, CssColor, CssSize, DispatchFn, RespoEvent, RespoNode, RespoState, RespoStyle, StatesTree,
 };
 
 use super::store::*;
 
-#[derive(Debug, Clone, Default, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+struct A {
+  a: bool,
+}
+
+#[derive(Debug, Clone, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
 struct TaskState {
   draft: String,
 }
+
+impl RespoState for TaskState {}
 
 #[memoize(Capacity: 40)]
 pub fn comp_task(

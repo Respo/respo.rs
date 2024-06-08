@@ -6,7 +6,9 @@ use std::rc::Rc;
 use crate::dialog::{css_backdrop, css_drawer_card};
 use crate::ui::{column, ui_center, ui_fullscreen, ui_global};
 
-use crate::{div, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree};
+use crate::{
+  div, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoState, RespoStyle, StatesTree,
+};
 
 use crate::dialog::effect_drawer_fade;
 
@@ -164,6 +166,8 @@ where
 struct DrawerPluginState {
   show: bool,
 }
+
+impl RespoState for DrawerPluginState {}
 
 /// a drawer that you can render you down card body
 #[derive(Debug, Clone)]

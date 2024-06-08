@@ -3,6 +3,8 @@ use std::{any::Any, fmt::Debug, rc::Rc};
 use cirru_parser::Cirru;
 use web_sys::Node;
 
+use crate::RespoState;
+
 // use crate::{log, util::print_type_of};
 
 /// effects that attached to components
@@ -84,14 +86,14 @@ impl From<RespoEffectType> for Cirru {
 }
 
 /// https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=c39e1eef6c8c10e973fa629103b4a0b1
-pub trait DynEq: Debug {
+pub trait DynEq: Debug + RespoState {
   fn as_any(&self) -> &dyn Any;
   fn do_eq(&self, rhs: &dyn DynEq) -> bool;
 }
 
 impl<T> DynEq for T
 where
-  T: PartialEq + Debug + 'static,
+  T: PartialEq + Debug + RespoState + 'static,
 {
   fn as_any(&self) -> &dyn Any {
     self

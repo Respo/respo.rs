@@ -1,4 +1,4 @@
-use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoIndexKey, RespoNode, StatesTree};
+use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoIndexKey, RespoNode, RespoState, StatesTree};
 
 use super::{
   store::{ActionOp, Task},
@@ -9,6 +9,8 @@ use super::{
 struct TodolistState {
   hide_done: bool,
 }
+
+impl RespoState for TodolistState {}
 
 pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();

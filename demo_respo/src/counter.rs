@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use respo::{button, div, span, ui::ui_button, util, CssColor, DispatchFn, RespoEvent, RespoNode, RespoStyle, StatesTree};
+use respo::{button, div, span, ui::ui_button, util, CssColor, DispatchFn, RespoEvent, RespoNode, RespoState, RespoStyle, StatesTree};
 
 use super::store::ActionOp;
 
@@ -8,6 +8,8 @@ use super::store::ActionOp;
 struct MainState {
   counted: i32,
 }
+
+impl RespoState for MainState {}
 
 pub fn comp_counter(states: &StatesTree, _counted: i32) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();

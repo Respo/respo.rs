@@ -4,6 +4,8 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 
 use js_sys::{Array, Function, Reflect};
+use respo_state_derive::RespoState;
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
@@ -132,13 +134,11 @@ where
   fn share_with_ref(&self) -> Rc<Self>;
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, RespoState)]
 struct ConfirmPluginState {
   show: bool,
   text: Option<String>,
 }
-
-impl RespoState for ConfirmPluginState {}
 
 /// Popup a confirmation dialog, confirm to process next task
 #[derive(Debug, Clone)]

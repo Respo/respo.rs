@@ -1,5 +1,7 @@
 use std::fmt::Debug;
 
+use respo_state_derive::RespoState;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::store::ActionOp;
@@ -10,12 +12,10 @@ use respo::{
   util, DispatchFn, RespoEvent, RespoNode, RespoState, StatesTree,
 };
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, RespoState)]
 struct PanelState {
   content: String,
 }
-
-impl RespoState for PanelState {}
 
 pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();

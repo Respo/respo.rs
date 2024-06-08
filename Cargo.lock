@@ -71,6 +71,7 @@ dependencies = [
  "js-sys",
  "memoize",
  "respo",
+ "respo_state_derive",
  "serde",
  "serde_json",
  "uuid",
@@ -199,11 +200,20 @@ dependencies = [
  "cirru_parser",
  "js-sys",
  "lazy_static",
+ "respo_state_derive",
  "rust-hsluv",
  "serde",
  "serde_json",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "respo_state_derive"
+version = "0.0.1"
+dependencies = [
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]

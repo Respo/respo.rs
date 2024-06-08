@@ -1,3 +1,5 @@
+mod state;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -6,6 +8,8 @@ use std::hash::Hash;
 use std::rc::Rc;
 
 use crate::{log, DynEq};
+
+pub use state::RespoState;
 
 // use wasm_bindgen::JsValue;
 
@@ -143,36 +147,5 @@ impl Hash for RespoStateBranch {
 impl RespoStateBranch {
   pub fn new(state: Rc<dyn DynEq>) -> Self {
     Self(state)
-  }
-}
-
-/// component level state that could be backuped
-pub trait RespoState {
-  fn backup(&self) -> Option<Value> {
-    None
-  }
-  fn restore_from(&mut self, _s: &Value) -> Result<(), String> {
-    Ok(())
-  }
-}
-
-impl RespoState for bool {
-  fn backup(&self) -> Option<Value> {
-    Some(Value::Bool(*self))
-  }
-
-  fn restore_from(&mut self, s: &Value) -> Result<(), String> {
-    *self = s.as_bool().unwrap();
-    Ok(())
-  }
-}
-
-impl RespoState for () {
-  fn backup(&self) -> Option<Value> {
-    None
-  }
-
-  fn restore_from(&mut self, _s: &Value) -> Result<(), String> {
-    Ok(())
   }
 }

@@ -1,3 +1,4 @@
+use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
@@ -15,12 +16,10 @@ struct A {
   a: bool,
 }
 
-#[derive(Debug, Clone, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Hash, PartialEq, Eq, Serialize, Deserialize, RespoState)]
 struct TaskState {
   draft: String,
 }
-
-impl RespoState for TaskState {}
 
 #[memoize(Capacity: 40)]
 pub fn comp_task(

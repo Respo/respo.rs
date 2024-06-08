@@ -1,6 +1,7 @@
 use std::{hash::Hash, rc::Rc};
 
 use respo::{util, RespoAction, RespoState, RespoStateBranch, RespoStore, StatesTree};
+use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -11,15 +12,13 @@ pub struct Store {
   pub states: StatesTree,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, RespoState)]
 pub struct Task {
   pub id: String,
   pub done: bool,
   pub content: String,
   pub time: f32,
 }
-
-impl RespoState for Task {}
 
 impl Eq for Task {}
 

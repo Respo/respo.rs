@@ -1,16 +1,16 @@
 use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoIndexKey, RespoNode, RespoState, StatesTree};
+use respo_state_derive::RespoState;
+use serde::{Deserialize, Serialize};
 
 use super::{
   store::{ActionOp, Task},
   task::comp_task,
 };
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, RespoState)]
 struct TodolistState {
   hide_done: bool,
 }
-
-impl RespoState for TodolistState {}
 
 pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();

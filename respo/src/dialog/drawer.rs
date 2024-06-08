@@ -3,6 +3,9 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
+use respo_state_derive::RespoState;
+use serde::{Deserialize, Serialize};
+
 use crate::dialog::{css_backdrop, css_drawer_card};
 use crate::ui::{column, ui_center, ui_fullscreen, ui_global};
 
@@ -162,12 +165,10 @@ where
   fn share_with_ref(&self) -> Rc<Self>;
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, RespoState)]
 struct DrawerPluginState {
   show: bool,
 }
-
-impl RespoState for DrawerPluginState {}
 
 /// a drawer that you can render you down card body
 #[derive(Debug, Clone)]

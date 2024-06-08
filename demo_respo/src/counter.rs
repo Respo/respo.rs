@@ -1,15 +1,15 @@
 use std::fmt::Debug;
 
 use respo::{button, div, span, ui::ui_button, util, CssColor, DispatchFn, RespoEvent, RespoNode, RespoState, RespoStyle, StatesTree};
+use respo_state_derive::RespoState;
+use serde::{Deserialize, Serialize};
 
 use super::store::ActionOp;
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, RespoState)]
 struct MainState {
   counted: i32,
 }
-
-impl RespoState for MainState {}
 
 pub fn comp_counter(states: &StatesTree, _counted: i32) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();

@@ -3,6 +3,7 @@
 members = [
   "respo",
   "demo_respo",
+  "respo_state_derive",
 ]
 
 resolver = "2"

@@ -3,6 +3,9 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
+use respo_state_derive::RespoState;
+use serde::{Deserialize, Serialize};
+
 use crate::dialog::{css_backdrop, css_button, css_modal_card};
 use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_row_parted};
 
@@ -124,13 +127,11 @@ where
   fn share_with_ref(&self) -> Rc<Self>;
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, RespoState)]
 struct AlertPluginState {
   show: bool,
   text: Option<String>,
 }
-
-impl RespoState for AlertPluginState {}
 
 /// abstraction for Alert modal, new with `AlertOption`,
 /// just displaying a message, you read it, you close it

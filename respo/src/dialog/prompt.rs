@@ -5,6 +5,7 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 
 use js_sys::{Array, Function, Reflect};
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
@@ -66,13 +67,23 @@ impl PromptValidator {
   }
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 struct InputState {
   draft: String,
   error: Option<String>,
 }
 
-impl RespoState for InputState {}
+impl RespoState for InputState {
+  fn backup(&self) -> Option<serde_json::Value> {
+    serde_json::to_value(self).ok()
+  }
+
+  fn restore_from(&mut self, s: &serde_json::Value) -> Result<(), String> {
+    let v: Self = serde_json::from_value(s.to_owned()).expect("failed to deserialize");
+    *self = v;
+    Ok(())
+  }
+}
 
 fn comp_prompt_modal<T, U, V>(
   states: StatesTree,
@@ -254,13 +265,26 @@ where
   fn share_with_ref(&self) -> Rc<Self>;
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 struct PromptPluginState {
   show: bool,
   text: Option<String>,
 }
 
-impl RespoState for PromptPluginState {}
+impl RespoState for PromptPluginState {
+  fn backup(&self) -> Option<serde_json::Value> {
+    serde_json::to_value(self).ok()
+  }
+  fn restore_from(&mut self, s: &serde_json::Value) -> Result<(), String> {
+    match serde_json::from_value(s.to_owned()) {
+      Ok(v) => {
+        *self = v;
+        Ok(())
+      }
+      Err(e) => Err(format!("failed to deserialize: {:?}", e)),
+    }
+  }
+}
 
 /// a dialog for prompt, request for some input, and submit
 #[derive(Debug, Clone)]

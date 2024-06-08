@@ -1,16 +1,17 @@
 use std::{hash::Hash, rc::Rc};
 
 use respo::{util, RespoAction, RespoState, RespoStateBranch, RespoStore, StatesTree};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Store {
   pub counted: i32,
   pub tasks: Vec<Task>,
   pub states: StatesTree,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Task {
   pub id: String,
   pub done: bool,

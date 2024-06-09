@@ -11,11 +11,6 @@ use respo::{
 
 use super::store::*;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
-struct A {
-  a: bool,
-}
-
 #[derive(Debug, Clone, Default, Hash, PartialEq, Eq, Serialize, Deserialize, RespoState)]
 struct TaskState {
   draft: String,
@@ -43,10 +38,10 @@ pub fn comp_task(
   };
 
   let on_input = {
-    let c = cursor.to_owned();
+    let cursor = cursor.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       if let RespoEvent::Input { value, .. } = e {
-        dispatch.run_state(&c, TaskState { draft: value })?;
+        dispatch.run_state(&cursor, TaskState { draft: value })?;
       }
       Ok(())
     }
@@ -105,13 +100,13 @@ pub fn comp_task(
       // TODO
       Ok(())
     })
-    .share_with_ref(),
+    .rc(),
   )
 }
 
 static_styles!(
   style_task_container,
-  ("&", RespoStyle::default().margin(4.).background_color(CssColor::Hsl(200, 90, 96)),)
+  ("&", RespoStyle::default().margin(4.).background_color(CssColor::Hsl(200, 90, 96)))
 );
 
 static_styles!(

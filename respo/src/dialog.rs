@@ -260,7 +260,7 @@ where
         }),
     )
     .effect(&[show], effect_keydown)
-    .share_with_ref(),
+    .rc(),
   )
 }
 

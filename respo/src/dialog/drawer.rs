@@ -139,7 +139,7 @@ where
     )
     // .effect(&[show], effect_focus)
     .effect(&[show], effect_drawer_fade)
-    .share_with_ref(),
+    .rc(),
   )
 }
 

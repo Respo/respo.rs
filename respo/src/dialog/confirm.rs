@@ -104,7 +104,7 @@ where
     )
     .effect(&[show], effect_focus)
     .effect(&[show], effect_modal_fade)
-    .share_with_ref(),
+    .rc(),
   )
 }
 

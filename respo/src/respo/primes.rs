@@ -455,8 +455,8 @@ where
   {
     self.attribute("value", content.into())
   }
-  /// wrap with a `Rc<RefCell<T>>` to enable memory reuse and skipping in diff
-  pub fn share_with_ref(&self) -> Self {
+  /// wrap with a `Rc<T>` to enable memory reuse and skipping in diff
+  pub fn rc(&self) -> Self {
     Self::Referenced(Rc::new(self.to_owned()))
   }
 }

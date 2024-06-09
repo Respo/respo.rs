@@ -1,12 +1,18 @@
+pub(crate) mod renderer;
+
 use std::{
   cell::{Ref, RefCell, RefMut},
   fmt::Debug,
   rc::Rc,
 };
 
+pub mod util;
+
 use web_sys::Node;
 
-use crate::{render_node, DispatchFn, RespoAction, RespoNode, RespoStore};
+use renderer::render_node;
+
+use crate::node::{DispatchFn, RespoAction, RespoNode, RespoStore};
 
 /// A template for a Respo app
 pub trait RespoApp {

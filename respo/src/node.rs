@@ -1,6 +1,12 @@
-mod dom_change;
+//! RespoNode abstraction
+
+pub mod alias;
+pub mod css;
+pub mod diff;
+pub(crate) mod dom_change;
 mod effect;
 mod listener;
+pub mod patch;
 
 use std::boxed::Box;
 use std::fmt::Display;
@@ -8,16 +14,15 @@ use std::rc::Rc;
 use std::{collections::HashMap, fmt::Debug};
 
 use cirru_parser::Cirru;
-pub use effect::DynEq;
 pub use effect::RespoEffectArg;
 pub use listener::{RespoEvent, RespoEventMark, RespoListenerFn};
 use web_sys::Node;
 
-use crate::{RespoStateBranch, StatesTree};
+use crate::states_tree::{DynEq, RespoStateBranch, StatesTree};
 
-use super::css::RespoStyle;
+use css::RespoStyle;
 
-pub use dom_change::{changes_to_cirru, ChildDomOp, DomChange, RespoCoord};
+pub use dom_change::{ChildDomOp, DomChange, RespoCoord};
 
 pub use effect::{RespoEffect, RespoEffectType};
 
@@ -463,7 +468,7 @@ where
 
 pub(crate) type StrDict = HashMap<Rc<str>, String>;
 
-fn str_dict_to_cirrus_dict(dict: &StrDict) -> Cirru {
+pub fn str_dict_to_cirrus_dict(dict: &StrDict) -> Cirru {
   let mut xs = vec![];
   for (k, v) in dict {
     xs.push(vec![Cirru::from(k.as_ref()), Cirru::from(v)].into());

@@ -10,11 +10,12 @@ use web_sys::{
 use wasm_bindgen::JsCast;
 use web_sys::console::warn_1;
 
-use crate::{RespoComponent, RespoEffectType};
+use crate::node::{RespoComponent, RespoEffectType, RespoEvent, RespoEventMark, RespoEventMarkFn, RespoNode};
 
-use super::{
-  build_dom_tree, load_coord_target_tree, ChildDomOp, DomChange, RespoCoord, RespoEvent, RespoEventMark, RespoEventMarkFn, RespoNode,
-};
+use crate::load_coord_target_tree;
+use crate::node::dom_change::{ChildDomOp, DomChange, RespoCoord};
+
+use crate::app::renderer::build_dom_tree;
 
 pub fn patch_tree<T>(
   tree: &RespoNode<T>,

@@ -1,12 +1,8 @@
-mod alias;
-mod app_template;
-mod css;
-mod diff;
-mod patch;
-mod primes;
-mod states_tree;
-pub mod util;
-
+use crate::app::util;
+use crate::node::dom_change::RespoCoord;
+use crate::node::{
+  DispatchFn, DomChange, RespoComponent, RespoEffectType, RespoElement, RespoEventMark, RespoEventMarkFn, RespoListenerFn, RespoNode,
+};
 use std::cell::RefCell;
 use std::fmt::Debug;
 use std::rc::Rc;
@@ -16,14 +12,8 @@ use wasm_bindgen::{JsCast, JsValue};
 use web_sys::console::{error_1, warn_1};
 use web_sys::{HtmlElement, HtmlLabelElement, Node};
 
-pub use alias::*;
-pub use app_template::RespoApp;
-pub use css::*;
-pub use primes::*;
-pub use states_tree::*;
-
-use self::diff::{collect_effects_outside_in_as, diff_tree};
-use self::patch::{attach_event, patch_tree};
+use crate::node::diff::{collect_effects_outside_in_as, diff_tree};
+use crate::node::patch::{attach_event, patch_tree};
 
 lazy_static::lazy_static! {
   /// event queue that code in the loop will detect
@@ -160,7 +150,7 @@ where
   Ok(())
 }
 
-fn load_coord_target_tree<T>(tree: &RespoNode<T>, coord: &[RespoCoord]) -> Result<RespoNode<T>, String>
+pub fn load_coord_target_tree<T>(tree: &RespoNode<T>, coord: &[RespoCoord]) -> Result<RespoNode<T>, String>
 where
   T: Debug + Clone,
 {

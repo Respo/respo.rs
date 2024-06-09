@@ -2,9 +2,9 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::rc::Rc;
 
-use crate::respo::primes::*;
+use crate::node::*;
 
-use crate::respo::util::fst;
+use crate::app::util::fst;
 
 pub fn diff_tree<T>(
   new_tree: &RespoNode<T>,

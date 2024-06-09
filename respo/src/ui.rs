@@ -11,7 +11,12 @@
 //! format!("{} {} {}", ui_input(), your_shared(), your_own())
 //! ```
 
-use crate::respo::{CssBoxSizing, CssColor, CssDisplay, CssLineHeight, CssSize, CssTextAlign, CssVerticalAlign, RespoStyle, *};
+pub mod dialog;
+
+use crate::{
+  node::css::{CssBoxSizing, CssColor, CssDisplay, CssLineHeight, CssSize, CssTextAlign, CssVerticalAlign, RespoStyle, *},
+  static_styles,
+};
 
 const DEFAULT_FONTS: &str = "Hind,Verdana,'Hiragino Sans GB','WenQuanYi Micro Hei','Microsoft Yahei',sans-serif";
 const CODE_FONTS: &str = "Source Code Pro, Menlo, Ubuntu Mono, Consolas, monospace";

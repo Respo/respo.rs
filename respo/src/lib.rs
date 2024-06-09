@@ -19,9 +19,16 @@
 //! - ❌ updating component states in lifecycle. Respo enforces "unidirectional data flow"
 //! - ❌ React-like hooks. Respo uses plain functions without tricky internal states
 //! - ❌ Hot reloading. Not working in WebAssembly so far
-mod respo;
+mod app;
+pub mod states_tree;
 
-pub mod dialog;
+pub(crate) mod node;
 pub mod ui;
 
-pub use crate::respo::*;
+pub use node::alias::*;
+pub use node::css::*;
+pub use node::*;
+
+pub use app::renderer::*;
+
+pub use app::{util, RespoApp};

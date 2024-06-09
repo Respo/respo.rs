@@ -10,15 +10,14 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
-use crate::dialog::{css_backdrop, css_button, css_modal_card};
+use crate::ui::dialog::{css_backdrop, css_button, css_modal_card, effect_modal_fade, BUTTON_NAME};
 use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_input, ui_row_parted, ui_textarea};
 
-use crate::{
-  button, div, input, respo, space, span, static_styles, textarea, CssColor, CssLineHeight, CssPosition, CssSize, DispatchFn,
-  RespoAction, RespoEvent, RespoNode, RespoState, RespoStyle, StatesTree,
-};
+use crate::node::css::{CssColor, CssLineHeight, CssPosition, CssSize, RespoStyle};
+use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
+use crate::{app, button, div, input, space, span, static_styles, textarea, util};
 
-use crate::dialog::{effect_modal_fade, BUTTON_NAME};
+use crate::states_tree::{RespoState, StatesTree};
 
 use super::comp_esc_listener;
 
@@ -114,7 +113,7 @@ where
     let close = close.to_owned();
     let cursor = cursor.to_owned();
     move |text: &str, dispatch: DispatchFn<_>| -> Result<(), String> {
-      respo::util::log!("validator: {:?}", &options.validator);
+      app::util::log!("validator: {:?}", &options.validator);
       if let Some(validator) = &options.validator {
         // let validator = validator.borrow();
         let result = validator.run(text);
@@ -309,7 +308,7 @@ where
               return Err("_NEXT_TASK is not a function".to_owned());
             }
           } else {
-            respo::util::log!("next task is None");
+            app::util::log!("next task is None");
           };
           let s = PromptPluginState {
             show: false,
@@ -347,7 +346,7 @@ where
     let window = web_sys::window().unwrap();
     // dirty global variable to store a shared callback
     if let Err(e) = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), task.as_ref()) {
-      respo::util::log!("failed to store next task {:?}", e);
+      util::log!("failed to store next task {:?}", e);
     }
     task.forget();
     dispatch.run_state(&self.cursor, s)?;

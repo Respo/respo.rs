@@ -6,8 +6,10 @@ use memoize::memoize;
 use respo::{
   button, div, input, space, span, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
-  util, CssColor, CssSize, DispatchFn, RespoEvent, RespoNode, RespoState, RespoStyle, StatesTree,
+  util, CssColor, CssSize, DispatchFn, RespoEvent, RespoNode, RespoStyle,
 };
+
+use respo::states_tree::{RespoState, StatesTree};
 
 use super::store::*;
 

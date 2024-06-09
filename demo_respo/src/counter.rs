@@ -1,8 +1,10 @@
 use std::fmt::Debug;
 
-use respo::{button, div, span, ui::ui_button, util, CssColor, DispatchFn, RespoEvent, RespoNode, RespoState, RespoStyle, StatesTree};
+use respo::{button, div, span, ui::ui_button, util, CssColor, DispatchFn, RespoEvent, RespoNode, RespoStyle};
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
+
+use respo::states_tree::{RespoState, StatesTree};
 
 use super::store::ActionOp;
 

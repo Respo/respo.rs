@@ -2,9 +2,11 @@ use respo::ui::{ui_button_danger, ui_button_primary};
 use respo::RespoEvent;
 use respo::{space, ui::ui_row_parted, RespoStyle};
 
-use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoNode, StatesTree};
+use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoNode};
 
-use respo::dialog::{
+use respo::states_tree::StatesTree;
+
+use respo::ui::dialog::{
   AlertOptions, AlertPlugin, AlertPluginInterface, ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface, DrawerOptions, DrawerPlugin,
   DrawerPluginInterface, DrawerRenderer, ModalOptions, ModalPlugin, ModalPluginInterface, ModalRenderer, PromptOptions, PromptPlugin,
   PromptPluginInterface, PromptValidator,
@@ -48,7 +50,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
       Ok(())
     },
   )?
-  .share_with_ref();
+  .rc();
 
   let on_confirm = {
     let confirm_plugin = confirm_plugin.to_owned();

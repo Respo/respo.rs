@@ -4,9 +4,9 @@ use std::fmt::Debug;
 
 use cirru_parser::Cirru;
 
-use crate::{RespoEffectType, RespoIndexKey, RespoNode, StrDict};
+use crate::node::{RespoEffectType, RespoIndexKey, RespoNode, StrDict};
 
-use super::str_dict_to_cirrus_dict;
+use crate::node::str_dict_to_cirrus_dict;
 
 /// DOM operations used for diff/patching
 /// performance is not optimial since looking up the DOM via dom_path has repetitive operations,
@@ -163,6 +163,7 @@ where
   }
 }
 
+#[allow(dead_code)]
 pub fn changes_to_cirru<T>(change: &[DomChange<T>]) -> Cirru
 where
   T: Debug + Clone,

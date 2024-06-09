@@ -13,8 +13,9 @@ use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{Element, HtmlElement, KeyboardEvent, KeyboardEventInit, Node};
 
-use crate::{input, respo, static_styles, CssDisplay, DispatchFn, RespoEffectType, RespoEvent, RespoNode};
-use crate::{CssColor, CssOverflow, CssPosition, CssSize, RespoEffectArg, RespoStyle};
+use crate::node::css::{CssColor, CssDisplay, CssOverflow, CssPosition, CssSize, RespoStyle};
+use crate::node::{DispatchFn, RespoEffectArg, RespoEffectType, RespoEvent, RespoNode};
+use crate::{app, input, static_styles, util};
 
 pub(crate) const BUTTON_NAME: &str = "dialog-button";
 
@@ -39,15 +40,15 @@ fn focus_element(el: &Node, name: &str) -> Result<(), String> {
       match element.dyn_ref::<HtmlElement>() {
         Some(el) => el.focus().unwrap(),
         None => {
-          respo::util::log!("focus_element: {} is not an HTML element", name);
+          app::util::log!("focus_element: {} is not an HTML element", name);
         }
       };
     }
     Ok(None) => {
-      respo::util::log!("focus_element: {} not found", name);
+      app::util::log!("focus_element: {} not found", name);
     }
     Err(e) => {
-      respo::util::log!("focus_element: {} not found: {:?}", name, e);
+      app::util::log!("focus_element: {} not found: {:?}", name, e);
     }
   }
   Ok(())
@@ -91,7 +92,7 @@ pub(crate) fn effect_modal_fade(args: Vec<RespoEffectArg>, effect_type: RespoEff
             delay_call.forget();
           }
           None => {
-            respo::util::log!("content not found");
+            util::log!("content not found");
           }
         }
       }
@@ -161,7 +162,7 @@ pub(crate) fn effect_drawer_fade(args: Vec<RespoEffectArg>, effect_type: RespoEf
             delay_call.forget();
           }
           None => {
-            respo::util::log!("content not found");
+            app::util::log!("content not found");
           }
         }
       }

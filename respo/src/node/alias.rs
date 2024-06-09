@@ -3,9 +3,10 @@
 
 use std::fmt::Debug;
 
-use crate::{CssSize, RespoStyle};
-
-use super::primes::RespoNode;
+use super::{
+  css::{CssSize, RespoStyle},
+  RespoNode,
+};
 
 /// a macro for creating a function with a named node
 /// ```ignore
@@ -20,7 +21,7 @@ macro_rules! declare_tag {
     where
       T: Debug + Clone,
     {
-      $crate::respo::RespoNode::new_tag(stringify!($name))
+      $crate::node::RespoNode::new_tag(stringify!($name))
     }
   };
 }
@@ -58,24 +59,24 @@ where
       RespoStyle::default()
         .width(CssSize::Px(wv as f32))
         .height(CssSize::Px(hv as f32))
-        .display(crate::CssDisplay::InlineBlock),
+        .display(crate::node::css::CssDisplay::InlineBlock),
     ),
     (Some(wv), None) => span().style(
       RespoStyle::default()
         .width(CssSize::Px(wv as f32))
-        .display(crate::CssDisplay::InlineBlock),
+        .display(crate::node::css::CssDisplay::InlineBlock),
     ),
     (None, Some(hv)) => div().style(
       RespoStyle::default()
         .height(CssSize::Px(hv as f32))
         .width(CssSize::Px(1.0))
-        .display(crate::CssDisplay::Block),
+        .display(crate::node::css::CssDisplay::Block),
     ),
     (None, None) => span().style(
       RespoStyle::default()
         .width(CssSize::Px(8.))
         .height(CssSize::Px(8.))
-        .display(crate::CssDisplay::InlineBlock),
+        .display(crate::node::css::CssDisplay::InlineBlock),
     ),
   }
 }

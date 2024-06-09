@@ -9,8 +9,10 @@ use crate::store::ActionOp;
 use respo::{
   button, div, input, space, span,
   ui::{ui_button, ui_input},
-  util, DispatchFn, RespoEvent, RespoNode, RespoState, StatesTree,
+  util, DispatchFn, RespoEvent, RespoNode,
 };
+
+use respo::states_tree::{RespoState, StatesTree};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, RespoState)]
 struct PanelState {

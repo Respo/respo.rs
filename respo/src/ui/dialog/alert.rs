@@ -6,15 +6,15 @@ use std::rc::Rc;
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 
-use crate::dialog::{css_backdrop, css_button, css_modal_card};
+use crate::ui::dialog::{css_backdrop, css_button, css_modal_card};
+use crate::ui::dialog::{effect_focus, effect_modal_fade, BUTTON_NAME};
 use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_row_parted};
 
-use crate::{
-  button, div, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoState, RespoStyle,
-  StatesTree,
-};
+use crate::node::css::{CssLineHeight, CssPosition, RespoStyle};
+use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
+use crate::{button, div, space, span};
 
-use crate::dialog::{effect_focus, effect_modal_fade, BUTTON_NAME};
+use crate::states_tree::{RespoState, StatesTree};
 
 use super::comp_esc_listener;
 

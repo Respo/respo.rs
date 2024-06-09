@@ -6,14 +6,16 @@ use std::rc::Rc;
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 
-use crate::dialog::{css_backdrop, css_drawer_card};
+use crate::ui::dialog::{css_backdrop, css_drawer_card};
 use crate::ui::{column, ui_center, ui_fullscreen, ui_global};
 
-use crate::{
-  div, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoState, RespoStyle, StatesTree,
-};
+use crate::node::css::{CssLineHeight, CssPosition, RespoStyle};
+use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
+use crate::{div, space, span};
 
-use crate::dialog::effect_drawer_fade;
+use crate::states_tree::{RespoState, StatesTree};
+
+use crate::ui::dialog::effect_drawer_fade;
 
 use super::comp_esc_listener;
 

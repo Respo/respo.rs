@@ -1,9 +1,11 @@
 use std::{hash::Hash, rc::Rc};
 
-use respo::{util, RespoAction, RespoState, RespoStateBranch, RespoStore, StatesTree};
+use respo::{util, RespoAction, RespoStore};
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+
+use respo::states_tree::{RespoState, RespoStateBranch, StatesTree};
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Store {

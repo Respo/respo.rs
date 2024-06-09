@@ -1,3 +1,4 @@
+mod dyn_eq;
 mod state;
 
 use serde::{Deserialize, Serialize};
@@ -7,7 +8,8 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::rc::Rc;
 
-use crate::{log, DynEq};
+use crate::log;
+pub use dyn_eq::DynEq;
 
 pub use state::RespoState;
 

@@ -52,12 +52,18 @@ impl RespoApp for App {
     let states = &store.states;
     // util::log!("global store: {:?}", store);
 
-    Ok(div().class(ui_global()).style(RespoStyle::default().padding(12.0)).children([
-      comp_counter(&states.pick("counter"), store.counted)?,
-      comp_panel(&states.pick("panel"))?,
-      comp_todolist(&states.pick("todolist"), &store.tasks)?,
-      comp_plugins_demo(&states.pick("plugins-demo"))?,
-    ]))
+    Ok(
+      div()
+        .class(ui_global())
+        .style(RespoStyle::default().padding(12.0))
+        .children([
+          comp_counter(&states.pick("counter"), store.counted)?,
+          comp_panel(&states.pick("panel"))?,
+          comp_todolist(&states.pick("todolist"), &store.tasks)?,
+          comp_plugins_demo(&states.pick("plugins-demo"))?,
+        ])
+        .to_node(),
+    )
   }
 }
 

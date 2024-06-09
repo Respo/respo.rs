@@ -52,7 +52,7 @@ where
         } else {
           load_coord_target_tree(tree, coord)?
         };
-        if let RespoNode::Component(RespoComponent(_, effects, _)) = target_tree {
+        if let RespoNode::Component(RespoComponent { effects, .. }) = target_tree {
           for (idx, effect) in effects.iter().enumerate() {
             if !skip_indexes.contains(&(idx as u32)) {
               effect.run(effect_type.to_owned(), &target)?;
@@ -236,7 +236,7 @@ where
                 load_coord_target_tree(&base_tree, nested_coord)?
               };
               let nested_el = find_coord_dom_target(&target, nesteed_dom_path)?;
-              if let RespoNode::Component(RespoComponent(_, effects, _)) = target_tree {
+              if let RespoNode::Component(RespoComponent { effects, .. }) = target_tree {
                 for (idx, effect) in effects.iter().enumerate() {
                   if !skip_indexes.contains(&(idx as u32)) {
                     effect.run(effect_type.to_owned(), &nested_el)?;
@@ -265,7 +265,7 @@ where
         } else {
           load_coord_target_tree(tree, coord)?
         };
-        if let RespoNode::Component(RespoComponent(_, effects, _)) = target_tree {
+        if let RespoNode::Component(RespoComponent { effects, .. }) = target_tree {
           for (idx, effect) in effects.iter().enumerate() {
             if !skip_indexes.contains(&(idx as u32)) {
               effect.run(effect_type.to_owned(), &target)?;

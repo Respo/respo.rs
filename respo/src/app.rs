@@ -1,3 +1,5 @@
+pub(crate) mod diff;
+pub(crate) mod patch;
 pub(crate) mod renderer;
 
 use std::{

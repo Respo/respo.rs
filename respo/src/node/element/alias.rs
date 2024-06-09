@@ -3,10 +3,8 @@
 
 use std::fmt::Debug;
 
-use super::{
-  css::{CssSize, RespoStyle},
-  RespoNode,
-};
+use super::RespoElement;
+use crate::css::{CssSize, RespoStyle};
 
 /// a macro for creating a function with a named node
 /// ```ignore
@@ -17,11 +15,11 @@ macro_rules! declare_tag {
   ( $name:ident, $doc: expr) => {
     #[doc=$doc]
     #[allow(dead_code)]
-    pub fn $name<T>() -> RespoNode<T>
+    pub fn $name<T>() -> RespoElement<T>
     where
       T: Debug + Clone,
     {
-      $crate::node::RespoNode::new_tag(stringify!($name))
+      $crate::node::RespoElement::named(stringify!($name))
     }
   };
 }
@@ -50,7 +48,7 @@ declare_tag!(li, "`<li/>`");
 declare_tag!(label, "`<label/>`");
 
 /// special function to return `<div/>` with width/height that can be used as a space
-pub fn space<T>(w: Option<i32>, h: Option<i32>) -> RespoNode<T>
+pub fn space<T>(w: Option<i32>, h: Option<i32>) -> RespoElement<T>
 where
   T: Clone + Debug,
 {

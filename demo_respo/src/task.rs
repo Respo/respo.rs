@@ -6,7 +6,7 @@ use memoize::memoize;
 use respo::{
   button, div, input, space, span, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
-  util, CssColor, CssSize, DispatchFn, RespoEvent, RespoNode, RespoStyle,
+  util, CssColor, CssSize, DispatchFn, RespoComponent, RespoEvent, RespoNode, RespoStyle,
 };
 
 use respo::states_tree::{RespoState, StatesTree};
@@ -70,31 +70,37 @@ pub fn comp_task(
   };
 
   Ok(
-    RespoNode::new_component(
+    RespoComponent::named(
       "task",
-      div().class_list(&[ui_row_middle(), style_task_container()]).children([
-        div()
-          .class(style_done_button())
-          .modify_style(|s| {
-            if task.done {
-              *s = s.to_owned().background_color(CssColor::Blue);
-            }
-          })
-          .on_click(on_toggle),
-        div().inner_text(task.content.to_owned()),
-        span()
-          .class_list(&[ui_center(), style_remove_button()])
-          .inner_text("✕")
-          .on_click(on_remove),
-        div().style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0)),
-        input()
-          .class(ui_input())
-          .attribute("value", state.draft.to_owned())
-          .attribute("placeholder", "something to update...")
-          .on_input(on_input),
-        space(Some(8), None),
-        button().class(ui_button()).inner_text("Update").on_click(on_update),
-      ]),
+      div()
+        .class_list(&[ui_row_middle(), style_task_container()])
+        .children([
+          div()
+            .class(style_done_button())
+            .modify_style(|s| {
+              if task.done {
+                *s = s.to_owned().background_color(CssColor::Blue);
+              }
+            })
+            .on_click(on_toggle)
+            .to_node(),
+          div().inner_text(task.content.to_owned()).to_node(),
+          span()
+            .class_list(&[ui_center(), style_remove_button()])
+            .inner_text("✕")
+            .on_click(on_remove)
+            .to_node(),
+          div().style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0)).to_node(),
+          input()
+            .class(ui_input())
+            .attribute("value", state.draft.to_owned())
+            .attribute("placeholder", "something to update...")
+            .on_input(on_input)
+            .to_node(),
+          space(Some(8), None).to_node(),
+          button().class(ui_button()).inner_text("Update").on_click(on_update).to_node(),
+        ])
+        .to_node(),
     )
     .effect(&[task], move |args, effect_type, _el| -> Result<(), String> {
       let t: Task = args[0].cast_into()?;
@@ -102,6 +108,7 @@ pub fn comp_task(
       // TODO
       Ok(())
     })
+    .to_node()
     .rc(),
   )
 }

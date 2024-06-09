@@ -12,8 +12,8 @@ use wasm_bindgen::{JsCast, JsValue};
 use web_sys::console::{error_1, warn_1};
 use web_sys::{HtmlElement, HtmlLabelElement, Node};
 
-use crate::node::diff::{collect_effects_outside_in_as, diff_tree};
-use crate::node::patch::{attach_event, patch_tree};
+use crate::app::diff::{collect_effects_outside_in_as, diff_tree};
+use crate::app::patch::{attach_event, patch_tree};
 
 lazy_static::lazy_static! {
   /// event queue that code in the loop will detect
@@ -163,7 +163,7 @@ where
   } else {
     let branch = coord.first().ok_or("to get first branch of coord")?;
     match (tree, branch) {
-      (RespoNode::Component(RespoComponent(name, _, tree)), RespoCoord::Comp(target_name)) => {
+      (RespoNode::Component(RespoComponent { name, tree, .. }), RespoCoord::Comp(target_name)) => {
         if name == target_name {
           load_coord_target_tree(tree, &coord[1..])
         } else {
@@ -197,7 +197,7 @@ where
   let target_node = load_coord_target_tree(tree, coord)?;
 
   match target_node {
-    RespoNode::Component(RespoComponent(name, ..)) => Err(format!("expected element, found target being a component: {}", &name)),
+    RespoNode::Component(RespoComponent { name, .. }) => Err(format!("expected element, found target being a component: {}", &name)),
     RespoNode::Element(RespoElement { name: tag_name, event, .. }) => match event.get(event_name) {
       Some(v) => Ok((*v).to_owned()),
       None => Err(format!("no handler for event:{} on {} {:?}", &event_name, tag_name, event,)),
@@ -215,7 +215,7 @@ where
   let document = window.document().expect("should have a document on window");
 
   match tree {
-    RespoNode::Component(RespoComponent(name, _, child)) => {
+    RespoNode::Component(RespoComponent { name, tree: child, .. }) => {
       let mut next_coord: Vec<RespoCoord> = coord.to_owned();
       next_coord.push(RespoCoord::Comp(name.to_owned()));
       build_dom_tree(child, &next_coord, handle_event)

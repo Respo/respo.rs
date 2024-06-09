@@ -15,7 +15,7 @@ use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_input
 
 use crate::node::css::{CssColor, CssLineHeight, CssPosition, CssSize, RespoStyle};
 use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
-use crate::{app, button, div, input, space, span, static_styles, textarea, util};
+use crate::{app, button, div, input, space, span, static_styles, textarea, util, RespoComponent};
 
 use crate::states_tree::{RespoState, StatesTree};
 
@@ -150,7 +150,7 @@ where
   };
 
   Ok(
-    RespoNode::new_component(
+    RespoComponent::named(
       "prompt-modal",
       div()
         .style(RespoStyle::default().position(CssPosition::Absolute))
@@ -188,40 +188,55 @@ where
                   }
                   Ok(())
                 })
-                .children([div().children([
-                  span().inner_text(options.text.unwrap_or_else(|| "Input your text:".to_owned())),
-                  space(None, Some(8)),
-                  div().children([input_el
-                    .class_list(&[ui_input()])
-                    .style(RespoStyle::default().width(CssSize::Percent(100.0)))
-                    .attribute("placeholder", "Content...")
-                    .attribute("autoFocus", "autofocus")
-                    .value(state.draft.to_owned())
-                    .on_input(on_text_input)]),
-                  match &state.error {
-                    Some(message) => div().class_list(&[css_error()]).inner_text(message),
-                    None => span(),
-                  },
-                  space(None, Some(8)),
-                  div().class(ui_row_parted()).children([
-                    span(),
-                    button()
-                      .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
-                      .inner_text(options.button_text.unwrap_or_else(|| "Submit".to_owned()))
-                      .on_click(move |_e, dispatch| -> Result<(), String> {
-                        check_submit(&state.draft, dispatch)?;
-                        Ok(())
-                      }),
-                  ]),
-                ])]),
+                .children([div()
+                  .children([
+                    span()
+                      .inner_text(options.text.unwrap_or_else(|| "Input your text:".to_owned()))
+                      .to_node(),
+                    space(None, Some(8)).to_node(),
+                    div()
+                      .children([input_el
+                        .class_list(&[ui_input()])
+                        .style(RespoStyle::default().width(CssSize::Percent(100.0)))
+                        .attribute("placeholder", "Content...")
+                        .attribute("autoFocus", "autofocus")
+                        .value(state.draft.to_owned())
+                        .on_input(on_text_input)
+                        .to_node()])
+                      .to_node(),
+                    match &state.error {
+                      Some(message) => div().class_list(&[css_error()]).inner_text(message).to_node(),
+                      None => span().to_node(),
+                    },
+                    space(None, Some(8)).to_node(),
+                    div()
+                      .class(ui_row_parted())
+                      .children([
+                        span().to_node(),
+                        button()
+                          .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
+                          .inner_text(options.button_text.unwrap_or_else(|| "Submit".to_owned()))
+                          .on_click(move |_e, dispatch| -> Result<(), String> {
+                            check_submit(&state.draft, dispatch)?;
+                            Ok(())
+                          })
+                          .to_node(),
+                      ])
+                      .to_node(),
+                  ])
+                  .to_node()])
+                .to_node(),
               comp_esc_listener(show, close)?,
             ])
+            .to_node()
         } else {
-          span().attribute("data-name", "placeholder")
-        }]),
+          span().attribute("data-name", "placeholder").to_node()
+        }])
+        .to_node(),
     )
     // .effect(&[show], effect_focus)
     .effect(&[show], effect_modal_fade)
+    .to_node()
     .rc(),
   )
 }

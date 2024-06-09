@@ -15,7 +15,7 @@ use web_sys::{Element, HtmlElement, KeyboardEvent, KeyboardEventInit, Node};
 
 use crate::node::css::{CssColor, CssDisplay, CssOverflow, CssPosition, CssSize, RespoStyle};
 use crate::node::{DispatchFn, RespoEffectArg, RespoEffectType, RespoEvent, RespoNode};
-use crate::{app, input, static_styles, util};
+use crate::{app, input, static_styles, util, RespoComponent};
 
 pub(crate) const BUTTON_NAME: &str = "dialog-button";
 
@@ -247,7 +247,7 @@ where
   T: Clone + Debug,
 {
   Ok(
-    RespoNode::new_component(
+    RespoComponent::named(
       "esc-listener",
       input()
         .style(RespoStyle::default().display(CssDisplay::None))
@@ -258,9 +258,11 @@ where
             }
           }
           Ok(())
-        }),
+        })
+        .to_node(),
     )
     .effect(&[show], effect_keydown)
+    .to_node()
     .rc(),
   )
 }

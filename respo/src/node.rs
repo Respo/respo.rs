@@ -1,12 +1,10 @@
 //! RespoNode abstraction
 
-pub mod alias;
+pub(crate) mod component;
 pub mod css;
-pub mod diff;
 pub(crate) mod dom_change;
-mod effect;
+pub(crate) mod element;
 mod listener;
-pub mod patch;
 
 use std::boxed::Box;
 use std::fmt::Display;
@@ -14,9 +12,11 @@ use std::rc::Rc;
 use std::{collections::HashMap, fmt::Debug};
 
 use cirru_parser::Cirru;
-pub use effect::RespoEffectArg;
+pub use component::effect::RespoEffectArg;
 pub use listener::{RespoEvent, RespoEventMark, RespoListenerFn};
-use web_sys::Node;
+
+pub use component::RespoComponent;
+pub use element::RespoElement;
 
 use crate::states_tree::{DynEq, RespoStateBranch, StatesTree};
 
@@ -24,31 +24,7 @@ use css::RespoStyle;
 
 pub use dom_change::{ChildDomOp, DomChange, RespoCoord};
 
-pub use effect::{RespoEffect, RespoEffectType};
-
-/// internal abstraction for an element
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RespoElement<T>
-where
-  T: Debug + Clone,
-{
-  /// tagName
-  pub name: Rc<str>,
-  pub attrs: HashMap<Rc<str>, String>,
-  pub event: HashMap<Rc<str>, RespoListenerFn<T>>,
-  /// inlines styles, partially typed.
-  /// there's also a macro called `static_styles` for inserting CSS rules
-  pub style: RespoStyle,
-  /// each child as a key like a string, by default generated from index,
-  /// they are used in diffing, so it's better to be distinct, although not required to be.
-  pub children: Vec<(RespoIndexKey, RespoNode<T>)>,
-}
-
-/// internal abstraction for a component
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RespoComponent<T>(pub Rc<str>, pub Vec<RespoEffect>, pub Box<RespoNode<T>>)
-where
-  T: Debug + Clone;
+pub use component::effect::{RespoEffect, RespoEffectType};
 
 /// an `Element` or a `Component`
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -68,7 +44,7 @@ where
 {
   fn from(value: RespoNode<T>) -> Self {
     match value {
-      RespoNode::Component(RespoComponent(name, _eff, tree)) => {
+      RespoNode::Component(RespoComponent { name, tree, .. }) => {
         Cirru::List(vec![Cirru::Leaf("::Component".into()), Cirru::from(name.as_ref()), (*tree).into()])
       }
       RespoNode::Element(RespoElement { name, children, .. }) => {
@@ -154,311 +130,11 @@ where
   }
   /// create a new component
   pub fn new_component(name: &str, tree: RespoNode<T>) -> Self {
-    Self::Component(RespoComponent(name.into(), Vec::new(), Box::new(tree)))
-  }
-  /// attach styles
-  /// ```ignore
-  /// element.style(RespoStyle::default().margin(10))
-  /// ```
-  pub fn style(self, more: RespoStyle) -> Self {
-    match self {
-      Self::Component(RespoComponent(name, effects, node)) => {
-        Self::Component(RespoComponent(name, effects, Box::new(node.style(more))))
-      }
-      Self::Element(el) => {
-        let mut style = el.style.to_owned();
-        for (k, v) in more.0.into_iter() {
-          style.0.push((k.to_owned(), v.to_owned()));
-        }
-        Self::Element(RespoElement { style, ..el })
-      }
-      Self::Referenced(_) => {
-        unreachable!("should not be called on a referenced node");
-      }
-    }
-  }
-  /// imparative way of updating style
-  /// ```ignore
-  /// element.modify_style(|s| {
-  ///   if data > 1 {
-  ///     s.color(CssColor::Red);
-  ///   }
-  /// });
-  /// ```
-  pub fn modify_style<U>(self, builder: U) -> Self
-  where
-    U: Fn(&mut RespoStyle),
-  {
-    match self {
-      RespoNode::Component(RespoComponent(name, effects, node)) => {
-        Self::Component(RespoComponent(name, effects, Box::new(node.modify_style(builder))))
-      }
-      RespoNode::Element(el) => {
-        let mut style = el.style.to_owned();
-        builder(&mut style);
-        Self::Element(RespoElement { style, ..el })
-      }
-      RespoNode::Referenced(_) => {
-        unreachable!("should not be called on a referenced node");
-      }
-    }
-  }
-  /// set an attribute on element
-  pub fn attribute<U, V>(self, property: U, value: V) -> Self
-  where
-    U: Into<Rc<str>> + ToOwned,
-    V: Display,
-  {
-    match self {
-      Self::Component(RespoComponent(name, effects, node)) => Self::Component(RespoComponent(
-        name.to_owned(),
-        effects.to_owned(),
-        Box::new(node.attribute(property, value)),
-      )),
-      Self::Element(el) => {
-        let mut a = el.attrs.to_owned();
-        a.insert(property.into(), value.to_string());
-        Self::Element(RespoElement { attrs: a, ..el.to_owned() })
-      }
-      Self::Referenced(_) => {
-        unreachable!("should not be called on a referenced node");
-      }
-    }
-  }
-  /// set an attribute on element, but using `None` indicates noting
-  pub fn maybe_attribute<U, V>(self, property: U, value: Option<V>) -> Self
-  where
-    U: Into<Rc<str>> + ToOwned,
-    V: Display,
-  {
-    if let Some(v) = value {
-      match self {
-        RespoNode::Component(RespoComponent(name, effect, node)) => {
-          Self::Component(RespoComponent(name, effect, Box::new(node.attribute(property, v))))
-        }
-        RespoNode::Element(el) => {
-          let mut a = el.attrs.to_owned();
-          a.insert(property.into(), v.to_string());
-          Self::Element(RespoElement { attrs: a, ..el })
-        }
-        RespoNode::Referenced(_) => {
-          unreachable!("should not be called on a referenced node");
-        }
-      }
-    } else {
-      self
-    }
-  }
-  pub fn on_click<U>(self, handler: U) -> Self
-  where
-    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
-  {
-    self.on_named_event("click", handler)
-  }
-  pub fn on_input<U>(self, handler: U) -> Self
-  where
-    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
-  {
-    self.on_named_event("input", handler)
-  }
-  /// handle keydown event
-  pub fn on_keydown<U>(self, handler: U) -> Self
-  where
-    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
-  {
-    self.on_named_event("keydown", handler)
-  }
-  /// handle focus event
-  pub fn on_focus<U>(self, handler: U) -> Self
-  where
-    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
-  {
-    self.on_named_event("focus", handler)
-  }
-  /// handle change event
-  pub fn on_change<U>(self, handler: U) -> Self
-  where
-    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
-  {
-    self.on_named_event("change", handler)
-  }
-  /// attach a listener by event name(only a small set of events are supported)
-  pub fn on_named_event<U>(self, name: &str, handler: U) -> Self
-  where
-    U: Fn(RespoEvent, DispatchFn<T>) -> Result<(), String> + 'static,
-  {
-    match self {
-      Self::Component(RespoComponent(c_name, effect, node)) => {
-        Self::Component(RespoComponent(c_name, effect, Box::new(node.on_named_event(name, handler))))
-      }
-      Self::Element(el) => {
-        let mut e = el.event.to_owned();
-        e.insert(name.into(), RespoListenerFn::new(handler));
-        Self::Element(RespoElement { event: e, ..el })
-      }
-      Self::Referenced(_) => {
-        unreachable!("should attach event on a referenced node");
-      }
-    }
-  }
-  /// add children elements,
-  /// index key are generated from index number
-  pub fn children<U>(self, more: U) -> Self
-  where
-    U: IntoIterator<Item = RespoNode<T>>,
-  {
-    match self {
-      RespoNode::Component(RespoComponent(name, effects, node)) => {
-        // node.children(more)
-        let n = node.children(more);
-        Self::Component(RespoComponent(name, effects, Box::new(n)))
-      }
-      RespoNode::Element(el) => {
-        let mut children = el.children.to_owned();
-        for (idx, v) in more.into_iter().enumerate() {
-          children.push((idx.into(), v.to_owned()));
-        }
-        Self::Element(RespoElement { children, ..el })
-      }
-      RespoNode::Referenced(_) => {
-        unreachable!("should not be called on a referenced node");
-      }
-    }
-  }
-  /// add children elements, with index keys specified
-  pub fn children_indexed<U>(self, more: U) -> Self
-  where
-    U: IntoIterator<Item = (RespoIndexKey, RespoNode<T>)>,
-  {
-    match self {
-      RespoNode::Component(RespoComponent(name, effects, node)) => {
-        let n = node.children_indexed(more);
-        Self::Component(RespoComponent(name, effects, Box::new(n)))
-      }
-      RespoNode::Element(el) => {
-        let mut children = el.children.to_owned();
-        for (idx, v) in more {
-          children.push((idx, v));
-        }
-        Self::Element(RespoElement { children, ..el })
-      }
-      RespoNode::Referenced(_) => {
-        unreachable!("should not be called on a referenced node");
-      }
-    }
-  }
-  /// add an effect on component
-  pub fn effect<U, V>(self, args: &[V], handler: U) -> Self
-  where
-    U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
-    V: Clone + DynEq + Debug + 'static,
-  {
-    match self {
-      RespoNode::Component(RespoComponent(name, effects, node)) => {
-        // effects.push(RespoEffect::new(args.to_vec(), handler));
-        let mut es = effects.to_owned();
-        es.push(RespoEffect::new(args.to_vec(), handler));
-        Self::Component(RespoComponent(name, es, node))
-      }
-      RespoNode::Element { .. } => unreachable!("effects are on components"),
-      RespoNode::Referenced(_) => {
-        unreachable!("should not be called on a referenced node");
-      }
-    }
-  }
-  /// add an empty args effect on component, which does not update
-  pub fn stable_effect<U>(self, handler: U) -> Self
-  where
-    U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
-  {
-    match self {
-      RespoNode::Component(RespoComponent(name, effects, node)) => {
-        let mut es = effects.to_owned();
-        es.push(RespoEffect::new(vec![] as Vec<()>, handler));
-        Self::Component(RespoComponent(name, es, node))
-      }
-      RespoNode::Element { .. } => unreachable!("effects are on components"),
-      RespoNode::Referenced(_) => {
-        unreachable!("should not be called on a referenced node");
-      }
-    }
-  }
-  /// add a list of effects on component
-  pub fn effects<U>(self, more: U) -> Self
-  where
-    U: IntoIterator<Item = RespoEffect>,
-  {
-    match self {
-      RespoNode::Component(RespoComponent(name, effects, node)) => {
-        let mut es = effects.to_owned();
-        es.extend(more);
-        Self::Component(RespoComponent(name, es, node))
-      }
-      RespoNode::Element { .. } => unreachable!("effects are on components"),
-      RespoNode::Referenced(_) => {
-        unreachable!("should not be called on a referenced node");
-      }
-    }
-  }
-  /// attach a class name for adding styles
-  pub fn class<U>(self, name: U) -> Self
-  where
-    U: Into<String>,
-  {
-    self.attribute("class", name.into())
-  }
-  /// attach an optional class name for adding styles
-  pub fn maybe_class<U>(self, name: Option<U>) -> Self
-  where
-    U: Into<String>,
-  {
-    match name {
-      Some(name) => self.attribute("class", name.into()),
-      None => self,
-    }
-  }
-  /// attach a class name, controlled by a boolean
-  pub fn toggle_class<U>(self, name: U, on: bool) -> Self
-  where
-    U: Into<String>,
-  {
-    if on {
-      self.attribute("class", name.into())
-    } else {
-      self
-    }
-  }
-  /// attach a list of class names for adding styles
-  pub fn class_list<U>(self, names: &[U]) -> Self
-  where
-    U: Into<String> + Clone,
-  {
-    let mut class_name: Vec<String> = vec![];
-    for name in names {
-      class_name.push((*name).to_owned().into());
-    }
-    self.attribute("class", class_name.join(" "))
-  }
-  /// writes `innerText`
-  pub fn inner_text<U>(self, content: U) -> Self
-  where
-    U: Into<String>,
-  {
-    self.attribute("innerText", content.into())
-  }
-  /// writes `innerHTML`
-  pub fn inner_html<U>(self, content: U) -> Self
-  where
-    U: Into<String>,
-  {
-    self.attribute("innerHTML", content.into())
-  }
-  /// writes `value`
-  pub fn value<U>(self, content: U) -> Self
-  where
-    U: Into<String>,
-  {
-    self.attribute("value", content.into())
+    Self::Component(RespoComponent {
+      name: name.into(),
+      effects: Vec::new(),
+      tree: Box::new(tree),
+    })
   }
   /// wrap with a `Rc<T>` to enable memory reuse and skipping in diff
   pub fn rc(&self) -> Self {

@@ -25,8 +25,8 @@ pub mod states_tree;
 pub(crate) mod node;
 pub mod ui;
 
-pub use node::alias::*;
 pub use node::css::*;
+pub use node::element::alias::*;
 pub use node::*;
 
 pub use app::renderer::*;

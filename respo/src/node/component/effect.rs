@@ -7,7 +7,7 @@ use crate::states_tree::DynEq;
 
 // use crate::{log, util::print_type_of};
 
-/// effects that attached to components
+/// in Respo, effect are link element, they are diffed and then applied. Not composable as in React.
 #[derive(Clone)]
 pub struct RespoEffect {
   /// arguments passed to this effect.

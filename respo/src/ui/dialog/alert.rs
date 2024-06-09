@@ -12,7 +12,7 @@ use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_row_p
 
 use crate::node::css::{CssLineHeight, CssPosition, RespoStyle};
 use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
-use crate::{button, div, space, span};
+use crate::{button, div, space, span, RespoComponent};
 
 use crate::states_tree::{RespoState, StatesTree};
 
@@ -41,7 +41,7 @@ where
   let close = Rc::new(on_close);
 
   Ok(
-    RespoNode::new_component(
+    RespoComponent::named(
       "alert-modal",
       div()
         .style(RespoStyle::default().position(CssPosition::Absolute))
@@ -73,32 +73,42 @@ where
                   }
                   Ok(())
                 })
-                .children([div().children([
-                  span().inner_text(options.text.unwrap_or_else(|| "Alert!".to_owned())),
-                  space(None, Some(8)),
-                  div().class(ui_row_parted()).children([
-                    span(),
-                    button()
-                      .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
-                      .inner_text(options.button_text.unwrap_or_else(|| "Read".to_owned()))
-                      .on_click({
-                        let close = close.to_owned();
-                        move |_e, dispatch| -> Result<(), String> {
-                          read(dispatch.to_owned())?;
-                          close(dispatch)?;
-                          Ok(())
-                        }
-                      }),
-                  ]),
-                ])]),
+                .children([div()
+                  .children([
+                    span().inner_text(options.text.unwrap_or_else(|| "Alert!".to_owned())).to_node(),
+                    space(None, Some(8)).to_node(),
+                    div()
+                      .class(ui_row_parted())
+                      .children([
+                        span().to_node(),
+                        button()
+                          .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
+                          .inner_text(options.button_text.unwrap_or_else(|| "Read".to_owned()))
+                          .on_click({
+                            let close = close.to_owned();
+                            move |_e, dispatch| -> Result<(), String> {
+                              read(dispatch.to_owned())?;
+                              close(dispatch)?;
+                              Ok(())
+                            }
+                          })
+                          .to_node(),
+                      ])
+                      .to_node(),
+                  ])
+                  .to_node()])
+                .to_node(),
               comp_esc_listener(show, close)?,
             ])
+            .to_node()
         } else {
-          span().attribute("data-name", "placeholder")
-        }]),
+          span().attribute("data-name", "placeholder").to_node()
+        }])
+        .to_node(),
     )
     .effect(&[show], effect_focus)
     .effect(&[show], effect_modal_fade)
+    .to_node()
     .rc(),
   )
 }

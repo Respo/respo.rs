@@ -2,7 +2,7 @@ use std::{any::Any, fmt::Debug};
 
 use super::RespoState;
 
-/// https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=c39e1eef6c8c10e973fa629103b4a0b1
+/// <https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=c39e1eef6c8c10e973fa629103b4a0b1>
 pub trait DynEq: Debug + RespoState {
   fn as_any(&self) -> &dyn Any;
   fn do_eq(&self, rhs: &dyn DynEq) -> bool;

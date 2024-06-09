@@ -18,8 +18,16 @@ where
 {
   match (new_tree, old_tree) {
     (
-      RespoNode::Component(RespoComponent(name, effects, new_child)),
-      RespoNode::Component(RespoComponent(name_old, old_effects, old_child)),
+      RespoNode::Component(RespoComponent {
+        name,
+        effects,
+        tree: new_child,
+      }),
+      RespoNode::Component(RespoComponent {
+        name: name_old,
+        effects: old_effects,
+        tree: old_child,
+      }),
     ) => {
       if name == name_old {
         let mut next_coord = coord.to_owned();
@@ -377,7 +385,7 @@ where
   T: Debug + Clone,
 {
   match tree {
-    RespoNode::Component(RespoComponent(name, effects, tree)) => {
+    RespoNode::Component(RespoComponent { name, effects, tree }) => {
       if !effects.is_empty() {
         changes.push(DomChange::Effect {
           coord: coord.to_owned(),
@@ -420,7 +428,7 @@ where
   T: Debug + Clone,
 {
   match tree {
-    RespoNode::Component(RespoComponent(name, effects, tree)) => {
+    RespoNode::Component(RespoComponent { name, effects, tree }) => {
       let mut next_coord = coord.to_owned();
       next_coord.push(RespoCoord::Comp(name.to_owned()));
       collect_effects_inside_out_as(tree, &next_coord, dom_path, effect_type, changes)?;
@@ -464,7 +472,7 @@ where
   T: Debug + Clone,
 {
   match tree {
-    RespoNode::Component(RespoComponent(name, effects, tree)) => {
+    RespoNode::Component(RespoComponent { name, effects, tree }) => {
       if !effects.is_empty() {
         operations.push(ChildDomOp::NestedEffect {
           nested_coord: coord.to_owned(),
@@ -505,7 +513,7 @@ where
   T: Debug + Clone,
 {
   match tree {
-    RespoNode::Component(RespoComponent(name, effects, tree)) => {
+    RespoNode::Component(RespoComponent { name, effects, tree }) => {
       let mut next_coord = coord.to_owned();
       next_coord.push(RespoCoord::Comp(name.to_owned()));
       nested_effects_inside_out_as(tree, &next_coord, dom_path, effect_type, operations)?;

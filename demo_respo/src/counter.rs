@@ -56,26 +56,39 @@ pub fn comp_counter(states: &StatesTree, _counted: i32) -> Result<RespoNode<Acti
   };
 
   Ok(
-    div().children([
-      div().children([
-        button()
-          .class(ui_button())
-          .inner_text("demo inc")
-          .style(RespoStyle::default().margin(4.))
-          .on_click(on_inc),
-        button()
-          .class(ui_button())
-          .inner_text("demo dec")
-          .style(RespoStyle::default().margin(4.))
-          .on_click(on_dec),
-      ]),
-      div().children([span().inner_text(format!("value is: {}", counted)).style(
-        RespoStyle::default()
-          .color(CssColor::Hsluv(270, 100, 40))
-          .font_family("Menlo".to_owned())
-          .font_size(10. + counted as f32),
-      )]),
-      div().children([span().inner_text(format!("local state: {}", counted))]),
-    ]),
+    div()
+      .children([
+        div()
+          .children([
+            button()
+              .class(ui_button())
+              .inner_text("demo inc")
+              .style(RespoStyle::default().margin(4.))
+              .on_click(on_inc)
+              .to_node(),
+            button()
+              .class(ui_button())
+              .inner_text("demo dec")
+              .style(RespoStyle::default().margin(4.))
+              .on_click(on_dec)
+              .to_node(),
+          ])
+          .to_node(),
+        div()
+          .children([span()
+            .inner_text(format!("value is: {}", counted))
+            .style(
+              RespoStyle::default()
+                .color(CssColor::Hsluv(270, 100, 40))
+                .font_family("Menlo".to_owned())
+                .font_size(10. + counted as f32),
+            )
+            .to_node()])
+          .to_node(),
+        div()
+          .children([span().inner_text(format!("local state: {}", counted)).to_node()])
+          .to_node(),
+      ])
+      .to_node(),
   )
 }

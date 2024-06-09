@@ -11,7 +11,7 @@ use crate::ui::{column, ui_center, ui_fullscreen, ui_global};
 
 use crate::node::css::{CssLineHeight, CssPosition, RespoStyle};
 use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
-use crate::{div, space, span};
+use crate::{div, space, span, RespoComponent};
 
 use crate::states_tree::{RespoState, StatesTree};
 
@@ -57,7 +57,7 @@ where
   T: Debug + Clone,
 {
   fn default() -> Self {
-    Self(Rc::new(|_close: _| Ok(div())))
+    Self(Rc::new(|_close: _| Ok(div().to_node())))
   }
 }
 
@@ -88,7 +88,7 @@ where
   let close = Rc::new(on_close);
 
   Ok(
-    RespoNode::new_component(
+    RespoComponent::named(
       "modal",
       div()
         .style(RespoStyle::default().position(CssPosition::Absolute))
@@ -122,27 +122,35 @@ where
                   }
                   Ok(())
                 })
-                .children([div().class(column()).children([
-                  div()
-                    .class(ui_center())
-                    .children([span().inner_text(options.title.unwrap_or_else(|| "Modal".to_owned()))]),
-                  space(None, Some(8)),
-                  {
-                    let close = close.to_owned();
-                    options.render.run(move |dispatch| -> Result<(), String> {
-                      close(dispatch)?;
-                      Ok(())
-                    })?
-                  },
-                ])]),
+                .children([div()
+                  .class(column())
+                  .children([
+                    div()
+                      .class(ui_center())
+                      .children([span().inner_text(options.title.unwrap_or_else(|| "Modal".to_owned())).to_node()])
+                      .to_node(),
+                    space(None, Some(8)).to_node(),
+                    {
+                      let close = close.to_owned();
+                      options.render.run(move |dispatch| -> Result<(), String> {
+                        close(dispatch)?;
+                        Ok(())
+                      })?
+                    },
+                  ])
+                  .to_node()])
+                .to_node(),
               comp_esc_listener(show, close)?,
             ])
+            .to_node()
         } else {
-          span().attribute("data-name", "placeholder")
-        }]),
+          span().attribute("data-name", "placeholder").to_node()
+        }])
+        .to_node(),
     )
     // .effect(&[show], effect_focus)
     .effect(&[show], effect_modal_fade)
+    .to_node()
     .rc(),
   )
 }

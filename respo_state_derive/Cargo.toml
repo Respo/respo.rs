@@ -2,6 +2,12 @@
 name = "respo_state_derive"
 version = "0.0.1"
 edition = "2021"
+description = "derive macro for RespoState"
+license = "Apache-2.0"
+repository = "https://github.com/Respo/respo.rs"
+homepage = "https://respo-mvc.org"
+documentation = "https://docs.rs/crate/respo_state_derive/"
+readme = "README.md"
 
 [dependencies]
 quote = { version = "1.0.36", features = ["proc-macro"] }

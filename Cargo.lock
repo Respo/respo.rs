@@ -71,7 +71,7 @@ dependencies = [
  "js-sys",
  "memoize",
  "respo",
- "respo_state_derive",
+ "respo_state_derive 0.0.1",
  "serde",
  "serde_json",
  "uuid",
@@ -200,7 +200,7 @@ dependencies = [
  "cirru_parser",
  "js-sys",
  "lazy_static",
- "respo_state_derive",
+ "respo_state_derive 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rust-hsluv",
  "serde",
  "serde_json",
@@ -211,6 +211,16 @@ dependencies = [
 [[package]]
 name = "respo_state_derive"
 version = "0.0.1"
+dependencies = [
+ "quote",
+ "syn 2.0.66",
+]
+
+[[package]]
+name = "respo_state_derive"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "604687f92aa7e859453ffc3615280146aa01b2b882e14c7c8d4dee530151bfb1"
 dependencies = [
  "quote",
  "syn 2.0.66",

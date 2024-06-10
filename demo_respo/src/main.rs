@@ -42,6 +42,10 @@ impl RespoApp for App {
     &self.mount_target
   }
 
+  fn pick_storage_key() -> &'static str {
+    APP_STORE_KEY
+  }
+
   fn dispatch(store: &mut RefMut<Self::Model>, op: Self::Action) -> Result<(), String> {
     store.update(op)
   }
@@ -71,14 +75,12 @@ fn main() {
   let app = App {
     mount_target: query_select_node(".app").expect("mount target"),
     store: Rc::new(RefCell::new(Store::default())),
-    // store: Rc::new(RefCell::new(Store::default())),
   };
 
-  app.try_load_storage(APP_STORE_KEY).expect("load storage");
-  app.backup_model_beforeunload(APP_STORE_KEY).expect("backup model beforeunload");
+  app.try_load_storage().expect("load storage");
+  app.backup_model_beforeunload().expect("backup model beforeunload");
 
-  let store = app.store.to_owned();
-  util::log!("store: {:?}", store.borrow());
+  util::log!("store: {:?}", app.store);
 
   app.render_loop().expect("app render");
 }

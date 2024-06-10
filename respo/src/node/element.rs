@@ -173,6 +173,19 @@ where
     RespoElement { children, ..el }
   }
 
+  /// add elements. if any component is involved, use `self.children([])` instead
+  pub fn elements<U>(self, mode: U) -> Self
+  where
+    U: IntoIterator<Item = RespoElement<T>>,
+  {
+    let el = self;
+    let mut children = el.children.to_owned();
+    for (idx, v) in mode.into_iter().enumerate() {
+      children.push((idx.into(), v.to_node()));
+    }
+    RespoElement { children, ..el }
+  }
+
   /// attach a class name for adding styles
   pub fn class<U>(self, name: U) -> Self
   where

@@ -1,8 +1,8 @@
 use respo::ui::{ui_button_danger, ui_button_primary};
-use respo::RespoEvent;
 use respo::{space, ui::ui_row_parted, RespoStyle};
+use respo::{RespoElement, RespoEvent};
 
-use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoNode};
+use respo::{button, div, span, ui::ui_button, util, DispatchFn};
 
 use respo::states_tree::StatesTree;
 
@@ -14,7 +14,7 @@ use respo::ui::dialog::{
 
 use super::store::*;
 
-pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
+pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoElement<ActionOp>, String> {
   // respo::util::log!("re-render");
 
   let alert_plugin = AlertPlugin::new(
@@ -117,15 +117,11 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
         Ok(
           div()
             .style(RespoStyle::default().padding(8.0))
-            .children([
-              div().children([span().inner_text("content in custom modal").to_node()]).to_node(),
+            .elements([
+              div().elements([span().inner_text("content in custom modal")]),
               div()
                 .class(ui_row_parted())
-                .children([
-                  span().to_node(),
-                  button().class(ui_button()).inner_text("close").on_click(handler).to_node(),
-                ])
-                .to_node(),
+                .elements([span(), button().class(ui_button()).inner_text("close").on_click(handler)]),
             ])
             .to_node(),
         )
@@ -160,15 +156,11 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
         Ok(
           div()
             .style(RespoStyle::default().padding(8.0))
-            .children([
-              div().children([span().inner_text("content in custom drawer").to_node()]).to_node(),
+            .elements([
+              div().elements([span().inner_text("content in custom drawer")]),
               div()
                 .class(ui_row_parted())
-                .children([
-                  span().to_node(),
-                  button().class(ui_button()).inner_text("close").on_click(handler).to_node(),
-                ])
-                .to_node(),
+                .elements([span(), button().class(ui_button()).inner_text("close").on_click(handler)]),
             ])
             .to_node(),
         )
@@ -190,36 +182,32 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   };
 
   Ok(
-    div()
-      .children([
-        div().children([span().inner_text("Dialogs").to_node()]).to_node(),
-        div()
-          .children([
-            button().class(ui_button()).inner_text("Try Alert").on_click(on_alert).to_node(),
-            space(Some(8), None).to_node(),
-            button().class(ui_button()).inner_text("Try Confirm").on_click(on_confirm).to_node(),
-            space(Some(8), None).to_node(),
-            button().class(ui_button()).inner_text("Try Prompt").on_click(on_prompt).to_node(),
-            space(Some(8), None).to_node(),
-            button()
-              .class(ui_button_primary())
-              .inner_text("Try Custom Modal")
-              .on_click(on_modal)
-              .to_node(),
-            space(Some(8), None).to_node(),
-            button()
-              .class(ui_button_danger())
-              .inner_text("Try Custom Drawer")
-              .on_click(on_drawer)
-              .to_node(),
-          ])
-          .to_node(),
-        alert_plugin.render()?,
-        confirm_plugin.render()?,
-        prompt_plugin.render()?,
-        modal_plugin.render()?,
-        drawer_plugin.render()?,
-      ])
-      .to_node(),
+    div().children([
+      div().elements([span().inner_text("Dialogs")]).to_node(),
+      div()
+        .elements([
+          button().class(ui_button()).inner_text("Try Alert").on_click(on_alert),
+          space(Some(8), None),
+          button().class(ui_button()).inner_text("Try Confirm").on_click(on_confirm),
+          space(Some(8), None),
+          button().class(ui_button()).inner_text("Try Prompt").on_click(on_prompt),
+          space(Some(8), None),
+          button()
+            .class(ui_button_primary())
+            .inner_text("Try Custom Modal")
+            .on_click(on_modal),
+          space(Some(8), None),
+          button()
+            .class(ui_button_danger())
+            .inner_text("Try Custom Drawer")
+            .on_click(on_drawer),
+        ])
+        .to_node(),
+      alert_plugin.render()?,
+      confirm_plugin.render()?,
+      prompt_plugin.render()?,
+      modal_plugin.render()?,
+      drawer_plugin.render()?,
+    ]),
   )
 }

@@ -92,7 +92,7 @@ where
       "modal",
       div()
         .style(RespoStyle::default().position(CssPosition::Absolute))
-        .children([if show {
+        .elements([if show {
           div()
             .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
             .style(options.backdrop_style)
@@ -122,31 +122,26 @@ where
                   }
                   Ok(())
                 })
-                .children([div()
-                  .class(column())
-                  .children([
-                    div()
-                      .class(ui_center())
-                      .children([span().inner_text(options.title.unwrap_or_else(|| "Modal".to_owned())).to_node()])
-                      .to_node(),
-                    space(None, Some(8)).to_node(),
-                    {
-                      let close = close.to_owned();
-                      options.render.run(move |dispatch| -> Result<(), String> {
-                        close(dispatch)?;
-                        Ok(())
-                      })?
-                    },
-                  ])
-                  .to_node()])
+                .elements([div().class(column()).children([
+                  div()
+                    .class(ui_center())
+                    .elements([span().inner_text(options.title.unwrap_or_else(|| "Modal".to_owned()))])
+                    .to_node(),
+                  space(None, Some(8)).to_node(),
+                  {
+                    let close = close.to_owned();
+                    options.render.run(move |dispatch| -> Result<(), String> {
+                      close(dispatch)?;
+                      Ok(())
+                    })?
+                  },
+                ])])
                 .to_node(),
               comp_esc_listener(show, close)?,
             ])
-            .to_node()
         } else {
-          span().attribute("data-name", "placeholder").to_node()
-        }])
-        .to_node(),
+          span().attribute("data-name", "placeholder")
+        }]),
     )
     // .effect(&[show], effect_focus)
     .effect(&[show], effect_modal_fade)

@@ -4,7 +4,7 @@ use std::{fmt::Debug, rc::Rc};
 
 use web_sys::Node;
 
-use crate::{states_tree::DynEq, RespoEffect, RespoEffectArg, RespoEffectType, RespoNode};
+use crate::{states_tree::DynEq, RespoEffect, RespoEffectArg, RespoEffectType, RespoElement, RespoNode};
 
 /// internal abstraction for a component
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -30,16 +30,17 @@ impl<T> RespoComponent<T>
 where
   T: Debug + Clone,
 {
-  pub fn named(name: &str, tree: RespoNode<T>) -> Self {
+  pub fn named(name: &str, tree: RespoElement<T>) -> Self {
     RespoComponent {
       name: Rc::from(name),
       effects: vec![],
-      tree: Box::new(tree),
+      tree: Box::new(tree.to_node()),
     }
   }
   pub fn to_node(self) -> RespoNode<T> {
     RespoNode::Component(self)
   }
+
   /// add an effect on component
   pub fn effect<U, V>(self, args: &[V], handler: U) -> Self
   where

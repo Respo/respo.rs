@@ -48,19 +48,16 @@ pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
   Ok(
     RespoComponent::named(
       "panel",
-      div()
-        .children([
-          input()
-            .class(ui_input())
-            .attribute("placeholder", "some content...")
-            .attribute("value", state.content.to_owned())
-            .on_input(on_input)
-            .to_node(),
-          space(Some(8), None).to_node(),
-          button().class(ui_button()).inner_text("add").on_click(on_submit).to_node(),
-          span().inner_text(format!("got panel state: {:?}", state)).to_node(),
-        ])
-        .to_node(),
+      div().elements([
+        input()
+          .class(ui_input())
+          .attribute("placeholder", "some content...")
+          .attribute("value", state.content.to_owned())
+          .on_input(on_input),
+        space(Some(8), None),
+        button().class(ui_button()).inner_text("add").on_click(on_submit),
+        span().inner_text(format!("got panel state: {:?}", state)),
+      ]),
     )
     .stable_effect(move |_, _dispatch, _el| {
       respo::util::log!("panel effect {:?}", cursor);

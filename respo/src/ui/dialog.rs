@@ -258,8 +258,7 @@ where
             }
           }
           Ok(())
-        })
-        .to_node(),
+        }),
     )
     .effect(&[show], effect_keydown)
     .to_node()

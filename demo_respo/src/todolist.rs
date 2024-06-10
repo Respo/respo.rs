@@ -1,4 +1,4 @@
-use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoIndexKey, RespoNode};
+use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoElement, RespoIndexKey, RespoNode};
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 
@@ -14,7 +14,7 @@ struct TodolistState {
   hide_done: bool,
 }
 
-pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<ActionOp>, String> {
+pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoElement<ActionOp>, String> {
   let cursor = states.path();
   let state = states.cast_branch::<TodolistState>()?;
 
@@ -45,19 +45,11 @@ pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoNode<Ac
     }
   };
 
-  Ok(
-    div()
-      .children([
-        div()
-          .children([
-            span()
-              .inner_text(format!("tasks size: {} ... {}", tasks.len(), state.hide_done.to_owned()))
-              .to_node(),
-            button().class(ui_button()).inner_text("hide done").on_click(on_hide).to_node(),
-          ])
-          .to_node(),
-        div().children_indexed(children).to_node(),
-      ])
-      .to_node(),
-  )
+  Ok(div().elements([
+    div().elements([
+      span().inner_text(format!("tasks size: {} ... {}", tasks.len(), state.hide_done.to_owned())),
+      button().class(ui_button()).inner_text("hide done").on_click(on_hide),
+    ]),
+    div().children_indexed(children),
+  ]))
 }

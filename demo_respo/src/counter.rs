@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use respo::{button, div, span, ui::ui_button, util, CssColor, DispatchFn, RespoEvent, RespoNode, RespoStyle};
+use respo::{button, div, span, ui::ui_button, util, CssColor, DispatchFn, RespoElement, RespoEvent, RespoStyle};
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 
@@ -13,7 +13,7 @@ struct MainState {
   counted: i32,
 }
 
-pub fn comp_counter(states: &StatesTree, _counted: i32) -> Result<RespoNode<ActionOp>, String> {
+pub fn comp_counter(states: &StatesTree, _counted: i32) -> Result<RespoElement<ActionOp>, String> {
   let cursor = states.path();
 
   let state = states.cast_branch::<MainState>()?;
@@ -56,39 +56,26 @@ pub fn comp_counter(states: &StatesTree, _counted: i32) -> Result<RespoNode<Acti
   };
 
   Ok(
-    div()
-      .children([
-        div()
-          .children([
-            button()
-              .class(ui_button())
-              .inner_text("demo inc")
-              .style(RespoStyle::default().margin(4.))
-              .on_click(on_inc)
-              .to_node(),
-            button()
-              .class(ui_button())
-              .inner_text("demo dec")
-              .style(RespoStyle::default().margin(4.))
-              .on_click(on_dec)
-              .to_node(),
-          ])
-          .to_node(),
-        div()
-          .children([span()
-            .inner_text(format!("value is: {}", counted))
-            .style(
-              RespoStyle::default()
-                .color(CssColor::Hsluv(270, 100, 40))
-                .font_family("Menlo".to_owned())
-                .font_size(10. + counted as f32),
-            )
-            .to_node()])
-          .to_node(),
-        div()
-          .children([span().inner_text(format!("local state: {}", counted)).to_node()])
-          .to_node(),
-      ])
-      .to_node(),
+    div().elements([
+      div().elements([
+        button()
+          .class(ui_button())
+          .inner_text("demo inc")
+          .style(RespoStyle::default().margin(4.))
+          .on_click(on_inc),
+        button()
+          .class(ui_button())
+          .inner_text("demo dec")
+          .style(RespoStyle::default().margin(4.))
+          .on_click(on_dec),
+      ]),
+      div().elements([span().inner_text(format!("value is: {}", counted)).style(
+        RespoStyle::default()
+          .color(CssColor::Hsluv(270, 100, 40))
+          .font_family("Menlo".to_owned())
+          .font_size(10. + counted as f32),
+      )]),
+      div().elements([span().inner_text(format!("local state: {}", counted))]),
+    ]),
   )
 }

@@ -81,7 +81,7 @@ pub fn comp_task(
             }
           })
           .on_click(on_toggle),
-        div().inner_text(task.content.to_owned()),
+        div().inner_text(&task.content),
         span()
           .class_list(&[ui_center(), style_remove_button()])
           .inner_text("✕")
@@ -89,7 +89,7 @@ pub fn comp_task(
         div().style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0)),
         input()
           .class(ui_input())
-          .attribute("value", state.draft.to_owned())
+          .attribute("value", &state.draft)
           .attribute("placeholder", "something to update...")
           .on_input(on_input),
         space(Some(8), None),

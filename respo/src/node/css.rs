@@ -734,10 +734,7 @@ pub fn css_name_from_path(p: &str) -> String {
   if let Some(x) = s.strip_suffix(".rs") {
     s = x.to_string();
   }
-  s = s.replace("::", "_");
-  s = s.replace('/', "_");
-  s = s.replace('.', "_");
-  s
+  s.replace("::", "_").replace(['/', '.'], "_")
 }
 
 /// macro to create a public function of CSS rules with a slice at current file scope,

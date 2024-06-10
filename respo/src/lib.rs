@@ -31,4 +31,4 @@ pub use node::*;
 
 pub use app::renderer::*;
 
-pub use app::{util, RespoApp};
+pub use app::{util, RespoApp, RespoStore};

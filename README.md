@@ -106,9 +106,6 @@ impl RespoAction for ActionOp {
 impl RespoStore for Store {
   type Action = ActionOp;
 
-  fn get_states(&self) -> RespoStatesTree {
-    self.states.to_owned()
-  }
   fn update(&mut self, op: Self::Action) -> Result<(), String> {
     match op {
       // TODO

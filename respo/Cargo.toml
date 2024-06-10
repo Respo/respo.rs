@@ -50,4 +50,5 @@ features = [
   "FocusEvent",
   "HtmlLabelElement",
   "BeforeUnloadEvent",
+  "Storage",
 ]

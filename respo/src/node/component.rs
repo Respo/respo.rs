@@ -47,12 +47,10 @@ where
     U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
     V: Clone + DynEq + Debug + 'static,
   {
-    let RespoComponent { name, effects, tree } = self;
+    let RespoComponent { name, mut effects, tree } = self;
     {
-      // effects.push(RespoEffect::new(args.to_vec(), handler));
-      let mut es = effects.to_owned();
-      es.push(RespoEffect::new(args.to_vec(), handler));
-      RespoComponent { name, effects: es, tree }
+      effects.push(RespoEffect::new(args.to_vec(), handler));
+      RespoComponent { name, effects, tree }
     }
   }
   /// add an empty args effect on component, which does not update
@@ -60,11 +58,10 @@ where
   where
     U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
   {
-    let RespoComponent { name, effects, tree } = self;
+    let RespoComponent { name, mut effects, tree } = self;
     {
-      let mut es = effects.to_owned();
-      es.push(RespoEffect::new(vec![] as Vec<()>, handler));
-      RespoComponent { name, effects: es, tree }
+      effects.push(RespoEffect::new(vec![] as Vec<()>, handler));
+      RespoComponent { name, effects, tree }
     }
   }
   /// add a list of effects on component
@@ -72,11 +69,10 @@ where
   where
     U: IntoIterator<Item = RespoEffect>,
   {
-    let RespoComponent { name, effects, tree } = self;
+    let RespoComponent { name, mut effects, tree } = self;
     {
-      let mut es = effects.to_owned();
-      es.extend(more);
-      RespoComponent { name, effects: es, tree }
+      effects.extend(more);
+      RespoComponent { name, effects, tree }
     }
   }
 }

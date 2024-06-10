@@ -54,12 +54,11 @@ where
   /// element.style(RespoStyle::default().margin(10))
   /// ```
   pub fn style(self, more: RespoStyle) -> Self {
-    let el = self;
-    let mut style = el.style.to_owned();
+    let mut style = self.style;
     for (k, v) in more.0.into_iter() {
       style.0.push((k.to_owned(), v.to_owned()));
     }
-    RespoElement { style, ..el }
+    RespoElement { style, ..self }
   }
   /// imparative way of updating style
   /// ```ignore
@@ -73,10 +72,9 @@ where
   where
     U: Fn(&mut RespoStyle),
   {
-    let el = self;
-    let mut style = el.style.to_owned();
+    let mut style = self.style;
     builder(&mut style);
-    RespoElement { style, ..el }
+    RespoElement { style, ..self }
   }
   /// set an attribute on element
   pub fn attribute<U, V>(self, property: U, value: V) -> Self
@@ -84,10 +82,9 @@ where
     U: Into<Rc<str>> + ToOwned,
     V: Display,
   {
-    let el = self;
-    let mut a = el.attrs.to_owned();
-    a.insert(property.into(), value.to_string());
-    RespoElement { attrs: a, ..el.to_owned() }
+    let mut attrs = self.attrs.to_owned();
+    attrs.insert(property.into(), value.to_string());
+    RespoElement { attrs, ..self.to_owned() }
   }
   /// set an attribute on element, but using `None` indicates noting
   pub fn maybe_attribute<U, V>(self, property: U, value: Option<V>) -> Self
@@ -96,10 +93,9 @@ where
     V: Display,
   {
     if let Some(v) = value {
-      let el = self;
-      let mut a = el.attrs.to_owned();
-      a.insert(property.into(), v.to_string());
-      RespoElement { attrs: a, ..el }
+      let mut attrs = self.attrs.to_owned();
+      attrs.insert(property.into(), v.to_string());
+      RespoElement { attrs, ..self }
     } else {
       self
     }
@@ -165,12 +161,11 @@ where
   where
     U: IntoIterator<Item = (RespoIndexKey, RespoNode<T>)>,
   {
-    let el = self;
-    let mut children = el.children.to_owned();
+    let mut children = self.children;
     for (idx, v) in more {
       children.push((idx, v));
     }
-    RespoElement { children, ..el }
+    RespoElement { children, ..self }
   }
 
   /// add elements. if any component is involved, use `self.children([])` instead
@@ -178,12 +173,11 @@ where
   where
     U: IntoIterator<Item = RespoElement<T>>,
   {
-    let el = self;
-    let mut children = el.children.to_owned();
+    let mut children = self.children.to_owned();
     for (idx, v) in mode.into_iter().enumerate() {
       children.push((idx.into(), v.to_node()));
     }
-    RespoElement { children, ..el }
+    RespoElement { children, ..self }
   }
 
   /// attach a class name for adding styles

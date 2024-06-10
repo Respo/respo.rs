@@ -17,7 +17,7 @@ use crate::node::css::{CssColor, CssLineHeight, CssPosition, CssSize, RespoStyle
 use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
 use crate::{app, button, div, input, space, span, static_styles, textarea, util, RespoComponent};
 
-use crate::states_tree::{RespoState, StatesTree};
+use crate::states_tree::{RespoState, RespoStatesTree};
 
 use super::comp_esc_listener;
 
@@ -74,7 +74,7 @@ struct InputState {
 }
 
 fn comp_prompt_modal<T, U, V>(
-  states: StatesTree,
+  states: RespoStatesTree,
   options: PromptOptions,
   show: bool,
   on_submit: U,
@@ -247,7 +247,7 @@ where
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String>;
 
   /// initialize the plugin, second parameter is the callback task when submitted,
-  fn new(states: StatesTree, options: PromptOptions, on_submit: U) -> Result<Self, String>
+  fn new(states: RespoStatesTree, options: PromptOptions, on_submit: U) -> Result<Self, String>
   where
     Self: std::marker::Sized;
 
@@ -268,7 +268,7 @@ where
   T: Clone + Debug,
   U: Fn(String, DispatchFn<T>) -> Result<(), String> + 'static,
 {
-  states: StatesTree,
+  states: RespoStatesTree,
   state: Rc<PromptPluginState>,
   options: PromptOptions,
   /// tracking content to display
@@ -363,7 +363,7 @@ where
     Ok(())
   }
 
-  fn new(states: StatesTree, options: PromptOptions, on_submit: U) -> Result<Self, String> {
+  fn new(states: RespoStatesTree, options: PromptOptions, on_submit: U) -> Result<Self, String> {
     let cursor = states.path();
     let state = states.cast_branch::<PromptPluginState>()?;
 

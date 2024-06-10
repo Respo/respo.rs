@@ -16,7 +16,7 @@ use crate::node::css::{CssLineHeight, CssPosition, RespoStyle};
 use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
 use crate::{app, button, div, space, span, RespoComponent};
 
-use crate::states_tree::{RespoState, StatesTree};
+use crate::states_tree::{RespoState, RespoStatesTree};
 
 use crate::ui::dialog::{effect_focus, effect_modal_fade, BUTTON_NAME};
 
@@ -130,7 +130,7 @@ where
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String>;
 
   /// creates a new instance of confirm plugin, second parameter is a callback when confirmed
-  fn new(states: StatesTree, options: ConfirmOptions, on_confirm: U) -> Result<Self, String>
+  fn new(states: RespoStatesTree, options: ConfirmOptions, on_confirm: U) -> Result<Self, String>
   where
     Self: std::marker::Sized;
 
@@ -245,7 +245,7 @@ where
     Ok(())
   }
 
-  fn new(states: StatesTree, options: ConfirmOptions, on_confirm: U) -> Result<Self, String> {
+  fn new(states: RespoStatesTree, options: ConfirmOptions, on_confirm: U) -> Result<Self, String> {
     let cursor = states.path();
     let state = states.cast_branch::<ConfirmPluginState>()?;
 

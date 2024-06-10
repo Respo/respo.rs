@@ -2,7 +2,7 @@ use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoElement, Re
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 
-use respo::states_tree::{RespoState, StatesTree};
+use respo::states_tree::{RespoState, RespoStatesTree};
 
 use super::{
   store::{ActionOp, Task},
@@ -14,7 +14,7 @@ struct TodolistState {
   hide_done: bool,
 }
 
-pub fn comp_todolist(states: &StatesTree, tasks: &[Task]) -> Result<RespoElement<ActionOp>, String> {
+pub fn comp_todolist(states: &RespoStatesTree, tasks: &[Task]) -> Result<RespoElement<ActionOp>, String> {
   let cursor = states.path();
   let state = states.cast_branch::<TodolistState>()?;
 

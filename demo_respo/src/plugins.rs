@@ -4,7 +4,7 @@ use respo::{RespoElement, RespoEvent};
 
 use respo::{button, div, span, ui::ui_button, util, DispatchFn};
 
-use respo::states_tree::StatesTree;
+use respo::states_tree::RespoStatesTree;
 
 use respo::ui::dialog::{
   AlertOptions, AlertPlugin, AlertPluginInterface, ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface, DrawerOptions, DrawerPlugin,
@@ -14,7 +14,7 @@ use respo::ui::dialog::{
 
 use super::store::*;
 
-pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoElement<ActionOp>, String> {
+pub fn comp_plugins_demo(states: &RespoStatesTree) -> Result<RespoElement<ActionOp>, String> {
   // respo::util::log!("re-render");
 
   let alert_plugin = AlertPlugin::new(

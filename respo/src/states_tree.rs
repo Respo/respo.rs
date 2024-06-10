@@ -19,7 +19,7 @@ pub use state::RespoState;
 /// each child component "picks" a key to attach its own state to the tree,
 /// and it dispatches events to global store to update the state.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct StatesTree {
+pub struct RespoStatesTree {
   /// local data
   #[serde(skip)]
   pub data: Option<RespoStateBranch>,
@@ -29,10 +29,10 @@ pub struct StatesTree {
   // pub data_type_name: Option<TypeId>,
   // pub data_revision: usize,
   /// holding children states
-  pub branches: BTreeMap<Rc<str>, Box<StatesTree>>,
+  pub branches: BTreeMap<Rc<str>, Box<RespoStatesTree>>,
 }
 
-impl Hash for StatesTree {
+impl Hash for RespoStatesTree {
   fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
     self.cursor.hash(state);
     self.data.hash(state);
@@ -41,16 +41,16 @@ impl Hash for StatesTree {
   }
 }
 
-impl PartialEq for StatesTree {
+impl PartialEq for RespoStatesTree {
   fn eq(&self, other: &Self) -> bool {
     // backup is only for backup
     // this trick might cause inconsistency in some cases after reloaded
     self.cursor == other.cursor && self.data == other.data && self.branches == other.branches
   }
 }
-impl Eq for StatesTree {}
+impl Eq for RespoStatesTree {}
 
-impl StatesTree {
+impl RespoStatesTree {
   /// get cursor
   pub fn path(&self) -> Vec<Rc<str>> {
     self.cursor.to_owned()
@@ -82,7 +82,7 @@ impl StatesTree {
   }
 
   /// pick a child branch as new cursor
-  pub fn pick(&self, name: &str) -> StatesTree {
+  pub fn pick(&self, name: &str) -> RespoStatesTree {
     let mut next_cursor = self.cursor.to_owned();
     next_cursor.push(Rc::from(name));
 

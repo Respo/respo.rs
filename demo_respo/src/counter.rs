@@ -4,7 +4,7 @@ use respo::{button, div, span, ui::ui_button, util, CssColor, DispatchFn, RespoE
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 
-use respo::states_tree::{RespoState, StatesTree};
+use respo::states_tree::{RespoState, RespoStatesTree};
 
 use super::store::ActionOp;
 
@@ -13,7 +13,7 @@ struct MainState {
   counted: i32,
 }
 
-pub fn comp_counter(states: &StatesTree, _counted: i32) -> Result<RespoElement<ActionOp>, String> {
+pub fn comp_counter(states: &RespoStatesTree, _counted: i32) -> Result<RespoElement<ActionOp>, String> {
   let cursor = states.path();
 
   let state = states.cast_branch::<MainState>()?;

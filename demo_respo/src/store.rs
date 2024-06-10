@@ -5,13 +5,13 @@ use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use respo::states_tree::{RespoState, RespoStateBranch, StatesTree};
+use respo::states_tree::{RespoState, RespoStateBranch, RespoStatesTree};
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Store {
   pub counted: i32,
   pub tasks: Vec<Task>,
-  pub states: StatesTree,
+  pub states: RespoStatesTree,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, RespoState)]
@@ -66,7 +66,7 @@ impl RespoAction for ActionOp {
 impl RespoStore for Store {
   type Action = ActionOp;
 
-  fn get_states(&self) -> StatesTree {
+  fn get_states(&self) -> RespoStatesTree {
     self.states.to_owned()
   }
   fn update(&mut self, op: Self::Action) -> Result<(), String> {

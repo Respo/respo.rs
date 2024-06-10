@@ -13,7 +13,7 @@ use crate::node::css::{CssLineHeight, CssPosition, RespoStyle};
 use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
 use crate::{div, space, span, RespoComponent};
 
-use crate::states_tree::{RespoState, StatesTree};
+use crate::states_tree::{RespoState, RespoStatesTree};
 
 use crate::ui::dialog::effect_drawer_fade;
 
@@ -162,7 +162,7 @@ where
   /// to close drawer
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String>;
 
-  fn new(states: StatesTree, options: DrawerOptions<T>) -> Result<Self, String>
+  fn new(states: RespoStatesTree, options: DrawerOptions<T>) -> Result<Self, String>
   where
     Self: std::marker::Sized;
 
@@ -212,7 +212,7 @@ where
     Ok(())
   }
 
-  fn new(states: StatesTree, options: DrawerOptions<T>) -> Result<Self, String> {
+  fn new(states: RespoStatesTree, options: DrawerOptions<T>) -> Result<Self, String> {
     let cursor = states.path();
     let state = states.cast_branch::<DrawerPluginState>()?;
 

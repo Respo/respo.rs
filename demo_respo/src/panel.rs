@@ -12,14 +12,14 @@ use respo::{
   util, DispatchFn, RespoComponent, RespoEvent, RespoNode,
 };
 
-use respo::states_tree::{RespoState, StatesTree};
+use respo::states_tree::{RespoState, RespoStatesTree};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, RespoState)]
 struct PanelState {
   content: String,
 }
 
-pub fn comp_panel(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
+pub fn comp_panel(states: &RespoStatesTree) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
   let state = states.cast_branch::<PanelState>()?;
 

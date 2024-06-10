@@ -18,7 +18,7 @@ pub use listener::{RespoEvent, RespoEventMark, RespoListenerFn};
 pub use component::RespoComponent;
 pub use element::RespoElement;
 
-use crate::states_tree::{DynEq, RespoStateBranch, StatesTree};
+use crate::states_tree::{DynEq, RespoStateBranch, RespoStatesTree};
 
 use css::RespoStyle;
 
@@ -233,6 +233,6 @@ impl From<Rc<dyn Fn(RespoEventMark) -> Result<(), String>>> for RespoEventMarkFn
 /// it has a states tree inside, and it does update itself
 pub trait RespoStore {
   type Action: Debug + Clone + RespoAction;
-  fn get_states(&self) -> StatesTree;
+  fn get_states(&self) -> RespoStatesTree;
   fn update(&mut self, op: Self::Action) -> Result<(), String>;
 }

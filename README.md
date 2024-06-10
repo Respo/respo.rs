@@ -87,7 +87,7 @@ Declaring a store:
 ```rust
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Store {
-  pub states: StatesTree,
+  pub states: RespoStatesTree,
   // TODO you app data
 }
 
@@ -106,7 +106,7 @@ impl RespoAction for ActionOp {
 impl RespoStore for Store {
   type Action = ActionOp;
 
-  fn get_states(&self) -> StatesTree {
+  fn get_states(&self) -> RespoStatesTree {
     self.states.to_owned()
   }
   fn update(&mut self, op: Self::Action) -> Result<(), String> {
@@ -170,7 +170,7 @@ let app = App {
     mount_target: query_select_node(".app").expect("mount target"),
     store: Rc::new(RefCell::new(Store {
       counted: 0,
-      states: StatesTree::default(),
+      states: RespoStatesTree::default(),
       tasks: vec![],
     })),
     memo_caches: MemoCache::default(),

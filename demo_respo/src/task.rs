@@ -9,7 +9,7 @@ use respo::{
   util, CssColor, CssSize, DispatchFn, RespoComponent, RespoEvent, RespoNode, RespoStyle,
 };
 
-use respo::states_tree::{RespoState, StatesTree};
+use respo::states_tree::{RespoState, RespoStatesTree};
 
 use super::store::*;
 
@@ -21,7 +21,7 @@ struct TaskState {
 #[memoize(Capacity: 40)]
 pub fn comp_task(
   // _memo_caches: MemoCache<RespoNode<ActionOp>>,
-  states: StatesTree,
+  states: RespoStatesTree,
   task: Task,
 ) -> Result<RespoNode<ActionOp>, String> {
   respo::util::log!("calling task function");

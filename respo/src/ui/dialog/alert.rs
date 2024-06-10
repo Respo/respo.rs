@@ -14,7 +14,7 @@ use crate::node::css::{CssLineHeight, CssPosition, RespoStyle};
 use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
 use crate::{button, div, space, span, RespoComponent};
 
-use crate::states_tree::{RespoState, StatesTree};
+use crate::states_tree::{RespoState, RespoStatesTree};
 
 use super::comp_esc_listener;
 
@@ -121,7 +121,7 @@ where
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String>;
 
   /// show alert with options, `on_read` is the callback function when read button is clicked
-  fn new(states: StatesTree, options: AlertOptions, on_read: U) -> Result<Self, String>
+  fn new(states: RespoStatesTree, options: AlertOptions, on_read: U) -> Result<Self, String>
   where
     Self: std::marker::Sized;
 
@@ -212,7 +212,7 @@ where
     Ok(())
   }
 
-  fn new(states: StatesTree, options: AlertOptions, on_read: U) -> Result<Self, String> {
+  fn new(states: RespoStatesTree, options: AlertOptions, on_read: U) -> Result<Self, String> {
     let cursor = states.path();
     let state = states.cast_branch::<AlertPluginState>()?;
 

@@ -35,7 +35,7 @@ impl RespoApp for App {
   type Model = Store;
   type Action = ActionOp;
 
-  fn load_store(&self) -> &Rc<RefCell<Self::Model>> {
+  fn get_store(&self) -> &Rc<RefCell<Self::Model>> {
     &self.store
   }
   fn get_mount_target(&self) -> &web_sys::Node {

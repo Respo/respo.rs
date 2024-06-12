@@ -37,7 +37,7 @@ pub trait RespoApp {
   /// bridge to mount target
   fn get_mount_target(&self) -> &Node;
   /// bridge to store
-  fn load_store(&self) -> &Rc<RefCell<Self::Model>>;
+  fn get_store(&self) -> &Rc<RefCell<Self::Model>>;
 
   /// default interval in milliseconds, by default 100ms,
   /// pass `None` to use raq directly, pass `Some(200)` to redice cost
@@ -50,7 +50,7 @@ pub trait RespoApp {
   /// start a requestAnimationFrame loop for rendering updated store
   fn render_loop(&self) -> Result<(), String> {
     let mount_target = self.get_mount_target();
-    let global_store = self.load_store();
+    let global_store = self.get_store();
 
     // let store_to_action = global_store.to_owned();
     let dispatch_action = {
@@ -93,7 +93,7 @@ pub trait RespoApp {
     let storage = window.local_storage().expect("get storage").expect("unwrap storage");
     let beforeunload = Closure::wrap(Box::new({
       let p = Self::pick_storage_key();
-      let store = self.load_store().to_owned();
+      let store = self.get_store().to_owned();
       move |_e: BeforeUnloadEvent| {
         let content = store.as_ref().borrow().to_string();
         // util::log!("before unload {} {}", p, content);
@@ -112,7 +112,7 @@ pub trait RespoApp {
     match storage.get_item(key) {
       Ok(Some(s)) => match Self::Model::try_from_string(&s) {
         Ok(s) => {
-          let store = self.load_store();
+          let store = self.get_store();
           *store.borrow_mut() = s;
         }
         Err(e) => {

@@ -31,8 +31,10 @@ impl Hash for Task {
   }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub enum ActionOp {
+  #[default]
+  Noop,
   Increment,
   Decrement,
   /// contains State and Value
@@ -41,14 +43,6 @@ pub enum ActionOp {
   RemoveTask(String),
   UpdateTask(String, String),
   ToggleTask(String),
-  Noop,
-}
-
-/// TODO added to pass type checking, maybe we can remove it
-impl Default for ActionOp {
-  fn default() -> Self {
-    ActionOp::Noop
-  }
 }
 
 impl RespoAction for ActionOp {

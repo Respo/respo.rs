@@ -53,13 +53,8 @@ impl Default for ActionOp {
 }
 
 impl RespoAction for ActionOp {
-  fn wrap_states_action(cursor: &[Rc<str>], a: Option<RespoStateBranch>) -> Self {
-    // val is a backup value from DynEq to Json Value
-    let val = match &a {
-      None => None,
-      Some(v) => v.0.as_ref().backup(),
-    };
-    Self::StatesChange(cursor.to_vec(), a, val)
+  fn states_action(cursor: Vec<Rc<str>>, data: Option<RespoStateBranch>, backup: Option<Value>) -> Self {
+    Self::StatesChange(cursor, data, backup)
   }
 }
 

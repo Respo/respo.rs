@@ -65,8 +65,8 @@ impl RespoStore for Store {
       ActionOp::Decrement => {
         self.counted -= 1;
       }
-      ActionOp::StatesChange(RespoUpdateState(path, new_state, val)) => {
-        self.states.set_in_mut(&path, new_state, val);
+      ActionOp::StatesChange(a) => {
+        self.states.set_in_mut(a);
       }
       ActionOp::AddTask(id, content) => self.tasks.push(Task {
         id,

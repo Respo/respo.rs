@@ -109,20 +109,26 @@ impl RespoStatesTree {
   }
 
   /// in-place mutation of state tree
-  pub fn set_in_mut(&mut self, path: &[Rc<str>], new_state: Option<RespoStateBranch>, val: Option<Value>) {
-    if path.is_empty() {
-      new_state.clone_into(&mut self.data);
-      val.clone_into(&mut self.backup);
+  pub fn set_in_mut(&mut self, change: RespoUpdateState) {
+    if change.cursor.is_empty() {
+      change.data.clone_into(&mut self.data);
+      change.backup.clone_into(&mut self.backup);
       // self.data_type_name = new_state.0.as_ref().map(|v| v.type_id().to_owned());
       // self.data_revision += 1;
     } else {
-      let (p_head, p_rest) = path.split_at(1);
+      let (p_head, p_rest) = change.cursor.split_at(1);
       let p0 = &p_head[0];
       if let Some(branch) = self.branches.get_mut(p0) {
-        branch.set_in_mut(p_rest, new_state, val);
+        branch.set_in_mut(RespoUpdateState {
+          cursor: p_rest.to_vec(),
+          ..change
+        });
       } else {
         let mut branch = self.pick(p0);
-        branch.set_in_mut(p_rest, new_state, val);
+        branch.set_in_mut(RespoUpdateState {
+          cursor: p_rest.to_vec(),
+          ..change
+        });
         self.branches.insert(p0.to_owned(), Box::new(branch));
       }
     }
@@ -154,4 +160,11 @@ impl RespoStateBranch {
 
 /// framework defined action for updating states branch
 #[derive(Clone, Debug)]
-pub struct RespoUpdateState(pub Vec<Rc<str>>, pub Option<RespoStateBranch>, pub Option<Value>);
+pub struct RespoUpdateState {
+  /// path to the state
+  pub cursor: Vec<Rc<str>>,
+  /// dyn eq data
+  pub data: Option<RespoStateBranch>,
+  /// backup data for restoring
+  pub backup: Option<Value>,
+}

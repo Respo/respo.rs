@@ -180,7 +180,11 @@ pub trait RespoAction {
       None => None,
       Some(v) => v.0.as_ref().backup(),
     };
-    Self::states_action(RespoUpdateState(cursor.to_vec(), a, val))
+    Self::states_action(RespoUpdateState {
+      cursor: cursor.to_vec(),
+      data: a,
+      backup: val,
+    })
   }
 
   /// a builder for states change

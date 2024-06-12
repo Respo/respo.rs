@@ -37,7 +37,7 @@ pub trait RespoApp {
   /// bridge to mount target
   fn get_mount_target(&self) -> &Node;
   /// bridge to store
-  fn load_store(&self) -> Rc<RefCell<Self::Model>>;
+  fn load_store(&self) -> &Rc<RefCell<Self::Model>>;
 
   /// default interval in milliseconds, by default 100ms,
   /// pass `None` to use raq directly, pass `Some(200)` to redice cost
@@ -71,10 +71,13 @@ pub trait RespoApp {
         let store_to_action = global_store.to_owned();
         move || store_to_action.borrow().to_owned()
       }),
-      Box::new(move || -> Result<RespoNode<Self::Action>, String> {
-        // util::log!("global store: {:?}", store);
+      Box::new({
+        let store = global_store.to_owned();
+        move || -> Result<RespoNode<Self::Action>, String> {
+          // util::log!("global store: {:?}", store);
 
-        Self::view(global_store.borrow())
+          Self::view(store.borrow())
+        }
       }),
       DispatchFn::new(dispatch_action),
       Self::get_loop_delay(),
@@ -90,7 +93,7 @@ pub trait RespoApp {
     let storage = window.local_storage().expect("get storage").expect("unwrap storage");
     let beforeunload = Closure::wrap(Box::new({
       let p = Self::pick_storage_key();
-      let store = self.load_store();
+      let store = self.load_store().to_owned();
       move |_e: BeforeUnloadEvent| {
         let content = store.as_ref().borrow().to_string();
         // util::log!("before unload {} {}", p, content);

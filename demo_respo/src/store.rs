@@ -1,11 +1,10 @@
-use std::{hash::Hash, rc::Rc};
+use std::hash::Hash;
 
-use respo::{util, RespoAction, RespoStore};
+use respo::{states_tree::RespoUpdateState, util, RespoAction, RespoStore};
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
-use respo::states_tree::{RespoState, RespoStateBranch, RespoStatesTree};
+use respo::states_tree::{RespoState, RespoStatesTree};
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Store {
@@ -37,7 +36,7 @@ pub enum ActionOp {
   Increment,
   Decrement,
   /// contains State and Value
-  StatesChange(Vec<Rc<str>>, Option<RespoStateBranch>, Option<Value>),
+  StatesChange(RespoUpdateState),
   AddTask(String, String),
   RemoveTask(String),
   UpdateTask(String, String),
@@ -53,8 +52,8 @@ impl Default for ActionOp {
 }
 
 impl RespoAction for ActionOp {
-  fn states_action(cursor: Vec<Rc<str>>, data: Option<RespoStateBranch>, backup: Option<Value>) -> Self {
-    Self::StatesChange(cursor, data, backup)
+  fn states_action(a: RespoUpdateState) -> Self {
+    Self::StatesChange(a)
   }
 }
 
@@ -72,7 +71,7 @@ impl RespoStore for Store {
       ActionOp::Decrement => {
         self.counted -= 1;
       }
-      ActionOp::StatesChange(path, new_state, val) => {
+      ActionOp::StatesChange(RespoUpdateState(path, new_state, val)) => {
         self.states.set_in_mut(&path, new_state, val);
       }
       ActionOp::AddTask(id, content) => self.tasks.push(Task {

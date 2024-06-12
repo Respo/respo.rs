@@ -17,9 +17,8 @@ pub use listener::{RespoEvent, RespoEventMark, RespoListenerFn};
 
 pub use component::RespoComponent;
 pub use element::RespoElement;
-use serde_json::Value;
 
-use crate::states_tree::{DynEq, RespoStateBranch};
+use crate::states_tree::{DynEq, RespoStateBranch, RespoUpdateState};
 
 use css::RespoStyle;
 
@@ -181,11 +180,11 @@ pub trait RespoAction {
       None => None,
       Some(v) => v.0.as_ref().backup(),
     };
-    Self::states_action(cursor.to_vec(), a, val)
+    Self::states_action(RespoUpdateState(cursor.to_vec(), a, val))
   }
 
   /// a builder for states change
-  fn states_action(cursor: Vec<Rc<str>>, data: Option<RespoStateBranch>, backup: Option<Value>) -> Self;
+  fn states_action(a: RespoUpdateState) -> Self;
 }
 
 impl<T> DispatchFn<T>

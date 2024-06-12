@@ -151,3 +151,7 @@ impl RespoStateBranch {
     Self(state)
   }
 }
+
+/// framework defined action for updating states branch
+#[derive(Clone, Debug)]
+pub struct RespoUpdateState(pub Vec<Rc<str>>, pub Option<RespoStateBranch>, pub Option<Value>);

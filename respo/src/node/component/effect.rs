@@ -6,101 +6,38 @@ use web_sys::Node;
 use crate::states_tree::DynEq;
 
 /// next abstraction on effect
-pub trait RespoEffectNext {
+pub trait RespoEffect
+where
+  Self: Debug + 'static,
+{
   /// actually run effect
-  fn run(&self, node: &Node) -> Result<(), String>;
-
-  fn as_any(&self) -> &dyn Any
-  where
-    Self: Sized + 'static,
-  {
-    self
-  }
-
-  /// compare equality
-  fn do_eq(&self, rhs: &dyn RespoEffectNext) -> bool {
-    if let Some(rhs_concrete) = rhs.as_any().downcast_ref::<Self>() {
-      self == rhs_concrete
-    } else {
-      false
-    }
-  }
+  fn run(&self, effect_type: RespoEffectType, el: &Node) -> Result<(), String>;
+  fn as_any(&self) -> &dyn Any;
+  fn do_eq(&self, rhs: &dyn RespoEffect) -> bool;
 }
 
-impl<T> RespoEffectNext for T
-where
-  T: PartialEq + Debug + RespoStat + 'static,
-{
-  fn run(&self, node: &Node) -> Result<(), String> {
-    Ok(())
-  }
+/// wraps dyn trait object of effect
+#[derive(Debug, Clone)]
+pub struct RespoEffectBox(pub Rc<dyn RespoEffect>);
 
-  /// compare equality
-  fn do_eq(&self, rhs: &dyn RespoEffectNext) -> bool {
-    if let Some(rhs_concrete) = rhs.as_any().downcast_ref::<Self>() {
-      self == rhs_concrete
-    } else {
-      false
-    }
+impl PartialEq for RespoEffectBox {
+  fn eq(&self, other: &Self) -> bool {
+    let r = self.0.as_ref();
+    r.do_eq(other.0.as_ref())
+  }
+}
+impl Eq for RespoEffectBox {}
+
+impl RespoEffectBox {
+  pub fn new<T>(v: T) -> Self
+  where
+    T: RespoEffect + 'static,
+  {
+    Self(Rc::new(v))
   }
 }
 
 // use crate::{log, util::print_type_of};
-
-/// in Respo, effect are link element, they are diffed and then applied. Not composable as in React.
-#[derive(Clone)]
-pub struct RespoEffect {
-  /// arguments passed to this effect.
-  /// the events `WillUpdate` and `Updated` are triggered when these arguments are changed
-  pub args: Vec<RespoEffectArg>,
-  handler: Rc<RespoEffectHandler>,
-}
-
-type RespoEffectHandler = dyn Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String>;
-
-impl PartialEq for RespoEffect {
-  /// closure are not compared, changes happen in and passed via args
-  fn eq(&self, other: &Self) -> bool {
-    self.args == other.args
-  }
-}
-
-impl Eq for RespoEffect {}
-
-impl RespoEffect {
-  pub fn run(&self, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
-    (*self.handler)(self.args.to_owned(), effect_type, el)
-  }
-  pub fn new<U, V>(args: Vec<V>, handler: U) -> Self
-  where
-    U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
-    V: Clone + DynEq + Debug + 'static,
-  {
-    Self {
-      args: args.into_iter().map(RespoEffectArg::new).collect(),
-      handler: Rc::new(handler),
-    }
-  }
-
-  /// no need to have args, only handler
-  pub fn new_insular<U>(handler: U) -> Self
-  where
-    U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
-  {
-    Self {
-      args: vec![],
-      handler: Rc::new(handler),
-    }
-  }
-}
-
-impl Debug for RespoEffect {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "RespoEffect(")?;
-    write!(f, "args: {:?}", self.args)?;
-    write!(f, "...)")
-  }
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RespoEffectType {

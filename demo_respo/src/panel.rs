@@ -9,7 +9,7 @@ use crate::store::ActionOp;
 use respo::{
   button, div, input, space, span,
   ui::{ui_button, ui_input},
-  util, DispatchFn, RespoComponent, RespoEvent, RespoNode,
+  util, DispatchFn, RespoComponent, RespoEffect, RespoEffectBox, RespoEvent, RespoNode,
 };
 
 use respo::states_tree::{RespoState, RespoStatesTree};
@@ -17,6 +17,22 @@ use respo::states_tree::{RespoState, RespoStatesTree};
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, RespoState)]
 struct PanelState {
   content: String,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+struct PanelMount {}
+
+impl RespoEffect for PanelMount {
+  fn as_any(&self) -> &dyn std::any::Any {
+    self
+  }
+  fn do_eq(&self, rhs: &dyn RespoEffect) -> bool {
+    matches!(rhs.as_any().downcast_ref::<Self>(), Some(_rhs))
+  }
+  fn run(&self, _effect_type: respo::RespoEffectType, _el: &web_sys::Node) -> Result<(), String> {
+    respo::util::log!("panel effect TODO cursor");
+    Ok(())
+  }
 }
 
 pub fn comp_panel(states: &RespoStatesTree) -> Result<RespoNode<ActionOp>, String> {
@@ -45,6 +61,8 @@ pub fn comp_panel(states: &RespoStatesTree) -> Result<RespoNode<ActionOp>, Strin
     }
   };
 
+  let mount_effect = RespoEffectBox::new(PanelMount::default());
+
   Ok(
     RespoComponent::named(
       "panel",
@@ -59,10 +77,7 @@ pub fn comp_panel(states: &RespoStatesTree) -> Result<RespoNode<ActionOp>, Strin
         span().inner_text(format!("got panel state: {:?}", state)),
       ]),
     )
-    .stable_effect(move |_, _dispatch, _el| {
-      respo::util::log!("panel effect {:?}", cursor);
-      Ok(())
-    })
+    .stable_effect(mount_effect)
     .to_node(),
   )
 }

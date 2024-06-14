@@ -55,7 +55,7 @@ where
         if let RespoNode::Component(RespoComponent { effects, .. }) = target_tree {
           for (idx, effect) in effects.iter().enumerate() {
             if !skip_indexes.contains(&(idx as u32)) {
-              effect.run(effect_type.to_owned(), &target)?;
+              effect.0.as_ref().run(effect_type.to_owned(), &target)?;
             }
           }
         } else {
@@ -239,7 +239,7 @@ where
               if let RespoNode::Component(RespoComponent { effects, .. }) = target_tree {
                 for (idx, effect) in effects.iter().enumerate() {
                   if !skip_indexes.contains(&(idx as u32)) {
-                    effect.run(effect_type.to_owned(), &nested_el)?;
+                    effect.0.run(effect_type.to_owned(), &nested_el)?;
                   }
                 }
               } else {
@@ -268,7 +268,7 @@ where
         if let RespoNode::Component(RespoComponent { effects, .. }) = target_tree {
           for (idx, effect) in effects.iter().enumerate() {
             if !skip_indexes.contains(&(idx as u32)) {
-              effect.run(effect_type.to_owned(), &target)?;
+              effect.0.run(effect_type.to_owned(), &target)?;
             }
           }
         } else {

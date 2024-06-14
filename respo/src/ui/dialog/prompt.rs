@@ -10,7 +10,8 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
-use crate::ui::dialog::{css_backdrop, css_button, css_modal_card, effect_modal_fade, BUTTON_NAME};
+use crate::component::effect::RespoEffectBox;
+use crate::ui::dialog::{css_backdrop, css_button, css_modal_card, EffectModalFade, BUTTON_NAME};
 use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_input, ui_row_parted, ui_textarea};
 
 use crate::node::css::{CssColor, CssLineHeight, CssPosition, CssSize, RespoStyle};
@@ -149,6 +150,9 @@ where
     input().class(ui_input())
   };
 
+  let effect_modal_fade_state = EffectModalFade { show };
+  let effect_modal_fade = RespoEffectBox(Rc::new(effect_modal_fade_state));
+
   Ok(
     RespoComponent::named(
       "prompt-modal",
@@ -222,7 +226,7 @@ where
         }]),
     )
     // .effect(&[show], effect_focus)
-    .effect(&[show], effect_modal_fade)
+    .effect(effect_modal_fade)
     .to_node()
     .rc(),
   )

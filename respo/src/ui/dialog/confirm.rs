@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
+use crate::component::effect::RespoEffectBox;
 use crate::ui::dialog::{css_backdrop, css_button, css_modal_card};
 use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_row_parted};
 
@@ -18,7 +19,7 @@ use crate::{app, button, div, space, span, RespoComponent};
 
 use crate::states_tree::{RespoState, RespoStatesTree};
 
-use crate::ui::dialog::{effect_focus, effect_modal_fade, BUTTON_NAME};
+use crate::ui::dialog::{EffectFocus, EffectModalFade, BUTTON_NAME};
 
 use super::comp_esc_listener;
 
@@ -45,6 +46,9 @@ where
 {
   let confirm = Rc::new(on_confirm);
   let close = Rc::new(on_close);
+
+  let effect_focus = RespoEffectBox::new(EffectFocus { show });
+  let effect_modal_fade = RespoEffectBox::new(EffectModalFade { show });
 
   Ok(
     RespoComponent::named(
@@ -104,8 +108,8 @@ where
           span().attribute("data-name", "placeholder")
         }]),
     )
-    .effect(&[show], effect_focus)
-    .effect(&[show], effect_modal_fade)
+    .effect(effect_focus)
+    .effect(effect_modal_fade)
     .to_node()
     .rc(),
   )

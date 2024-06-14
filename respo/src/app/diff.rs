@@ -36,7 +36,7 @@ where
         let mut skipped = HashSet::new();
         for (idx, effect) in effects.iter().enumerate() {
           if let Some(old_effect) = old_effects.get(idx) {
-            if effect.args == old_effect.args {
+            if effect == old_effect {
               skipped.insert(idx as u32);
             }
           }

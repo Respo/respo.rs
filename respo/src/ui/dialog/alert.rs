@@ -6,8 +6,9 @@ use std::rc::Rc;
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 
+use crate::component::effect::RespoEffectBox;
 use crate::ui::dialog::{css_backdrop, css_button, css_modal_card};
-use crate::ui::dialog::{effect_focus, effect_modal_fade, BUTTON_NAME};
+use crate::ui::dialog::{EffectFocus, EffectModalFade, BUTTON_NAME};
 use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_row_parted};
 
 use crate::node::css::{CssLineHeight, CssPosition, RespoStyle};
@@ -39,6 +40,9 @@ where
 {
   let read = Rc::new(on_read);
   let close = Rc::new(on_close);
+
+  let effect_focus = RespoEffectBox::new(EffectFocus { show });
+  let effect_modal_fade = RespoEffectBox::new(EffectModalFade { show });
 
   Ok(
     RespoComponent::named(
@@ -98,8 +102,8 @@ where
           span().attribute("data-name", "placeholder")
         }]),
     )
-    .effect(&[show], effect_focus)
-    .effect(&[show], effect_modal_fade)
+    .effect(effect_focus)
+    .effect(effect_modal_fade)
     .to_node()
     .rc(),
   )

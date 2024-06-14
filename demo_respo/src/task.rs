@@ -6,7 +6,7 @@ use memoize::memoize;
 use respo::{
   button, div, input, space, span, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
-  util, CssColor, CssSize, DispatchFn, RespoComponent, RespoEvent, RespoNode, RespoStyle,
+  util, CssColor, CssSize, DispatchFn, RespoComponent, RespoEffectBox, RespoEffect, RespoEvent, RespoNode, RespoStyle,
 };
 
 use respo::states_tree::{RespoState, RespoStatesTree};
@@ -16,6 +16,30 @@ use super::store::*;
 #[derive(Debug, Clone, Default, Hash, PartialEq, Eq, Serialize, Deserialize, RespoState)]
 struct TaskState {
   draft: String,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+struct TaskUpdateEffect {
+  task: Task,
+}
+
+impl RespoEffect for TaskUpdateEffect {
+  fn as_any(&self) -> &dyn std::any::Any {
+    self
+  }
+
+  fn do_eq(&self, rhs: &dyn RespoEffect) -> bool {
+    if let Some(rhs) = rhs.as_any().downcast_ref::<Self>() {
+      self.task == rhs.task
+    } else {
+      false
+    }
+  }
+
+  fn run(&self, _effect_type: respo::RespoEffectType, _el: &web_sys::Node) -> Result<(), String> {
+    util::log!("task update effect");
+    Ok(())
+  }
 }
 
 #[memoize(Capacity: 40)]
@@ -69,6 +93,8 @@ pub fn comp_task(
     }
   };
 
+  let task_update_effect = RespoEffectBox::new(TaskUpdateEffect { task: task.to_owned() });
+
   Ok(
     RespoComponent::named(
       "task",
@@ -96,12 +122,7 @@ pub fn comp_task(
         button().class(ui_button()).inner_text("Update").on_click(on_update),
       ]),
     )
-    .effect(&[task], move |args, effect_type, _el| -> Result<(), String> {
-      let t: Task = args[0].cast_into()?;
-      util::log!("effect {:?} task: {:?}", effect_type, t);
-      // TODO
-      Ok(())
-    })
+    .effect(task_update_effect)
     .to_node()
     .rc(),
   )

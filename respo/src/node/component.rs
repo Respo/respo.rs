@@ -2,9 +2,9 @@ pub(crate) mod effect;
 
 use std::{fmt::Debug, rc::Rc};
 
-use web_sys::Node;
+use effect::RespoEffectBox;
 
-use crate::{states_tree::DynEq, RespoEffect, RespoEffectArg, RespoEffectType, RespoElement, RespoNode};
+use crate::{RespoElement, RespoNode};
 
 /// internal abstraction for a component
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -13,7 +13,7 @@ where
   T: Debug + Clone,
 {
   pub name: Rc<str>,
-  pub effects: Vec<RespoEffect>,
+  pub effects: Vec<RespoEffectBox>,
   pub tree: Box<RespoNode<T>>,
 }
 
@@ -42,32 +42,25 @@ where
   }
 
   /// add an effect on component
-  pub fn effect<U, V>(self, args: &[V], handler: U) -> Self
-  where
-    U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
-    V: Clone + DynEq + Debug + 'static,
-  {
+  pub fn effect(self, eff: RespoEffectBox) -> Self {
     let RespoComponent { name, mut effects, tree } = self;
     {
-      effects.push(RespoEffect::new(args.to_vec(), handler));
+      effects.push(eff);
       RespoComponent { name, effects, tree }
     }
   }
   /// add an empty args effect on component, which does not update
-  pub fn stable_effect<U>(self, handler: U) -> Self
-  where
-    U: Fn(Vec<RespoEffectArg>, RespoEffectType, &Node) -> Result<(), String> + 'static,
-  {
+  pub fn stable_effect(self, eff: RespoEffectBox) -> Self {
     let RespoComponent { name, mut effects, tree } = self;
     {
-      effects.push(RespoEffect::new(vec![] as Vec<()>, handler));
+      effects.push(eff);
       RespoComponent { name, effects, tree }
     }
   }
   /// add a list of effects on component
   pub fn effects<U>(self, more: U) -> Self
   where
-    U: IntoIterator<Item = RespoEffect>,
+    U: IntoIterator<Item = RespoEffectBox>,
   {
     let RespoComponent { name, mut effects, tree } = self;
     {

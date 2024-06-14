@@ -6,7 +6,7 @@ use memoize::memoize;
 use respo::{
   button, div, input, space, span, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
-  util, CssColor, CssSize, DispatchFn, RespoComponent, RespoEffect, RespoEffectBox, RespoEvent, RespoNode, RespoStyle,
+  util, CssColor, CssSize, DispatchFn, RespoComponent, RespoEffect, RespoEvent, RespoNode, RespoStyle,
 };
 
 use respo::states_tree::{RespoState, RespoStatesTree};
@@ -89,8 +89,6 @@ pub fn comp_task(
     }
   };
 
-  let task_update_effect = RespoEffectBox::new(TaskUpdateEffect { task: task.to_owned() });
-
   Ok(
     RespoComponent::named(
       "task",
@@ -118,7 +116,7 @@ pub fn comp_task(
         button().class(ui_button()).inner_text("Update").on_click(on_update),
       ]),
     )
-    .effect(task_update_effect)
+    .effect(TaskUpdateEffect { task: task.to_owned() })
     .to_node()
     .rc(),
   )

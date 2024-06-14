@@ -13,7 +13,7 @@ use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{Element, HtmlElement, KeyboardEvent, KeyboardEventInit, Node};
 
-use crate::component::effect::{RespoEffect, RespoEffectBox};
+use crate::component::effect::RespoEffect;
 use crate::node::css::{CssColor, CssDisplay, CssOverflow, CssPosition, CssSize, RespoStyle};
 use crate::node::{DispatchFn, RespoEvent, RespoNode};
 use crate::{app, input, static_styles, util, RespoComponent};
@@ -301,8 +301,6 @@ where
   U: Fn(DispatchFn<T>) -> Result<(), String> + 'static,
   T: Clone + Debug,
 {
-  let effect_close = EffectModalClose {};
-  let effect: RespoEffectBox = RespoEffectBox(Rc::new(effect_close));
   Ok(
     RespoComponent::named(
       "esc-listener",
@@ -317,7 +315,7 @@ where
           Ok(())
         }),
     )
-    .effect(effect)
+    .effect(EffectModalClose {})
     .to_node()
     .rc(),
   )

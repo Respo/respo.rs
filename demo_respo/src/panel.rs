@@ -9,7 +9,7 @@ use crate::store::ActionOp;
 use respo::{
   button, div, input, space, span,
   ui::{ui_button, ui_input},
-  util, DispatchFn, RespoComponent, RespoEffect, RespoEffectBox, RespoEvent, RespoNode,
+  util, DispatchFn, RespoComponent, RespoEffect, RespoEvent, RespoNode,
 };
 
 use respo::states_tree::{RespoState, RespoStatesTree};
@@ -67,8 +67,6 @@ pub fn comp_panel(states: &RespoStatesTree) -> Result<RespoNode<ActionOp>, Strin
     }
   };
 
-  let mount_effect = RespoEffectBox::new(PanelMount::default());
-
   Ok(
     RespoComponent::named(
       "panel",
@@ -83,7 +81,7 @@ pub fn comp_panel(states: &RespoStatesTree) -> Result<RespoNode<ActionOp>, Strin
         span().inner_text(format!("got panel state: {:?}", state)),
       ]),
     )
-    .stable_effect(mount_effect)
+    .effect(PanelMount::default())
     .to_node(),
   )
 }

@@ -4,7 +4,7 @@ use std::{fmt::Debug, rc::Rc};
 
 use effect::RespoEffectBox;
 
-use crate::{RespoElement, RespoNode};
+use crate::{RespoEffect, RespoElement, RespoNode};
 
 /// internal abstraction for a component
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -42,29 +42,13 @@ where
   }
 
   /// add an effect on component
-  pub fn effect(self, eff: RespoEffectBox) -> Self {
-    let RespoComponent { name, mut effects, tree } = self;
-    {
-      effects.push(eff);
-      RespoComponent { name, effects, tree }
-    }
-  }
-  /// add an empty args effect on component, which does not update
-  pub fn stable_effect(self, eff: RespoEffectBox) -> Self {
-    let RespoComponent { name, mut effects, tree } = self;
-    {
-      effects.push(eff);
-      RespoComponent { name, effects, tree }
-    }
-  }
-  /// add a list of effects on component
-  pub fn effects<U>(self, more: U) -> Self
+  pub fn effect<S>(self, eff: S) -> Self
   where
-    U: IntoIterator<Item = RespoEffectBox>,
+    S: RespoEffect + 'static,
   {
     let RespoComponent { name, mut effects, tree } = self;
     {
-      effects.extend(more);
+      effects.push(RespoEffectBox::new(eff));
       RespoComponent { name, effects, tree }
     }
   }

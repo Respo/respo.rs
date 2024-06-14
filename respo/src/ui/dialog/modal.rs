@@ -6,7 +6,6 @@ use std::rc::Rc;
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 
-use crate::component::effect::RespoEffectBox;
 use crate::ui::dialog::{css_backdrop, css_modal_card};
 use crate::ui::{column, ui_center, ui_fullscreen, ui_global};
 
@@ -88,9 +87,6 @@ where
 {
   let close = Rc::new(on_close);
 
-  let effect_modal_fade_state = EffectModalFade { show };
-  let effect_modal_fade = RespoEffectBox(Rc::new(effect_modal_fade_state));
-
   Ok(
     RespoComponent::named(
       "modal",
@@ -148,7 +144,7 @@ where
         }]),
     )
     // .effect(&[show], effect_focus)
-    .effect(effect_modal_fade)
+    .effect(EffectModalFade { show })
     .to_node()
     .rc(),
   )

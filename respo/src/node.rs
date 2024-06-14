@@ -24,7 +24,7 @@ use css::RespoStyle;
 
 pub use dom_change::{ChildDomOp, DomChange, RespoCoord};
 
-pub use component::effect::{RespoEffectBox, RespoEffect, RespoEffectType};
+pub use component::effect::{RespoEffect, RespoEffectType};
 
 /// an `Element` or a `Component`
 #[derive(Debug, Clone, PartialEq, Eq)]

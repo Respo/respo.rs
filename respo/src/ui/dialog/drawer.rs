@@ -6,7 +6,6 @@ use std::rc::Rc;
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 
-use crate::component::effect::RespoEffectBox;
 use crate::ui::dialog::{css_backdrop, css_drawer_card};
 use crate::ui::{column, ui_center, ui_fullscreen, ui_global};
 
@@ -88,8 +87,6 @@ where
 {
   let close = Rc::new(on_close);
 
-  let effect_drawer_fade = RespoEffectBox(Rc::new(EffectDrawerFade { show }));
-
   Ok(
     RespoComponent::named(
       "drawer",
@@ -145,7 +142,7 @@ where
         }]),
     )
     // .effect(&[show], effect_focus)
-    .effect(effect_drawer_fade)
+    .effect(EffectDrawerFade { show })
     .to_node()
     .rc(),
   )

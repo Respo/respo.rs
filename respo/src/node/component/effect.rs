@@ -1,9 +1,49 @@
-use std::{fmt::Debug, rc::Rc};
+use std::{any::Any, fmt::Debug, rc::Rc};
 
 use cirru_parser::Cirru;
 use web_sys::Node;
 
 use crate::states_tree::DynEq;
+
+/// next abstraction on effect
+pub trait RespoEffectNext {
+  /// actually run effect
+  fn run(&self, node: &Node) -> Result<(), String>;
+
+  fn as_any(&self) -> &dyn Any
+  where
+    Self: Sized + 'static,
+  {
+    self
+  }
+
+  /// compare equality
+  fn do_eq(&self, rhs: &dyn RespoEffectNext) -> bool {
+    if let Some(rhs_concrete) = rhs.as_any().downcast_ref::<Self>() {
+      self == rhs_concrete
+    } else {
+      false
+    }
+  }
+}
+
+impl<T> RespoEffectNext for T
+where
+  T: PartialEq + Debug + RespoStat + 'static,
+{
+  fn run(&self, node: &Node) -> Result<(), String> {
+    Ok(())
+  }
+
+  /// compare equality
+  fn do_eq(&self, rhs: &dyn RespoEffectNext) -> bool {
+    if let Some(rhs_concrete) = rhs.as_any().downcast_ref::<Self>() {
+      self == rhs_concrete
+    } else {
+      false
+    }
+  }
+}
 
 // use crate::{log, util::print_type_of};
 

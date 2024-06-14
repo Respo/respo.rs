@@ -6,7 +6,7 @@ use memoize::memoize;
 use respo::{
   button, div, input, space, span, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
-  util, CssColor, CssSize, DispatchFn, RespoComponent, RespoEffectBox, RespoEffect, RespoEvent, RespoNode, RespoStyle,
+  util, CssColor, CssSize, DispatchFn, RespoComponent, RespoEffect, RespoEffectBox, RespoEvent, RespoNode, RespoStyle,
 };
 
 use respo::states_tree::{RespoState, RespoStatesTree};
@@ -28,15 +28,11 @@ impl RespoEffect for TaskUpdateEffect {
     self
   }
 
-  fn do_eq(&self, rhs: &dyn RespoEffect) -> bool {
-    if let Some(rhs) = rhs.as_any().downcast_ref::<Self>() {
-      self.task == rhs.task
-    } else {
-      false
-    }
+  fn do_eq(&self, rhs: &dyn RespoEffect) -> Option<bool> {
+    rhs.as_any().downcast_ref::<Self>().map(|x| self == x)
   }
 
-  fn run(&self, _effect_type: respo::RespoEffectType, _el: &web_sys::Node) -> Result<(), String> {
+  fn updated(&self, _el: &web_sys::Node) -> Result<(), String> {
     util::log!("task update effect");
     Ok(())
   }

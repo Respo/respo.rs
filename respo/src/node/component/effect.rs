@@ -8,12 +8,41 @@ use crate::states_tree::DynEq;
 /// next abstraction on effect
 pub trait RespoEffect
 where
-  Self: Debug + 'static,
+  Self: Debug + Any + 'static,
 {
-  /// actually run effect
-  fn run(&self, effect_type: RespoEffectType, el: &Node) -> Result<(), String>;
   fn as_any(&self) -> &dyn Any;
-  fn do_eq(&self, rhs: &dyn RespoEffect) -> bool;
+  fn do_eq(&self, rhs: &dyn RespoEffect) -> Option<bool>;
+
+  /// actually run effect
+  #[allow(unused_variables)]
+  fn run(&self, effect_type: RespoEffectType, el: &Node) -> Result<(), String> {
+    match effect_type {
+      RespoEffectType::Mounted => self.mounted(el),
+      RespoEffectType::BeforeUpdate => self.before_update(el),
+      RespoEffectType::Updated => self.updated(el),
+      RespoEffectType::BeforeUnmount => self.before_unmount(el),
+    }
+  }
+  /// called when mounted
+  #[allow(unused_variables)]
+  fn mounted(&self, el: &Node) -> Result<(), String> {
+    Ok(())
+  }
+  /// called when before update
+  #[allow(unused_variables)]
+  fn before_update(&self, el: &Node) -> Result<(), String> {
+    Ok(())
+  }
+  /// called when updated
+  #[allow(unused_variables)]
+  fn updated(&self, el: &Node) -> Result<(), String> {
+    Ok(())
+  }
+  /// called when before unmount
+  #[allow(unused_variables)]
+  fn before_unmount(&self, el: &Node) -> Result<(), String> {
+    Ok(())
+  }
 }
 
 /// wraps dyn trait object of effect
@@ -23,7 +52,7 @@ pub struct RespoEffectBox(pub Rc<dyn RespoEffect>);
 impl PartialEq for RespoEffectBox {
   fn eq(&self, other: &Self) -> bool {
     let r = self.0.as_ref();
-    r.do_eq(other.0.as_ref())
+    r.do_eq(other.0.as_ref()) == Some(true)
   }
 }
 impl Eq for RespoEffectBox {}

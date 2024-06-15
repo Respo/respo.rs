@@ -23,13 +23,6 @@ struct PanelState {
 struct PanelMount {}
 
 impl RespoEffect for PanelMount {
-  fn as_any(&self) -> &dyn std::any::Any {
-    self
-  }
-  fn do_eq(&self, rhs: &dyn RespoEffect) -> Option<bool> {
-    rhs.as_any().downcast_ref::<Self>().map(|x| x == self)
-  }
-
   fn updated(&self, _el: &web_sys::Node) -> Result<(), String> {
     respo::util::log!("panel updated");
     Ok(())

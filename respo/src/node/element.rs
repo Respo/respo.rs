@@ -16,7 +16,7 @@ where
   /// tagName
   pub name: Rc<str>,
   pub attrs: HashMap<Rc<str>, String>,
-  pub event: HashMap<Rc<str>, RespoListenerFn<T>>,
+  pub(crate) event: HashMap<Rc<str>, RespoListenerFn<T>>,
   /// inlines styles, partially typed.
   /// there's also a macro called `static_styles` for inserting CSS rules
   pub style: RespoStyle,

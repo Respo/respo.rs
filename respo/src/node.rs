@@ -12,8 +12,8 @@ use std::rc::Rc;
 use std::{collections::HashMap, fmt::Debug};
 
 use cirru_parser::Cirru;
-pub use component::effect::RespoEffectArg;
-pub use listener::{RespoEvent, RespoEventMark, RespoListenerFn};
+pub use listener::RespoEvent;
+pub(crate) use listener::{RespoEventMark, RespoListenerFn};
 
 pub use component::RespoComponent;
 pub use element::RespoElement;
@@ -22,7 +22,8 @@ use crate::states_tree::{DynEq, RespoStateBranch, RespoUpdateState};
 
 use css::RespoStyle;
 
-pub use dom_change::{ChildDomOp, DomChange, RespoCoord};
+pub use dom_change::RespoCoord;
+pub(crate) use dom_change::{ChildDomOp, DomChange};
 
 pub use component::effect::{RespoEffect, RespoEffectType};
 
@@ -168,7 +169,8 @@ where
   }
 }
 
-/// it has special support for states
+/// guide for actions to be dispatched
+/// expecially for how you update states
 pub trait RespoAction {
   /// to provide syntax sugar to dispatch.run_state
   fn build_states_action(cursor: &[Rc<str>], a: Option<RespoStateBranch>) -> Self
@@ -221,7 +223,7 @@ where
 
 /// (internal) function to handle event marks at first phase of event handling
 #[derive(Clone)]
-pub struct RespoEventMarkFn(Rc<dyn Fn(RespoEventMark) -> Result<(), String>>);
+pub(crate) struct RespoEventMarkFn(Rc<dyn Fn(RespoEventMark) -> Result<(), String>>);
 
 impl Debug for RespoEventMarkFn {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

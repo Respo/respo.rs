@@ -6,7 +6,7 @@ use crate::node::{DispatchFn, RespoCoord};
 
 /// (internal) struct to store event handler function on the tree
 #[derive(Clone)]
-pub struct RespoListenerFn<T>(Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>)
+pub(crate) struct RespoListenerFn<T>(Rc<dyn Fn(RespoEvent, DispatchFn<T>) -> Result<(), String>>)
 where
   T: Debug + Clone;
 

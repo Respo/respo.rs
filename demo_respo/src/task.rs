@@ -24,14 +24,6 @@ struct TaskUpdateEffect {
 }
 
 impl RespoEffect for TaskUpdateEffect {
-  fn as_any(&self) -> &dyn std::any::Any {
-    self
-  }
-
-  fn do_eq(&self, rhs: &dyn RespoEffect) -> Option<bool> {
-    rhs.as_any().downcast_ref::<Self>().map(|x| self == x)
-  }
-
   fn updated(&self, _el: &web_sys::Node) -> Result<(), String> {
     util::log!("task update effect");
     Ok(())

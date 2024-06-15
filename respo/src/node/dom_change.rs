@@ -12,7 +12,7 @@ use crate::node::str_dict_to_cirrus_dict;
 /// performance is not optimial since looking up the DOM via dom_path has repetitive operations,
 /// might need to fix in future is overhead observed.
 #[derive(Debug, Clone)]
-pub enum DomChange<T>
+pub(crate) enum DomChange<T>
 where
   T: Debug + Clone,
 {
@@ -177,7 +177,7 @@ where
 
 /// used in list diffing, this is still part of `DomChange`
 #[derive(Debug, Clone)]
-pub enum ChildDomOp<T>
+pub(crate) enum ChildDomOp<T>
 where
   T: Debug + Clone,
 {

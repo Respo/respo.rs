@@ -9,7 +9,7 @@ use std::hash::Hash;
 use std::rc::Rc;
 
 use crate::log;
-pub use dyn_eq::DynEq;
+pub(crate) use dyn_eq::DynEq;
 
 pub use state::RespoState;
 

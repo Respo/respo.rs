@@ -802,4 +802,3 @@ macro_rules! static_styles {
     $crate::static_style_seq!($a, &[$b, $c, $d, $e, $f]);
   };
 }
-pub use static_styles;

@@ -3,8 +3,6 @@ use std::{any::Any, fmt::Debug, rc::Rc};
 use cirru_parser::Cirru;
 use web_sys::Node;
 
-use crate::states_tree::DynEq;
-
 pub trait RespoEffectDynEq
 where
   Self: Debug + Any + 'static,
@@ -36,7 +34,9 @@ impl PartialEq for dyn RespoEffectDynEq {
   }
 }
 
-/// next abstraction on effect
+/// trait for component effects
+/// you can declare `mounted`, `beforeUpdate`, `updated`, `beforeUnmount` methods
+/// to handle lifecycle events, mainly for manually manipulating DOM
 pub trait RespoEffect
 where
   Self: Debug + Any + RespoEffectDynEq + 'static,
@@ -96,6 +96,8 @@ impl RespoEffectBox {
 
 // use crate::{log, util::print_type_of};
 
+/// Internal enum for effect types.
+/// you only need this if you override `RespoEffect` `.run()`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RespoEffectType {
   /// called after mounting happened, use effect handlers from new trees
@@ -115,43 +117,6 @@ impl From<RespoEffectType> for Cirru {
       RespoEffectType::BeforeUpdate => "::before-update".into(),
       RespoEffectType::Updated => "::updated".into(),
       RespoEffectType::BeforeUnmount => "::before-unmount".into(),
-    }
-  }
-}
-
-/// (internal) abstraction on effect argument
-#[derive(Debug, Clone)]
-pub struct RespoEffectArg(pub Rc<dyn DynEq>);
-
-impl PartialEq for RespoEffectArg {
-  fn eq(&self, other: &Self) -> bool {
-    self.0.eq(&other.0)
-  }
-}
-
-impl Eq for RespoEffectArg {}
-
-impl RespoEffectArg {
-  pub fn new<T: ToOwned + DynEq + 'static>(v: T) -> Self {
-    Self(Rc::new(v))
-  }
-  pub fn cast_into<T>(&self) -> Result<T, String>
-  where
-    T: Debug + DynEq + Clone + 'static,
-  {
-    // log!("cast {:?} {:?}", self.0, type_name::<T>());
-    // print_type_of(&self.0.as_ref());
-    // log!("expected type {:?}", type_name::<T>());
-    // if let Some(v) = self.0.as_ref().as_any().downcast_ref::<bool>() {
-    //   log!("Casted to &bool {:?}", v);
-    // } else {
-    //   log!("failed to cast &bool {:?}", self.0);
-    // }
-    if let Some(v) = self.0.as_ref().as_any().downcast_ref::<T>() {
-      // need to call .as_ref() to get the reference inside Rc<T>
-      Ok(v.to_owned())
-    } else {
-      Err(format!("failed to cast, {:?}", self))
     }
   }
 }

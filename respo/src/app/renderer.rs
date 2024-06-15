@@ -207,7 +207,7 @@ where
 }
 
 /// creates a DOM tree from virtual DOM with proxied event handler attached
-pub fn build_dom_tree<T>(tree: &RespoNode<T>, coord: &[RespoCoord], handle_event: RespoEventMarkFn) -> Result<Node, JsValue>
+pub(crate) fn build_dom_tree<T>(tree: &RespoNode<T>, coord: &[RespoCoord], handle_event: RespoEventMarkFn) -> Result<Node, JsValue>
 where
   T: Debug + Clone,
 {

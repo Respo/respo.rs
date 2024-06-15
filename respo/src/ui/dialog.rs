@@ -32,14 +32,6 @@ pub(crate) struct EffectFocus {
 }
 
 impl RespoEffect for EffectFocus {
-  fn as_any(&self) -> &dyn std::any::Any {
-    self
-  }
-
-  fn do_eq(&self, rhs: &dyn RespoEffect) -> Option<bool> {
-    rhs.as_any().downcast_ref::<Self>().map(|x| self == x)
-  }
-
   fn updated(&self, el: &Node) -> Result<(), String> {
     let show: bool = self.show;
     if show {
@@ -76,14 +68,6 @@ pub(crate) struct EffectModalFade {
 }
 
 impl RespoEffect for EffectModalFade {
-  fn as_any(&self) -> &dyn std::any::Any {
-    self
-  }
-
-  fn do_eq(&self, rhs: &dyn RespoEffect) -> Option<bool> {
-    rhs.as_any().downcast_ref::<Self>().map(|x| self == x)
-  }
-
   fn before_update(&self, el: &Node) -> Result<(), String> {
     let show: bool = self.show;
 
@@ -160,14 +144,6 @@ pub(crate) struct EffectDrawerFade {
 }
 
 impl RespoEffect for EffectDrawerFade {
-  fn as_any(&self) -> &dyn std::any::Any {
-    self
-  }
-
-  fn do_eq(&self, rhs: &dyn RespoEffect) -> Option<bool> {
-    rhs.as_any().downcast_ref::<Self>().map(|x| self == x)
-  }
-
   fn before_update(&self, el: &Node) -> Result<(), String> {
     let show = self.show;
 
@@ -244,14 +220,6 @@ impl RespoEffect for EffectDrawerFade {
 struct EffectModalClose {}
 
 impl RespoEffect for EffectModalClose {
-  fn as_any(&self) -> &dyn std::any::Any {
-    self
-  }
-
-  fn do_eq(&self, rhs: &dyn RespoEffect) -> Option<bool> {
-    rhs.as_any().downcast_ref::<Self>().map(|x| self == x)
-  }
-
   fn mounted(&self, el: &Node) -> Result<(), String> {
     let el = Rc::new(el.to_owned());
     let window = web_sys::window().unwrap();

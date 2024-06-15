@@ -1,3 +1,5 @@
+#![feature(trait_upcasting)]
+
 //! A tiny framework around a **virtual DOM** library, compiles to WebAssembly, runs in the browser, declarative UI for building interactive web apps.
 //!
 //! Original design was [Respo.cljs](http://respo-mvc.org/), which is heavily influenced by React.js and ClojureScript.
@@ -19,6 +21,7 @@
 //! - ❌ updating component states in lifecycle. Respo enforces "unidirectional data flow"
 //! - ❌ React-like hooks. Respo uses plain functions without tricky internal states
 //! - ❌ Hot reloading. Not working in WebAssembly so far
+
 mod app;
 pub mod states_tree;
 

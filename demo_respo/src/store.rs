@@ -55,29 +55,30 @@ impl RespoStore for Store {
   type Action = ActionOp;
 
   fn update(&mut self, op: Self::Action) -> Result<(), String> {
+    use ActionOp::*;
     match op {
-      ActionOp::Noop => {
+      Noop => {
         // nothing to to
       }
-      ActionOp::Increment => {
+      Increment => {
         self.counted += 1;
       }
-      ActionOp::Decrement => {
+      Decrement => {
         self.counted -= 1;
       }
-      ActionOp::StatesChange(a) => {
+      StatesChange(a) => {
         self.states.set_in_mut(a);
       }
-      ActionOp::AddTask(id, content) => self.tasks.push(Task {
+      AddTask(id, content) => self.tasks.push(Task {
         id,
         content,
         time: 0.0,
         done: false,
       }),
-      ActionOp::RemoveTask(id) => {
+      RemoveTask(id) => {
         self.tasks.retain(|task| task.id != id);
       }
-      ActionOp::UpdateTask(id, content) => {
+      UpdateTask(id, content) => {
         let mut found = false;
         for task in &mut self.tasks {
           if task.id == id {
@@ -89,7 +90,7 @@ impl RespoStore for Store {
           return Err(format!("task {} not found", id));
         }
       }
-      ActionOp::ToggleTask(id) => {
+      ToggleTask(id) => {
         let mut found = false;
         for task in &mut self.tasks {
           if task.id == id {

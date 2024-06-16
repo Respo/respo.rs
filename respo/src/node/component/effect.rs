@@ -1,45 +1,17 @@
+mod base;
+
 use std::{any::Any, fmt::Debug, rc::Rc};
 
+use base::{AsRespoEffectBase, RespoEffectDynEq};
 use cirru_parser::Cirru;
 use web_sys::Node;
-
-pub trait RespoEffectDynEq
-where
-  Self: Debug + Any + 'static,
-{
-  fn as_any(&self) -> &dyn Any;
-  fn do_eq(&self, rhs: &dyn RespoEffectDynEq) -> Option<bool>;
-}
-
-impl<T> RespoEffectDynEq for T
-where
-  T: PartialEq + Debug + 'static,
-{
-  fn as_any(&self) -> &dyn Any {
-    self
-  }
-
-  fn do_eq(&self, rhs: &dyn RespoEffectDynEq) -> Option<bool> {
-    if let Some(rhs_concrete) = rhs.as_any().downcast_ref::<Self>() {
-      Some(self == rhs_concrete)
-    } else {
-      Some(false)
-    }
-  }
-}
-
-impl PartialEq for dyn RespoEffectDynEq {
-  fn eq(&self, rhs: &Self) -> bool {
-    self.do_eq(rhs) == Some(true)
-  }
-}
 
 /// trait for component effects
 /// you can declare `mounted`, `beforeUpdate`, `updated`, `beforeUnmount` methods
 /// to handle lifecycle events, mainly for manually manipulating DOM
 pub trait RespoEffect
 where
-  Self: Debug + Any + RespoEffectDynEq + 'static,
+  Self: Debug + Any + RespoEffectDynEq + AsRespoEffectBase + 'static,
 {
   /// actually run effect
   #[allow(unused_variables)]
@@ -80,7 +52,7 @@ pub struct RespoEffectBox(pub Rc<dyn RespoEffect>);
 impl PartialEq for RespoEffectBox {
   fn eq(&self, other: &Self) -> bool {
     let r = self.0.as_ref();
-    r.do_eq(other.0.as_ref()) == Some(true)
+    r.do_eq(other.0.as_ref().as_base()) == Some(true)
   }
 }
 impl Eq for RespoEffectBox {}

@@ -1,5 +1,3 @@
-#![feature(trait_upcasting)]
-
 //! A tiny framework around a **virtual DOM** library, compiles to WebAssembly, runs in the browser, declarative UI for building interactive web apps.
 //!
 //! Original design was [Respo.cljs](http://respo-mvc.org/), which is heavily influenced by React.js and ClojureScript.

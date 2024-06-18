@@ -22,7 +22,7 @@ use crate::states_tree::{DynEq, RespoStateBranch, RespoUpdateState};
 
 use css::RespoStyle;
 
-pub use dom_change::RespoCoord;
+pub(crate) use dom_change::RespoCoord;
 pub(crate) use dom_change::{ChildDomOp, DomChange};
 
 pub use component::effect::{RespoEffect, RespoEffectType};
@@ -145,7 +145,7 @@ where
 
 pub(crate) type StrDict = HashMap<Rc<str>, String>;
 
-pub fn str_dict_to_cirrus_dict(dict: &StrDict) -> Cirru {
+pub(crate) fn str_dict_to_cirrus_dict(dict: &StrDict) -> Cirru {
   let mut xs = vec![];
   for (k, v) in dict {
     xs.push(vec![Cirru::from(k.as_ref()), Cirru::from(v)].into());

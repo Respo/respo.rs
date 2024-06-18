@@ -8,7 +8,7 @@ use crate::css::{CssSize, RespoStyle};
 
 /// a macro for creating a function with a named node
 /// ```ignore
-/// declare_tag!(div);
+/// declare_tag!(div, "about `<div/>`");
 /// ```
 #[macro_export]
 macro_rules! declare_tag {
@@ -46,6 +46,7 @@ declare_tag!(blockquote, "`<blockquote/>`");
 declare_tag!(ul, "`<ul/>`");
 declare_tag!(li, "`<li/>`");
 declare_tag!(label, "`<label/>`");
+declare_tag!(canvas, "`<canvas/>`");
 
 /// special function to return `<div/>` with width/height that can be used as a space
 pub fn space<T>(w: Option<i32>, h: Option<i32>) -> RespoElement<T>

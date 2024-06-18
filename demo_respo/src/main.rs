@@ -14,8 +14,8 @@ use std::rc::Rc;
 use web_sys::Node;
 
 use respo::ui::ui_global;
+use respo::{css::RespoStyle, util, RespoApp, RespoNode, RespoStore};
 use respo::{div, util::query_select_node};
-use respo::{util, RespoApp, RespoNode, RespoStore, RespoStyle};
 
 use self::counter::comp_counter;
 pub use self::store::ActionOp;

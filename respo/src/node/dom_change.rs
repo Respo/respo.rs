@@ -242,7 +242,7 @@ where
 
 /// coordinate system on RespoNode, to lookup among elements and components
 #[derive(Debug, Clone)]
-pub enum RespoCoord {
+pub(crate) enum RespoCoord {
   Key(RespoIndexKey),
   /// for indexing by component name, even though there's only one of that
   Comp(Rc<str>),

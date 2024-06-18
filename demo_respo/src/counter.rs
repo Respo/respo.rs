@@ -1,6 +1,12 @@
 use std::fmt::Debug;
 
-use respo::{button, div, span, ui::ui_button, util, CssColor, DispatchFn, RespoElement, RespoEvent, RespoStyle};
+use respo::{
+  button,
+  css::{CssColor, RespoStyle},
+  div, span,
+  ui::ui_button,
+  util, DispatchFn, RespoElement, RespoEvent,
+};
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 

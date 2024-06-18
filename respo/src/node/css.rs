@@ -1,3 +1,23 @@
+//! Define CSS styles in Rust and generate CSS class-name.
+//!
+//! ```rust
+//! use respo::css::*;
+//! respo::static_styles!(
+//!  style_done_button,
+//!  (
+//!    "&",
+//!    RespoStyle::default()
+//!      .width(CssSize::Px(24.0))
+//!      .height(CssSize::Px(24.0))
+//!      .margin(4.)
+//!      .cursor("pointer".to_owned())
+//!      .background_color(CssColor::Hsl(20, 90, 70)),
+//!  )
+//! );
+//! ```
+//!
+//! then `style_done_button()` returns the class name, while CSS is generated and injected into the `<style/>`.
+
 use std::{
   collections::HashSet,
   fmt::{self, Display, Formatter, Write},
@@ -725,7 +745,7 @@ where
   }
 }
 
-/// turns `src/a/b.rs` into `a_b`, used inside macro
+/// turns `src/a/b.rs` into `a_b`, (used inside macro)
 pub fn css_name_from_path(p: &str) -> String {
   let mut s = p.to_owned();
   if let Some(x) = s.strip_prefix("src/") {
@@ -741,7 +761,7 @@ pub fn css_name_from_path(p: &str) -> String {
 /// ```rust
 /// respo::static_style_seq!(the_name,
 ///   &[
-///     ("&", respo::RespoStyle::default())
+///     ("&", respo::css::RespoStyle::default())
 ///   ]
 /// );
 /// ```
@@ -754,8 +774,8 @@ macro_rules! static_style_seq {
   ($a:ident, $b:expr) => {
     pub fn $a() -> String {
       // let name = $crate::css_name_from_path(std::file!());
-      let name = $crate::css_name_from_path(std::module_path!());
-      $crate::declare_static_style(format!("{}__{}", name, stringify!($a)), $b)
+      let name = $crate::css::css_name_from_path(std::module_path!());
+      $crate::css::declare_static_style(format!("{}__{}", name, stringify!($a)), $b)
     }
   };
 }
@@ -763,7 +783,7 @@ macro_rules! static_style_seq {
 /// macro to create a public function of CSS rules(up to 5 tuples) at current file scope,
 /// ```rust
 /// respo::static_styles!(the_name,
-///   ("&", respo::RespoStyle::default())
+///   ("&", respo::css::RespoStyle::default())
 /// );
 /// ```
 /// gets a function like:

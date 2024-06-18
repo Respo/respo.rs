@@ -41,7 +41,7 @@ pub(crate) fn mark_need_rerender() {
 }
 
 /// render elements
-pub fn render_node<T, U>(
+pub(crate) fn render_node<T, U>(
   mount_target: Node,
   // TODO it copies the whole store, need to optimize
   get_store: Box<dyn Fn() -> U>,
@@ -150,7 +150,7 @@ where
   Ok(())
 }
 
-pub fn load_coord_target_tree<T>(tree: &RespoNode<T>, coord: &[RespoCoord]) -> Result<RespoNode<T>, String>
+pub(crate) fn load_coord_target_tree<T>(tree: &RespoNode<T>, coord: &[RespoCoord]) -> Result<RespoNode<T>, String>
 where
   T: Debug + Clone,
 {

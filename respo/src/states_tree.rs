@@ -1,3 +1,7 @@
+//! Respo does not provide local states in components, but a global states tree.
+//! `RespoStatesTree` tree has concept of "cursor", which is a path to the current state in the tree.
+//! use `branch.pick(name)` to get a child branch, and `branch.set_in_mut(change)` to update the tree.
+
 mod dyn_eq;
 mod state;
 
@@ -109,7 +113,7 @@ impl RespoStatesTree {
   }
 
   /// in-place mutation of state tree
-  pub fn set_in_mut(&mut self, change: RespoUpdateState) {
+  pub(crate) fn set_in_mut(&mut self, change: RespoUpdateState) {
     if change.cursor.is_empty() {
       change.data.clone_into(&mut self.data);
       change.backup.clone_into(&mut self.backup);

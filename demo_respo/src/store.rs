@@ -35,10 +35,10 @@ impl Hash for Task {
 pub enum ActionOp {
   #[default]
   Noop,
-  Increment,
-  Decrement,
   /// contains State and Value
   StatesChange(RespoUpdateState),
+  Increment,
+  Decrement,
   AddTask(String, String),
   RemoveTask(String),
   UpdateTask(String, String),
@@ -54,20 +54,24 @@ impl RespoAction for ActionOp {
 impl RespoStore for Store {
   type Action = ActionOp;
 
+  fn get_states(&mut self) -> &mut RespoStatesTree {
+    &mut self.states
+  }
+
   fn update(&mut self, op: Self::Action) -> Result<(), String> {
     use ActionOp::*;
     match op {
       Noop => {
         // nothing to to
       }
+      StatesChange(a) => {
+        self.update_states(a);
+      }
       Increment => {
         self.counted += 1;
       }
       Decrement => {
         self.counted -= 1;
-      }
-      StatesChange(a) => {
-        self.states.set_in_mut(a);
       }
       AddTask(id, content) => self.tasks.push(Task {
         id,

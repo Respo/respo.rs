@@ -1,5 +1,5 @@
 use respo::ui::{ui_button_danger, ui_button_primary};
-use respo::{space, ui::ui_row_parted, RespoStyle};
+use respo::{css::RespoStyle, space, ui::ui_row_parted};
 use respo::{RespoElement, RespoEvent};
 
 use respo::{button, div, span, ui::ui_button, util, DispatchFn};

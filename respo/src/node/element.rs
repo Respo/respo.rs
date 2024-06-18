@@ -5,7 +5,7 @@ use std::{
   rc::Rc,
 };
 
-use crate::{DispatchFn, RespoEvent, RespoIndexKey, RespoListenerFn, RespoNode, RespoStyle};
+use crate::{css::RespoStyle, DispatchFn, RespoEvent, RespoIndexKey, RespoListenerFn, RespoNode};
 
 /// internal abstraction for an element
 #[derive(Debug, Clone, PartialEq, Eq)]

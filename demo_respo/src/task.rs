@@ -4,9 +4,11 @@ use std::fmt::Debug;
 
 use memoize::memoize;
 use respo::{
-  button, div, input, space, span, static_styles,
+  button,
+  css::{CssColor, CssSize, RespoStyle},
+  div, input, space, span, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
-  util, CssColor, CssSize, DispatchFn, RespoComponent, RespoEffect, RespoEvent, RespoNode, RespoStyle,
+  util, DispatchFn, RespoComponent, RespoEffect, RespoEvent, RespoNode,
 };
 
 use respo::states_tree::{RespoState, RespoStatesTree};

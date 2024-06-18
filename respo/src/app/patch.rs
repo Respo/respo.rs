@@ -12,7 +12,7 @@ use web_sys::console::warn_1;
 
 use crate::node::{RespoComponent, RespoEffectType, RespoEvent, RespoEventMark, RespoEventMarkFn, RespoNode};
 
-use crate::load_coord_target_tree;
+use super::renderer::load_coord_target_tree;
 use crate::node::dom_change::{ChildDomOp, DomChange, RespoCoord};
 
 use crate::app::renderer::build_dom_tree;

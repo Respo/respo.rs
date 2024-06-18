@@ -15,7 +15,10 @@ use web_sys::{BeforeUnloadEvent, Node};
 
 use renderer::render_node;
 
-use crate::node::{DispatchFn, RespoAction, RespoNode};
+use crate::{
+  node::{DispatchFn, RespoAction, RespoNode},
+  states_tree::{RespoStatesTree, RespoUpdateState},
+};
 
 const RESPO_APP_STORE_KEY: &str = "respo_app_respo_store_default";
 
@@ -131,6 +134,14 @@ pub trait RespoApp {
 pub trait RespoStore {
   type Action: Debug + Clone + RespoAction;
   fn update(&mut self, op: Self::Action) -> Result<(), String>;
+
+  /// a way to load states tree
+  fn get_states(&mut self) -> &mut RespoStatesTree;
+
+  /// public API for updating states tree
+  fn update_states(&mut self, op: RespoUpdateState) {
+    self.get_states().set_in_mut(op);
+  }
 
   /// for backup
   fn to_string(&self) -> String;

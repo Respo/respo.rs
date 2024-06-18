@@ -3,6 +3,7 @@ use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::Node;
 
+/// this one uses `requestAnimationFrame` for calling
 #[allow(dead_code)]
 pub fn raf_loop(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
   let f_ = Rc::new(RefCell::new(None));
@@ -30,7 +31,8 @@ fn window() -> web_sys::Window {
   web_sys::window().expect("no global `window` exists")
 }
 
-/// this API is used for development, prefer `req_loop` for fast response
+/// uses `requestAnimationFrame` for calling, but with a interval to reduce cost.
+/// prefer `req_loop` if you want to be faster
 #[allow(dead_code)]
 pub fn raf_loop_slow(interval: i32, mut cb: Box<dyn FnMut() -> Result<(), String>>) {
   let f = Rc::new(RefCell::new(None));
@@ -76,7 +78,9 @@ pub fn query_select_node(pattern: &str) -> Result<Node, String> {
   }
 }
 
-/// wraps on top of `web_sys::console.log_1`, use it like:
+/// wraps on top of `web_sys::console.log_1`.
+///
+/// use it like:
 /// ```ignore
 /// util::log!("a is {}", a);
 /// ```

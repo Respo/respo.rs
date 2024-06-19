@@ -1,10 +1,12 @@
 use respo::ui::{ui_button_danger, ui_button_primary};
-use respo::RespoEvent;
-use respo::{space, ui::ui_row_parted, RespoStyle};
+use respo::{css::RespoStyle, space, ui::ui_row_parted};
+use respo::{RespoElement, RespoEvent};
 
-use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoNode, StatesTree};
+use respo::{button, div, span, ui::ui_button, util, DispatchFn};
 
-use respo::dialog::{
+use respo::states_tree::RespoStatesTree;
+
+use respo::ui::dialog::{
   AlertOptions, AlertPlugin, AlertPluginInterface, ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface, DrawerOptions, DrawerPlugin,
   DrawerPluginInterface, DrawerRenderer, ModalOptions, ModalPlugin, ModalPluginInterface, ModalRenderer, PromptOptions, PromptPlugin,
   PromptPluginInterface, PromptValidator,
@@ -12,13 +14,13 @@ use respo::dialog::{
 
 use super::store::*;
 
-pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, String> {
+pub fn comp_plugins_demo(states: &RespoStatesTree) -> Result<RespoElement<ActionOp>, String> {
   // respo::util::log!("re-render");
 
   let alert_plugin = AlertPlugin::new(
     states.pick("info"),
     AlertOptions {
-      // card_style: RespoStyle::default().background_color(CssColor::Blue).to_owned(),
+      // card_style: RespoStyle::default().background_color(CssColor::Blue),
       ..AlertOptions::default()
     },
     |_dispatch: DispatchFn<ActionOp>| {
@@ -29,7 +31,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   .share_with_ref();
 
   let on_alert = {
-    let alert_plugin = alert_plugin.clone();
+    let alert_plugin = alert_plugin.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("click {:?}", e);
 
@@ -48,10 +50,10 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
       Ok(())
     },
   )?
-  .share_with_ref();
+  .rc();
 
   let on_confirm = {
-    let confirm_plugin = confirm_plugin.clone();
+    let confirm_plugin = confirm_plugin.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("click {:?}", e);
 
@@ -88,7 +90,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   .share_with_ref();
 
   let on_prompt = {
-    let prompt_plugin = prompt_plugin.clone();
+    let prompt_plugin = prompt_plugin.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("click {:?}", e);
 
@@ -114,15 +116,14 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
         };
         Ok(
           div()
-            .style(RespoStyle::default().padding(8.0).to_owned())
-            .children([
-              div().children([span().inner_text("content in custom modal").to_owned()]).to_owned(),
+            .style(RespoStyle::default().padding(8.0))
+            .elements([
+              div().elements([span().inner_text("content in custom modal")]),
               div()
                 .class(ui_row_parted())
-                .children([span(), button().class(ui_button()).inner_text("close").on_click(handler).to_owned()])
-                .to_owned(),
+                .elements([span(), button().class(ui_button()).inner_text("close").on_click(handler)]),
             ])
-            .to_owned(),
+            .to_node(),
         )
       }),
       ..ModalOptions::default()
@@ -131,7 +132,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   .share_with_ref();
 
   let on_modal = {
-    let modal_plugin = modal_plugin.clone();
+    let modal_plugin = modal_plugin.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("click {:?}", e);
 
@@ -154,17 +155,14 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
         };
         Ok(
           div()
-            .style(RespoStyle::default().padding(8.0).to_owned())
-            .children([
-              div()
-                .children([span().inner_text("content in custom drawer").to_owned()])
-                .to_owned(),
+            .style(RespoStyle::default().padding(8.0))
+            .elements([
+              div().elements([span().inner_text("content in custom drawer")]),
               div()
                 .class(ui_row_parted())
-                .children([span(), button().class(ui_button()).inner_text("close").on_click(handler).to_owned()])
-                .to_owned(),
+                .elements([span(), button().class(ui_button()).inner_text("close").on_click(handler)]),
             ])
-            .to_owned(),
+            .to_node(),
         )
       }),
       ..DrawerOptions::default()
@@ -173,7 +171,7 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   .share_with_ref();
 
   let on_drawer = {
-    let drawer_plugin = drawer_plugin.clone();
+    let drawer_plugin = drawer_plugin.to_owned();
     move |e: RespoEvent, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("click {:?}", e);
 
@@ -184,40 +182,32 @@ pub fn comp_plugins_demo(states: &StatesTree) -> Result<RespoNode<ActionOp>, Str
   };
 
   Ok(
-    div()
-      .children([
-        div().children([span().inner_text("Dialogs").to_owned()]).to_owned(),
-        div()
-          .children([
-            button().class(ui_button()).inner_text("Try Alert").on_click(on_alert).to_owned(),
-            space(Some(8), None),
-            button()
-              .class(ui_button())
-              .inner_text("Try Confirm")
-              .on_click(on_confirm)
-              .to_owned(),
-            space(Some(8), None),
-            button().class(ui_button()).inner_text("Try Prompt").on_click(on_prompt).to_owned(),
-            space(Some(8), None),
-            button()
-              .class(ui_button_primary())
-              .inner_text("Try Custom Modal")
-              .on_click(on_modal)
-              .to_owned(),
-            space(Some(8), None),
-            button()
-              .class(ui_button_danger())
-              .inner_text("Try Custom Drawer")
-              .on_click(on_drawer)
-              .to_owned(),
-          ])
-          .to_owned(),
-        alert_plugin.render()?,
-        confirm_plugin.render()?,
-        prompt_plugin.render()?,
-        modal_plugin.render()?,
-        drawer_plugin.render()?,
-      ])
-      .to_owned(),
+    div().children([
+      div().elements([span().inner_text("Dialogs")]).to_node(),
+      div()
+        .elements([
+          button().class(ui_button()).inner_text("Try Alert").on_click(on_alert),
+          space(Some(8), None),
+          button().class(ui_button()).inner_text("Try Confirm").on_click(on_confirm),
+          space(Some(8), None),
+          button().class(ui_button()).inner_text("Try Prompt").on_click(on_prompt),
+          space(Some(8), None),
+          button()
+            .class(ui_button_primary())
+            .inner_text("Try Custom Modal")
+            .on_click(on_modal),
+          space(Some(8), None),
+          button()
+            .class(ui_button_danger())
+            .inner_text("Try Custom Drawer")
+            .on_click(on_drawer),
+        ])
+        .to_node(),
+      alert_plugin.render()?,
+      confirm_plugin.render()?,
+      prompt_plugin.render()?,
+      modal_plugin.render()?,
+      drawer_plugin.render()?,
+    ]),
   )
 }

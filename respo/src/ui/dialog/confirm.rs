@@ -4,18 +4,21 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 
 use js_sys::{Array, Function, Reflect};
+use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
-use crate::dialog::{css_backdrop, css_button, css_modal_card};
+use crate::ui::dialog::{css_backdrop, css_button, css_modal_card};
 use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_row_parted};
 
-use crate::{
-  button, div, respo, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree,
-};
+use crate::node::css::{CssLineHeight, CssPosition, RespoStyle};
+use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
+use crate::{app, button, div, space, span, RespoComponent};
 
-use crate::dialog::{effect_focus, effect_modal_fade, BUTTON_NAME};
+use crate::states_tree::{RespoState, RespoStatesTree};
+
+use crate::ui::dialog::{EffectFocus, EffectModalFade, BUTTON_NAME};
 
 use super::comp_esc_listener;
 
@@ -42,30 +45,31 @@ where
 {
   let confirm = Rc::new(on_confirm);
   let close = Rc::new(on_close);
-  let close2 = close.clone();
-  let close3 = close.clone();
 
   Ok(
-    RespoNode::new_component(
+    RespoComponent::named(
       "confirm-modal",
       div()
-        .style(RespoStyle::default().position(CssPosition::Absolute).to_owned())
-        .children([if show {
+        .style(RespoStyle::default().position(CssPosition::Absolute))
+        .elements([if show {
           div()
             .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
             .style(options.backdrop_style)
-            .on_click(move |e, dispatch| -> Result<(), String> {
-              if let RespoEvent::Click { original_event, .. } = e {
-                // stop propagation to prevent closing the modal
-                original_event.stop_propagation();
+            .on_click({
+              let close = close.to_owned();
+              move |e, dispatch| -> Result<(), String> {
+                if let RespoEvent::Click { original_event, .. } = e {
+                  // stop propagation to prevent closing the modal
+                  original_event.stop_propagation();
+                }
+                close(dispatch)?;
+                Ok(())
               }
-              close(dispatch)?;
-              Ok(())
             })
             .children([
               div()
                 .class_list(&[column(), ui_global(), css_modal_card()])
-                .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)).to_owned())
+                .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)))
                 .style(options.card_style)
                 .on_click(move |e, _dispatch| -> Result<(), String> {
                   // nothing to do
@@ -75,42 +79,35 @@ where
                   }
                   Ok(())
                 })
-                .children([div()
-                  .children([
-                    span()
-                      .inner_text(options.text.unwrap_or_else(|| "Need confirmation...".to_owned()))
-                      .to_owned(),
-                    space(None, Some(8)),
-                    div()
-                      .class(ui_row_parted())
-                      .children([
-                        span(),
-                        button()
-                          .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
-                          .inner_text(options.button_text.unwrap_or_else(|| "Confirm".to_owned()))
-                          .on_click(move |_e, dispatch| -> Result<(), String> {
-                            let d2 = dispatch.clone();
-                            confirm(dispatch)?;
-                            close2(d2)?;
-                            Ok(())
-                          })
-                          .to_owned(),
-                      ])
-                      .to_owned(),
-                  ])
-                  .to_owned()])
-                .to_owned(),
-              comp_esc_listener(show, close3)?,
+                .elements([div().elements([
+                  span().inner_text(options.text.unwrap_or_else(|| "Need confirmation...".to_owned())),
+                  space(None, Some(8)),
+                  div().class(ui_row_parted()).elements([
+                    span(),
+                    button()
+                      .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
+                      .inner_text(options.button_text.unwrap_or_else(|| "Confirm".to_owned()))
+                      .on_click({
+                        let close = close.to_owned();
+                        move |_e, dispatch| -> Result<(), String> {
+                          confirm(dispatch.to_owned())?;
+                          close(dispatch)?;
+                          Ok(())
+                        }
+                      }),
+                  ]),
+                ])])
+                .to_node(),
+              comp_esc_listener(show, close)?,
             ])
-            .to_owned()
         } else {
-          span().attribute("data-name", "placeholder").to_owned()
-        }])
-        .to_owned(),
+          span().attribute("data-name", "placeholder")
+        }]),
     )
-    .effect(&[show], effect_focus)
-    .effect(&[show], effect_modal_fade)
-    .share_with_ref(),
+    .effect(EffectFocus { show })
+    .effect(EffectModalFade { show })
+    .to_node()
+    .rc(),
   )
 }
 
@@ -133,14 +130,14 @@ where
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String>;
 
   /// creates a new instance of confirm plugin, second parameter is a callback when confirmed
-  fn new(states: StatesTree, options: ConfirmOptions, on_confirm: U) -> Result<Self, String>
+  fn new(states: RespoStatesTree, options: ConfirmOptions, on_confirm: U) -> Result<Self, String>
   where
     Self: std::marker::Sized;
 
-  fn share_with_ref(&self) -> Rc<Self>;
+  fn rc(&self) -> Rc<Self>;
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, RespoState)]
 struct ConfirmPluginState {
   show: bool,
   text: Option<String>,
@@ -157,7 +154,7 @@ where
   options: ConfirmOptions,
   /// tracking content to display
   text: Option<String>,
-  cursor: Vec<String>,
+  cursor: Vec<Rc<str>>,
   on_confirm: U,
   phantom: PhantomData<T>,
 }
@@ -169,50 +166,55 @@ where
 {
   fn render(&self) -> Result<RespoNode<T>, String> {
     let on_confirm = self.on_confirm;
-    let cursor = self.cursor.clone();
-    let cursor2 = self.cursor.clone();
+    let cursor = self.cursor.to_owned();
     let state = self.state.to_owned();
-    let state2 = self.state.to_owned();
 
     comp_confirm_modal(
       self.options.to_owned(),
-      self.state.show,
-      move |dispatch| {
-        let d2 = dispatch.clone();
-        on_confirm(dispatch)?;
-        let window = web_sys::window().expect("window");
-        // TODO dirty global variable
-        let task = Reflect::get(&window, &JsValue::from_str(NEXT_TASK_NAME));
-        if let Ok(f) = task {
-          if f.is_function() {
-            let f = f.dyn_into::<Function>().unwrap();
-            let _ = f.apply(&JsValue::NULL, &Array::new());
+      state.show.to_owned(),
+      {
+        let c = cursor.to_owned();
+        let st = state.to_owned();
+        move |dispatch| {
+          on_confirm(dispatch.to_owned())?;
+          let window = web_sys::window().expect("window");
+          // TODO dirty global variable
+          let task = Reflect::get(&window, &JsValue::from_str(NEXT_TASK_NAME));
+          if let Ok(f) = task {
+            if f.is_function() {
+              let f = f.dyn_into::<Function>().unwrap();
+              let _ = f.apply(&JsValue::NULL, &Array::new());
+            } else {
+              return Err("_NEXT_TASK is not a function".to_owned());
+            }
           } else {
-            return Err("_NEXT_TASK is not a function".to_owned());
-          }
-        } else {
-          respo::util::log!("next task is None");
-        };
-        let s = ConfirmPluginState {
-          show: false,
-          text: state.text.to_owned(),
-        };
-        d2.run_state(&cursor, s)?;
-        // clean up leaked closure
-        let window = web_sys::window().expect("window");
-        let _ = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), &JsValue::NULL);
-        Ok(())
+            app::util::log!("next task is None");
+          };
+          let s = ConfirmPluginState {
+            show: false,
+            text: st.text.to_owned(),
+          };
+          dispatch.run_state(&c, s)?;
+          // clean up leaked closure
+          let window = web_sys::window().expect("window");
+          let _ = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), &JsValue::NULL);
+          Ok(())
+        }
       },
-      move |dispatch| {
-        let s = ConfirmPluginState {
-          show: false,
-          text: state2.text.to_owned(),
-        };
-        dispatch.run_state(&cursor2, s)?;
-        // clean up leaked closure
-        let window = web_sys::window().expect("window");
-        let _ = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), &JsValue::NULL);
-        Ok(())
+      {
+        let st = state.to_owned();
+        let c = cursor.to_owned();
+        move |dispatch| {
+          let s = ConfirmPluginState {
+            show: false,
+            text: st.text.to_owned(),
+          };
+          dispatch.run_state(&c, s)?;
+          // clean up leaked closure
+          let window = web_sys::window().expect("window");
+          let _ = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), &JsValue::NULL);
+          Ok(())
+        }
       },
     )
   }
@@ -228,7 +230,7 @@ where
     let window = web_sys::window().unwrap();
     // dirty global variable to store a shared callback
     if let Err(e) = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), task.as_ref()) {
-      respo::util::log!("failed to store next task {:?}", e);
+      app::util::log!("failed to store next task {:?}", e);
     }
     task.forget();
     dispatch.run_state(&self.cursor, s)?;
@@ -237,15 +239,15 @@ where
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String> {
     let s = ConfirmPluginState {
       show: false,
-      text: self.text.clone(),
+      text: self.text.to_owned(),
     };
     dispatch.run_state(&self.cursor, s)?;
     Ok(())
   }
 
-  fn new(states: StatesTree, options: ConfirmOptions, on_confirm: U) -> Result<Self, String> {
+  fn new(states: RespoStatesTree, options: ConfirmOptions, on_confirm: U) -> Result<Self, String> {
     let cursor = states.path();
-    let state = states.data.cast_or_default::<ConfirmPluginState>()?;
+    let state = states.cast_branch::<ConfirmPluginState>()?;
 
     let instance = Self {
       state,
@@ -259,7 +261,8 @@ where
     Ok(instance)
   }
 
-  fn share_with_ref(&self) -> Rc<Self> {
-    Rc::new(self.clone())
+  // return a reference counted instance
+  fn rc(&self) -> Rc<Self> {
+    Rc::new(self.to_owned())
   }
 }

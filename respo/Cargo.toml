@@ -1,11 +1,11 @@
 [package]
 name = "respo"
-version = "0.0.18"
+version = "0.1.6"
 edition = "2021"
 description = "a tiny virtual DOM library migrated from ClojureScript"
 license = "Apache-2.0"
 repository = "https://github.com/Respo/respo.rs"
-homepage = "http://respo-mvc.org"
+homepage = "https://respo-mvc.org"
 documentation = "https://docs.rs/crate/respo/"
 readme = "README.md"
 
@@ -15,11 +15,14 @@ readme = "README.md"
 js-sys = "0.3.69"
 wasm-bindgen = "0.2.92"
 lazy_static = "1.4.0"
-serde = { version = "1.0.203", features = [ "derive" ] }
-serde_json = "1.0.117"
 cirru_parser = "0.1.31"
 # cirru_parser = { path = "/Users/chenyong/repo/cirru/parser.rs" }
 rust-hsluv = "0.1.4"
+serde = { version = "1.0.203", features = ["derive", "rc"] }
+serde_json = "1.0.117"
+# respo_state_derive = { path = "../respo_state_derive" }
+respo_state_derive = "0.0.1"
+
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -47,4 +50,5 @@ features = [
   "FocusEvent",
   "HtmlLabelElement",
   "BeforeUnloadEvent",
+  "Storage",
 ]

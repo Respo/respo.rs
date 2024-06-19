@@ -1,0 +1,20 @@
+[package]
+name = "respo_state_derive"
+version = "0.0.1"
+edition = "2021"
+description = "derive macro for RespoState"
+license = "Apache-2.0"
+repository = "https://github.com/Respo/respo.rs"
+homepage = "https://respo-mvc.org"
+documentation = "https://docs.rs/crate/respo_state_derive/"
+readme = "README.md"
+
+[dependencies]
+quote = { version = "1.0.36", features = ["proc-macro"] }
+syn = { version = "2.0.66", features = ["clone-impls", "derive", "parsing", "printing", "proc-macro"] }
+
+# proc-macro2 = "1.0.85"
+# proc-macro2 = { version = "1.0.85", features = ["proc-macro"] }
+
+[lib]
+proc-macro = true

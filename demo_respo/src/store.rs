@@ -1,17 +1,19 @@
 use std::hash::Hash;
 
+use respo::{states_tree::RespoUpdateState, util, RespoAction, RespoStore};
+use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 
-use respo::{util, MaybeState, RespoAction, RespoStore, StatesTree};
+use respo::states_tree::{RespoState, RespoStatesTree};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Store {
   pub counted: i32,
   pub tasks: Vec<Task>,
-  pub states: StatesTree,
+  pub states: RespoStatesTree,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, RespoState)]
 pub struct Task {
   pub id: String,
   pub done: bool,
@@ -29,61 +31,58 @@ impl Hash for Task {
   }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub enum ActionOp {
+  #[default]
+  Noop,
+  /// contains State and Value
+  StatesChange(RespoUpdateState),
   Increment,
   Decrement,
-  StatesChange(Vec<String>, MaybeState),
   AddTask(String, String),
   RemoveTask(String),
   UpdateTask(String, String),
   ToggleTask(String),
-  Noop,
-}
-
-/// TODO added to pass type checking, maybe we can remove it
-impl Default for ActionOp {
-  fn default() -> Self {
-    ActionOp::Noop
-  }
 }
 
 impl RespoAction for ActionOp {
-  fn wrap_states_action(cursor: &[String], a: MaybeState) -> Self {
-    Self::StatesChange(cursor.to_vec(), a)
+  fn states_action(a: RespoUpdateState) -> Self {
+    Self::StatesChange(a)
   }
 }
 
 impl RespoStore for Store {
   type Action = ActionOp;
 
-  fn get_states(&self) -> StatesTree {
-    self.states.to_owned()
+  fn get_states(&mut self) -> &mut RespoStatesTree {
+    &mut self.states
   }
+
   fn update(&mut self, op: Self::Action) -> Result<(), String> {
+    use ActionOp::*;
     match op {
-      ActionOp::Noop => {
+      Noop => {
         // nothing to to
       }
-      ActionOp::Increment => {
+      StatesChange(a) => {
+        self.update_states(a);
+      }
+      Increment => {
         self.counted += 1;
       }
-      ActionOp::Decrement => {
+      Decrement => {
         self.counted -= 1;
       }
-      ActionOp::StatesChange(path, new_state) => {
-        self.states.set_in_mut(&path, new_state);
-      }
-      ActionOp::AddTask(id, content) => self.tasks.push(Task {
+      AddTask(id, content) => self.tasks.push(Task {
         id,
         content,
         time: 0.0,
         done: false,
       }),
-      ActionOp::RemoveTask(id) => {
+      RemoveTask(id) => {
         self.tasks.retain(|task| task.id != id);
       }
-      ActionOp::UpdateTask(id, content) => {
+      UpdateTask(id, content) => {
         let mut found = false;
         for task in &mut self.tasks {
           if task.id == id {
@@ -95,7 +94,7 @@ impl RespoStore for Store {
           return Err(format!("task {} not found", id));
         }
       }
-      ActionOp::ToggleTask(id) => {
+      ToggleTask(id) => {
         let mut found = false;
         for task in &mut self.tasks {
           if task.id == id {
@@ -110,5 +109,16 @@ impl RespoStore for Store {
       }
     }
     Ok(())
+  }
+
+  fn to_string(&self) -> String {
+    serde_json::to_string(&self).expect("to json")
+  }
+
+  fn try_from_string(s: &str) -> Result<Self, String>
+  where
+    Self: Sized,
+  {
+    serde_json::from_str(s).map_err(|e| format!("parse store: {}", e))
   }
 }

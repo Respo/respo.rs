@@ -1,50 +1,70 @@
+use respo_state_derive::RespoState;
+use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
 use memoize::memoize;
 use respo::{
-  button, div, input, space, span, static_styles,
+  button,
+  css::{CssColor, CssSize, RespoStyle},
+  div, input, space, span, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
-  util, CssColor, CssSize, DispatchFn, RespoEvent, RespoNode, RespoStyle, StatesTree,
+  util, DispatchFn, RespoComponent, RespoEffect, RespoEvent, RespoNode,
 };
+
+use respo::states_tree::{RespoState, RespoStatesTree};
 
 use super::store::*;
 
-#[derive(Debug, Clone, Default, Hash)]
+#[derive(Debug, Clone, Default, Hash, PartialEq, Eq, Serialize, Deserialize, RespoState)]
 struct TaskState {
   draft: String,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+struct TaskUpdateEffect {
+  task: Task,
+}
+
+impl RespoEffect for TaskUpdateEffect {
+  fn updated(&self, _el: &web_sys::Node) -> Result<(), String> {
+    util::log!("task update effect");
+    Ok(())
+  }
 }
 
 #[memoize(Capacity: 40)]
 pub fn comp_task(
   // _memo_caches: MemoCache<RespoNode<ActionOp>>,
-  states: StatesTree,
+  states: RespoStatesTree,
   task: Task,
 ) -> Result<RespoNode<ActionOp>, String> {
   respo::util::log!("calling task function");
 
-  let task_id = task.id.to_owned();
+  let task_id = &task.id;
 
   let cursor = states.path();
-  let cursor2 = cursor.clone();
-  let state = states.data.cast_or_default::<TaskState>()?;
+  let state = states.cast_branch::<TaskState>()?;
 
   let on_toggle = {
-    let tid = task_id.clone();
+    let tid = task_id.to_owned();
     move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
       dispatch.run(ActionOp::ToggleTask(tid.to_owned()))?;
       Ok(())
     }
   };
 
-  let on_input = move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
-    if let RespoEvent::Input { value, .. } = e {
-      dispatch.run_state(&cursor, TaskState { draft: value })?;
+  let on_input = {
+    let cursor = cursor.to_owned();
+    move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+      if let RespoEvent::Input { value, .. } = e {
+        dispatch.run_state(&cursor, TaskState { draft: value })?;
+      }
+      Ok(())
     }
-    Ok(())
   };
 
   let on_remove = {
-    let tid = task_id.clone();
+    let tid = task_id.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       util::log!("remove button {:?}", e);
       dispatch.run(ActionOp::RemoveTask(tid.to_owned()))?;
@@ -53,63 +73,52 @@ pub fn comp_task(
   };
 
   let on_update = {
-    let tid = task_id.clone();
-    let s = state.clone();
+    let tid = task_id.to_owned();
+    let cursor = cursor.to_owned();
+    let state = state.to_owned();
     move |_e, dispatch: DispatchFn<_>| -> Result<(), String> {
-      dispatch.run(ActionOp::UpdateTask(tid.to_owned(), s.draft.clone()))?;
-      dispatch.run_empty_state(&cursor2)?;
+      dispatch.run(ActionOp::UpdateTask(tid.to_owned(), state.draft.to_owned()))?;
+      dispatch.run_empty_state(&cursor)?;
       Ok(())
     }
   };
 
   Ok(
-    RespoNode::new_component(
+    RespoComponent::named(
       "task",
-      div()
-        .class_list(&[ui_row_middle(), style_task_container()])
-        .children([
-          div()
-            .class(style_done_button())
-            .modify_style(|s| {
-              if task.done {
-                s.background_color(CssColor::Blue);
-              }
-            })
-            .on_click(on_toggle)
-            .to_owned(),
-          div().inner_text(task.content.to_owned()).to_owned(),
-          span()
-            .class_list(&[ui_center(), style_remove_button()])
-            .inner_text("✕")
-            .on_click(on_remove)
-            .to_owned(),
-          div()
-            .style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0).to_owned())
-            .to_owned(),
-          input()
-            .class(ui_input())
-            .attribute("value", state.draft.to_owned())
-            .attribute("placeholder", "something to update...")
-            .on_input(on_input)
-            .to_owned(),
-          space(Some(8), None),
-          button().class(ui_button()).inner_text("Update").on_click(on_update).to_owned(),
-        ])
-        .to_owned(),
+      div().class_list(&[ui_row_middle(), style_task_container()]).elements([
+        div()
+          .class(style_done_button())
+          .modify_style(|s| {
+            if task.done {
+              *s = s.to_owned().background_color(CssColor::Blue);
+            }
+          })
+          .on_click(on_toggle),
+        div().inner_text(&task.content),
+        span()
+          .class_list(&[ui_center(), style_remove_button()])
+          .inner_text("✕")
+          .on_click(on_remove),
+        div().style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0)),
+        input()
+          .class(ui_input())
+          .attribute("value", &state.draft)
+          .attribute("placeholder", "something to update...")
+          .on_input(on_input),
+        space(Some(8), None),
+        button().class(ui_button()).inner_text("Update").on_click(on_update),
+      ]),
     )
-    .effect(&[task], move |args, effect_type, _el| -> Result<(), String> {
-      let t: Task = args[0].cast_into()?;
-      util::log!("effect {:?} task: {:?}", effect_type, t);
-      // TODO
-      Ok(())
-    })
-    .share_with_ref(),
+    .effect(TaskUpdateEffect { task: task.to_owned() })
+    .to_node()
+    .rc(),
   )
 }
 
 static_styles!(
   style_task_container,
-  ("&", RespoStyle::default().margin(4.).background_color(CssColor::Hsl(200, 90, 96)),)
+  ("&", RespoStyle::default().margin(4.).background_color(CssColor::Hsl(200, 90, 96)))
 );
 
 static_styles!(

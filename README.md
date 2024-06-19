@@ -19,13 +19,12 @@ Here is some preview of DOM syntax:
 Ok(
   div()
     .class(ui_global())
-    .add_style(RespoStyle::default().padding(12.0).to_owned())
-    .add_children([
+    .style(RespoStyle::default().padding(12.0))
+    .children([
       comp_counter(&states.pick("counter"), store.counted)?,
       comp_panel(&states.pick("panel"))?,
       comp_todolist(memo_caches, &states.pick("todolist"), &store.tasks)?,
-    ])
-    .to_owned(),
+    ]),
 )
 ```
 
@@ -88,28 +87,25 @@ Declaring a store:
 ```rust
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Store {
-  pub states: StatesTree,
+  pub states: RespoStatesTree,
   // TODO you app data
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ActionOp {
   // TODO
-  StatesChange(Vec<String>, MaybeState),
+  StatesChange(RespoUpdateState),
 }
 
 impl RespoAction for ActionOp {
-  fn wrap_states_action(cursor: &[String], a: MaybeState) -> Self {
-    Self::StatesChange(cursor.to_vec(), a)
+  fn states_action(a: RespoUpdateState) -> Self {
+    Self::StatesChange(a)
   }
 }
 
 impl RespoStore for Store {
   type Action = ActionOp;
 
-  fn get_states(&self) -> StatesTree {
-    self.states.to_owned()
-  }
   fn update(&mut self, op: Self::Action) -> Result<(), String> {
     match op {
       // TODO
@@ -125,7 +121,7 @@ Declaring an app:
 struct App {
   store: Rc<RefCell<Store>>,
   mount_target: Node,
-  memo_caches: MemoCache<RespoNode<ActionOp>>,
+
 }
 
 impl RespoApp for App {
@@ -133,13 +129,10 @@ impl RespoApp for App {
   type Action = ActionOp;
 
   fn get_store(&self) -> Rc<RefCell<Self::Model>> {
-    self.store.clone()
+    self.store.to_owned()
   }
   fn get_mount_target(&self) -> &web_sys::Node {
     &self.mount_target
-  }
-  fn get_memo_caches(&self) -> MemoCache<RespoNode<Self::Action>> {
-    self.memo_caches.to_owned()
   }
 
   fn dispatch(store: &mut RefMut<Self::Model>, op: Self::Action) -> Result<(), String> {
@@ -153,13 +146,12 @@ impl RespoApp for App {
     Ok(
       div()
         .class(ui_global())
-        .add_style(RespoStyle::default().padding(12.0).to_owned())
-        .add_children([
+        .style(RespoStyle::default().padding(12.0))
+        .children([
           comp_counter(&states.pick("counter"), store.counted)?,
           comp_panel(&states.pick("panel"))?,
           comp_todolist(memo_caches, &states.pick("todolist"), &store.tasks)?,
-        ])
-        .to_owned(),
+        ]),
     )
   }
 }
@@ -172,10 +164,9 @@ let app = App {
     mount_target: query_select_node(".app").expect("mount target"),
     store: Rc::new(RefCell::new(Store {
       counted: 0,
-      states: StatesTree::default(),
+      states: RespoStatesTree::default(),
       tasks: vec![],
     })),
-    memo_caches: MemoCache::default(),
   };
 
   app.render_loop().expect("app render");

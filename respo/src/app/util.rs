@@ -1,15 +1,13 @@
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-use serde_json::Value;
 use std::{cell::RefCell, rc::Rc};
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::Node;
 
+/// this one uses `requestAnimationFrame` for calling
 #[allow(dead_code)]
 pub fn raf_loop(mut cb: Box<dyn FnMut() -> Result<(), String>>) {
   let f_ = Rc::new(RefCell::new(None));
-  let g = f_.clone();
+  let g = f_.to_owned();
 
   *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
     if let Err(e) = cb() {
@@ -33,20 +31,23 @@ fn window() -> web_sys::Window {
   web_sys::window().expect("no global `window` exists")
 }
 
-/// this API is used for development, prefer `req_loop` for fast response
+/// uses `requestAnimationFrame` for calling, but with a interval to reduce cost.
+/// prefer `req_loop` if you want to be faster
 #[allow(dead_code)]
 pub fn raf_loop_slow(interval: i32, mut cb: Box<dyn FnMut() -> Result<(), String>>) {
   let f = Rc::new(RefCell::new(None));
-  let g = f.clone();
+  let g = f.to_owned();
 
   *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
     if let Err(e) = cb() {
       crate::log!("failed in slow loop: {}", e);
     }
 
-    let f2 = f.clone();
-    let h = Closure::wrap(Box::new(move || {
-      request_animation_frame(f2.borrow().as_ref().expect("call raq"));
+    let h = Closure::wrap(Box::new({
+      let f = f.to_owned();
+      move || {
+        request_animation_frame(f.borrow().as_ref().expect("call raq"));
+      }
     }) as Box<dyn FnMut()>);
     web_sys::Window::set_timeout_with_callback_and_timeout_and_arguments_0(&window(), h.as_ref().unchecked_ref(), interval)
       .expect("call set timeout");
@@ -77,7 +78,9 @@ pub fn query_select_node(pattern: &str) -> Result<Node, String> {
   }
 }
 
-/// wraps on top of `web_sys::console.log_1`, use it like:
+/// wraps on top of `web_sys::console.log_1`.
+///
+/// use it like:
 /// ```ignore
 /// util::log!("a is {}", a);
 /// ```
@@ -88,18 +91,25 @@ macro_rules! log {
   }};
 }
 
-pub use log;
-
-pub fn cast_from_json<T>(data: &Value) -> T
-where
-  T: DeserializeOwned + Clone,
-{
-  serde_json::from_value(data.to_owned()).expect("should be json")
+/// wraps on top of `web_sys::console.warn_1`.
+///
+/// use it like:
+/// ```ignore
+/// util::warn!("a is {}", a);
+/// ```
+#[macro_export]
+macro_rules! warn_log {
+  ($($t:tt)*) => {{
+    web_sys::console::warn_1(&format!($($t)*).into());
+  }};
 }
 
-pub fn cast_into_json<T>(data: T) -> Value
-where
-  T: Serialize,
-{
-  serde_json::to_value(data).expect("should be json")
+pub use log;
+pub use warn_log;
+
+/// display type of a variable, as a debug tool
+#[allow(dead_code)]
+pub fn print_type_of<T>(_: &T) {
+  // println!("{}", std::any::type_name::<T>())
+  log!("{}", &std::any::type_name::<T>().to_string());
 }

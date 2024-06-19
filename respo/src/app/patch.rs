@@ -10,11 +10,12 @@ use web_sys::{
 use wasm_bindgen::JsCast;
 use web_sys::console::warn_1;
 
-use crate::RespoEffectType;
+use crate::node::{RespoComponent, RespoEffectType, RespoEvent, RespoEventMark, RespoEventMarkFn, RespoNode};
 
-use super::{
-  build_dom_tree, load_coord_target_tree, ChildDomOp, DomChange, RespoCoord, RespoEvent, RespoEventMark, RespoEventMarkFn, RespoNode,
-};
+use super::renderer::load_coord_target_tree;
+use crate::node::dom_change::{ChildDomOp, DomChange, RespoCoord};
+
+use crate::app::renderer::build_dom_tree;
 
 pub fn patch_tree<T>(
   tree: &RespoNode<T>,
@@ -45,16 +46,16 @@ where
     } = op
     {
       if effect_type == &RespoEffectType::BeforeUpdate {
-        let target = find_coord_dom_target(&mount_target.first_child().ok_or("mount position")?, &op.get_dom_path())?;
+        let target = find_coord_dom_target(&mount_target.first_child().ok_or("mount position")?, op.get_dom_path())?;
         let target_tree = if effect_type == &RespoEffectType::BeforeUnmount {
           load_coord_target_tree(old_tree, coord)?
         } else {
           load_coord_target_tree(tree, coord)?
         };
-        if let RespoNode::Component(_, effects, _) = target_tree {
+        if let RespoNode::Component(RespoComponent { effects, .. }) = target_tree {
           for (idx, effect) in effects.iter().enumerate() {
             if !skip_indexes.contains(&(idx as u32)) {
-              effect.run(effect_type.to_owned(), &target)?;
+              effect.0.as_ref().run(effect_type.to_owned(), &target)?;
             }
           }
         } else {
@@ -66,12 +67,12 @@ where
 
   for op in changes {
     // crate::util::log!("op: {:?}", op);
-    let coord = op.get_coord();
-    let target = find_coord_dom_target(&mount_target.first_child().ok_or("mount position")?, &op.get_dom_path())?;
+    let target = find_coord_dom_target(&mount_target.first_child().ok_or("mount position")?, op.get_dom_path())?;
     match op {
       DomChange::ModifyAttrs { set, unset, .. } => {
         let el = target.dyn_ref::<Element>().expect("load as element");
         for (k, v) in set {
+          let k = k.as_ref();
           if k == "innerText" {
             el.dyn_ref::<HtmlElement>().ok_or("to html element")?.set_inner_text(v);
           } else if k == "innerHTML" {
@@ -103,6 +104,7 @@ where
           }
         }
         for k in unset {
+          let k = k.as_ref();
           if k == "innerText" {
             el.dyn_ref::<HtmlElement>().ok_or("to html element")?.set_inner_text("");
           } else if k == "innerHTML" {
@@ -130,12 +132,11 @@ where
       DomChange::ModifyEvent { add, remove, coord, .. } => {
         let el = target.dyn_ref::<Element>().expect("to element");
         for k in add.iter() {
-          let handler = handle_event.clone();
-          attach_event(el, k, coord, handler)?;
+          attach_event(el, k, coord, handle_event.to_owned())?;
         }
         let el = el.dyn_ref::<HtmlElement>().expect("html element");
         for k in remove {
-          match k.as_str() {
+          match k.as_ref() {
             "click" => {
               el.set_onclick(None);
             }
@@ -146,10 +147,9 @@ where
           }
         }
       }
-      DomChange::ReplaceElement { node, .. } => {
+      DomChange::ReplaceElement { node, coord, .. } => {
         let parent = target.parent_element().expect("load parent");
-        let handler = handle_event.clone();
-        let new_element = build_dom_tree(node, &coord, handler).expect("build element");
+        let new_element = build_dom_tree(node, coord, handle_event.to_owned()).expect("build element");
         parent
           .dyn_ref::<Node>()
           .expect("to node")
@@ -161,7 +161,7 @@ where
         let base_tree = load_coord_target_tree(tree, coord)?;
         let old_base_tree = load_coord_target_tree(old_tree, coord)?;
         for op in operations {
-          let handler = handle_event.clone();
+          let handler = handle_event.to_owned();
           match op {
             ChildDomOp::Append(k, node) => {
               let mut next_coord = coord.to_owned();
@@ -206,7 +206,7 @@ where
               if idx >= &children.length() {
                 return Err(format!("child to insert not found at {}", &idx));
               } else {
-                let handler = handle_event.clone();
+                let handler = handle_event.to_owned();
                 let mut next_coord = coord.to_owned();
                 next_coord.push(RespoCoord::Key(k.to_owned()));
                 let new_element = build_dom_tree(node, &next_coord, handler).expect("new element");
@@ -236,10 +236,10 @@ where
                 load_coord_target_tree(&base_tree, nested_coord)?
               };
               let nested_el = find_coord_dom_target(&target, nesteed_dom_path)?;
-              if let RespoNode::Component(_, effects, _) = target_tree {
+              if let RespoNode::Component(RespoComponent { effects, .. }) = target_tree {
                 for (idx, effect) in effects.iter().enumerate() {
                   if !skip_indexes.contains(&(idx as u32)) {
-                    effect.run(effect_type.to_owned(), &nested_el)?;
+                    effect.0.run(effect_type.to_owned(), &nested_el)?;
                   }
                 }
               } else {
@@ -265,10 +265,10 @@ where
         } else {
           load_coord_target_tree(tree, coord)?
         };
-        if let RespoNode::Component(_, effects, _) = target_tree {
+        if let RespoNode::Component(RespoComponent { effects, .. }) = target_tree {
           for (idx, effect) in effects.iter().enumerate() {
             if !skip_indexes.contains(&(idx as u32)) {
-              effect.run(effect_type.to_owned(), &target)?;
+              effect.0.run(effect_type.to_owned(), &target)?;
             }
           }
         } else {
@@ -281,7 +281,7 @@ where
 }
 
 fn find_coord_dom_target(mount_target: &Node, coord: &[u32]) -> Result<Node, String> {
-  let mut target = mount_target.clone();
+  let mut target = mount_target.to_owned();
   for idx in coord {
     let child = target.child_nodes().item(idx.to_owned());
     if child.is_none() {

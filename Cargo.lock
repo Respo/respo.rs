@@ -71,6 +71,7 @@ dependencies = [
  "js-sys",
  "memoize",
  "respo",
+ "respo_state_derive 0.0.1",
  "serde",
  "serde_json",
  "uuid",
@@ -102,9 +103,9 @@ dependencies = [
 
 [[package]]
 name = "itoa"
-version = "1.0.2"
+version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "112c678d4050afce233f4f2852bb2eb519230b3cf12f33585275537d7e41578d"
+checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
 
 [[package]]
 name = "js-sys"
@@ -194,16 +195,35 @@ dependencies = [
 
 [[package]]
 name = "respo"
-version = "0.0.18"
+version = "0.1.6"
 dependencies = [
  "cirru_parser",
  "js-sys",
  "lazy_static",
+ "respo_state_derive 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rust-hsluv",
  "serde",
  "serde_json",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "respo_state_derive"
+version = "0.0.1"
+dependencies = [
+ "quote",
+ "syn 2.0.66",
+]
+
+[[package]]
+name = "respo_state_derive"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "604687f92aa7e859453ffc3615280146aa01b2b882e14c7c8d4dee530151bfb1"
+dependencies = [
+ "quote",
+ "syn 2.0.66",
 ]
 
 [[package]]
@@ -214,9 +234,9 @@ checksum = "efe2374f2385cdd8755a446f80b2a646de603c9d8539ca38734879b5c71e378b"
 
 [[package]]
 name = "ryu"
-version = "1.0.10"
+version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3f6f92acf49d1b98f7a81226834412ada05458b7364277387724a237f062695"
+checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
 
 [[package]]
 name = "serde"

@@ -1,18 +1,18 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, rc::Rc};
 
 use std::fmt::Debug;
 
 use cirru_parser::Cirru;
 
-use crate::{RespoEffectType, RespoIndexKey, RespoNode, StrDict};
+use crate::node::{RespoEffectType, RespoIndexKey, RespoNode, StrDict};
 
-use super::str_dict_to_cirrus_dict;
+use crate::node::str_dict_to_cirrus_dict;
 
 /// DOM operations used for diff/patching
 /// performance is not optimial since looking up the DOM via dom_path has repetitive operations,
 /// might need to fix in future is overhead observed.
 #[derive(Debug, Clone)]
-pub enum DomChange<T>
+pub(crate) enum DomChange<T>
 where
   T: Debug + Clone,
 {
@@ -30,19 +30,19 @@ where
     coord: Vec<RespoCoord>,
     dom_path: Vec<u32>,
     set: StrDict,
-    unset: HashSet<String>,
+    unset: HashSet<Rc<str>>,
   },
   ModifyStyle {
     coord: Vec<RespoCoord>,
     dom_path: Vec<u32>,
     set: StrDict,
-    unset: HashSet<String>,
+    unset: HashSet<Rc<str>>,
   },
   ModifyEvent {
     coord: Vec<RespoCoord>,
     dom_path: Vec<u32>,
-    add: HashSet<String>,
-    remove: HashSet<String>,
+    add: HashSet<Rc<str>>,
+    remove: HashSet<Rc<str>>,
   },
   /// this is only part of effects.
   /// effects that collected while diffing children are nested inside
@@ -59,24 +59,14 @@ impl<T> DomChange<T>
 where
   T: Debug + Clone,
 {
-  pub fn get_coord(&self) -> Vec<RespoCoord> {
+  pub fn get_dom_path(&self) -> &Vec<u32> {
     match self {
-      DomChange::ReplaceElement { coord, .. } => coord.clone(),
-      DomChange::ModifyChildren { coord, .. } => coord.clone(),
-      DomChange::ModifyAttrs { coord, .. } => coord.clone(),
-      DomChange::ModifyStyle { coord, .. } => coord.clone(),
-      DomChange::ModifyEvent { coord, .. } => coord.clone(),
-      DomChange::Effect { coord, .. } => coord.clone(),
-    }
-  }
-  pub fn get_dom_path(&self) -> Vec<u32> {
-    match self {
-      DomChange::ReplaceElement { dom_path, .. } => dom_path.clone(),
-      DomChange::ModifyChildren { dom_path, .. } => dom_path.clone(),
-      DomChange::ModifyAttrs { dom_path, .. } => dom_path.clone(),
-      DomChange::ModifyStyle { dom_path, .. } => dom_path.clone(),
-      DomChange::ModifyEvent { dom_path, .. } => dom_path.clone(),
-      DomChange::Effect { dom_path, .. } => dom_path.clone(),
+      DomChange::ReplaceElement { dom_path, .. } => dom_path,
+      DomChange::ModifyChildren { dom_path, .. } => dom_path,
+      DomChange::ModifyAttrs { dom_path, .. } => dom_path,
+      DomChange::ModifyStyle { dom_path, .. } => dom_path,
+      DomChange::ModifyEvent { dom_path, .. } => dom_path,
+      DomChange::Effect { dom_path, .. } => dom_path,
     }
   }
 }
@@ -135,7 +125,7 @@ where
           coord_path_to_cirru(coord),
           dom_path_to_cirru(&dom_path),
           str_dict_to_cirrus_dict(&set),
-          unset.iter().map(Cirru::from).collect::<Vec<_>>().into(),
+          unset.iter().map(|x| Cirru::from(x.as_ref())).collect::<Vec<_>>().into(),
         ];
         Cirru::List(xs)
       }
@@ -150,7 +140,7 @@ where
           coord_path_to_cirru(coord),
           dom_path_to_cirru(&dom_path),
           str_dict_to_cirrus_dict(&set),
-          unset.iter().map(Cirru::from).collect::<Vec<_>>().into(),
+          unset.iter().map(|x| Cirru::from(x.as_ref())).collect::<Vec<_>>().into(),
         ];
         Cirru::List(xs)
       }
@@ -164,8 +154,8 @@ where
           "::modify-event".into(),
           coord_path_to_cirru(coord),
           dom_path_to_cirru(&dom_path),
-          add.iter().map(Cirru::from).collect::<Vec<_>>().into(),
-          remove.iter().map(Cirru::from).collect::<Vec<_>>().into(),
+          add.iter().map(|x| Cirru::from(x.as_ref())).collect::<Vec<_>>().into(),
+          remove.iter().map(|x| Cirru::from(x.as_ref())).collect::<Vec<_>>().into(),
         ];
         Cirru::List(xs)
       }
@@ -173,20 +163,21 @@ where
   }
 }
 
+#[allow(dead_code)]
 pub fn changes_to_cirru<T>(change: &[DomChange<T>]) -> Cirru
 where
   T: Debug + Clone,
 {
   let mut xs = vec!["::changes".into()];
   for c in change {
-    xs.push(c.to_owned().into());
+    xs.push(Cirru::from(c.to_owned()));
   }
   Cirru::List(xs)
 }
 
 /// used in list diffing, this is still part of `DomChange`
 #[derive(Debug, Clone)]
-pub enum ChildDomOp<T>
+pub(crate) enum ChildDomOp<T>
 where
   T: Debug + Clone,
 {
@@ -251,17 +242,17 @@ where
 
 /// coordinate system on RespoNode, to lookup among elements and components
 #[derive(Debug, Clone)]
-pub enum RespoCoord {
+pub(crate) enum RespoCoord {
   Key(RespoIndexKey),
   /// for indexing by component name, even though there's only one of that
-  Comp(String),
+  Comp(Rc<str>),
 }
 
 impl From<RespoCoord> for Cirru {
   fn from(coord: RespoCoord) -> Self {
     match coord {
       RespoCoord::Key(key) => key.into(),
-      RespoCoord::Comp(name) => vec![Cirru::from("::Comp"), Cirru::from(name)].into(),
+      RespoCoord::Comp(name) => vec![Cirru::from("::Comp"), Cirru::from(name.as_ref())].into(),
     }
   }
 }

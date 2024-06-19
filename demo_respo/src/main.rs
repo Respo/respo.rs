@@ -14,8 +14,8 @@ use std::rc::Rc;
 use web_sys::Node;
 
 use respo::ui::ui_global;
+use respo::{css::RespoStyle, util, RespoApp, RespoNode, RespoStore};
 use respo::{div, util::query_select_node};
-use respo::{RespoApp, RespoNode, RespoStore, RespoStyle};
 
 use self::counter::comp_counter;
 pub use self::store::ActionOp;
@@ -24,7 +24,7 @@ use self::todolist::comp_todolist;
 use panel::comp_panel;
 use plugins::comp_plugins_demo;
 
-// const APP_STORE_KEY: &str = "demo_respo_store";
+const APP_STORE_KEY: &str = "demo_respo_store";
 
 struct App {
   store: Rc<RefCell<Store>>,
@@ -35,11 +35,15 @@ impl RespoApp for App {
   type Model = Store;
   type Action = ActionOp;
 
-  fn get_store(&self) -> Rc<RefCell<Self::Model>> {
-    self.store.clone()
+  fn get_store(&self) -> &Rc<RefCell<Self::Model>> {
+    &self.store
   }
   fn get_mount_target(&self) -> &web_sys::Node {
     &self.mount_target
+  }
+
+  fn pick_storage_key() -> &'static str {
+    APP_STORE_KEY
   }
 
   fn dispatch(store: &mut RefMut<Self::Model>, op: Self::Action) -> Result<(), String> {
@@ -53,14 +57,14 @@ impl RespoApp for App {
     Ok(
       div()
         .class(ui_global())
-        .style(RespoStyle::default().padding(12.0).to_owned())
+        .style(RespoStyle::default().padding(12.0))
         .children([
-          comp_counter(&states.pick("counter"), store.counted)?,
+          comp_counter(&states.pick("counter"), store.counted)?.to_node(),
           comp_panel(&states.pick("panel"))?,
-          comp_todolist(&states.pick("todolist"), &store.tasks)?,
-          comp_plugins_demo(&states.pick("plugins-demo"))?,
+          comp_todolist(&states.pick("todolist"), &store.tasks)?.to_node(),
+          comp_plugins_demo(&states.pick("plugins-demo"))?.to_node(),
         ])
-        .to_owned(),
+        .to_node(),
     )
   }
 }
@@ -68,38 +72,15 @@ impl RespoApp for App {
 fn main() {
   panic::set_hook(Box::new(console_error_panic_hook::hook));
 
-  // util::log!("todo");
-  // let window = web_sys::window().expect("window");
-  // let storage = window.local_storage().expect("get storage").expect("unwrap storage");
-
-  // let prev_store: Option<Store> = match storage.get_item(APP_STORE_KEY) {
-  //   Ok(Some(s)) => match serde_json::from_str(&s) {
-  //     Ok(s) => Some(s),
-  //     Err(e) => {
-  //       respo::util::log!("error: {:?}", e);
-  //       None
-  //     }
-  //   },
-  //   Ok(None) => None,
-  //   Err(_e) => None,
-  // };
-
   let app = App {
     mount_target: query_select_node(".app").expect("mount target"),
-    // store: Rc::new(RefCell::new(prev_store.unwrap_or_default())),
     store: Rc::new(RefCell::new(Store::default())),
   };
 
-  // let store2 = app.store.clone();
-  // let beforeunload = Closure::wrap(Box::new(move |_e: BeforeUnloadEvent| {
-  //   respo::util::log!("before unload.");
-  //   let s: &Store = &store2.borrow();
-  //   storage
-  //     .set_item(APP_STORE_KEY, &serde_json::to_string(s).expect("to json"))
-  //     .expect("save storage");
-  // }) as Box<dyn FnMut(BeforeUnloadEvent)>);
-  // window.set_onbeforeunload(Some(beforeunload.as_ref().unchecked_ref()));
-  // beforeunload.forget();
+  app.try_load_storage().expect("load storage");
+  app.backup_model_beforeunload().expect("backup model beforeunload");
+
+  util::log!("store: {:?}", app.store);
 
   app.render_loop().expect("app render");
 }

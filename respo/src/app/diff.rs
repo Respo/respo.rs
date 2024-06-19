@@ -2,9 +2,9 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::rc::Rc;
 
-use crate::respo::primes::*;
+use crate::node::*;
 
-use crate::respo::util::fst;
+use crate::app::util::fst;
 
 pub fn diff_tree<T>(
   new_tree: &RespoNode<T>,
@@ -17,15 +17,26 @@ where
   T: Debug + Clone,
 {
   match (new_tree, old_tree) {
-    (RespoNode::Component(name, effects, new_child), RespoNode::Component(name_old, old_effects, old_child)) => {
+    (
+      RespoNode::Component(RespoComponent {
+        name,
+        effects,
+        tree: new_child,
+      }),
+      RespoNode::Component(RespoComponent {
+        name: name_old,
+        effects: old_effects,
+        tree: old_child,
+      }),
+    ) => {
       if name == name_old {
         let mut next_coord = coord.to_owned();
-        next_coord.push(RespoCoord::Comp(String::from(name)));
+        next_coord.push(RespoCoord::Comp(name.to_owned()));
         diff_tree(new_child, old_child, &next_coord, dom_path, changes)?;
         let mut skipped = HashSet::new();
         for (idx, effect) in effects.iter().enumerate() {
           if let Some(old_effect) = old_effects.get(idx) {
-            if effect.args == old_effect.args {
+            if effect == old_effect {
               skipped.insert(idx as u32);
             }
           }
@@ -74,20 +85,20 @@ where
       collect_effects_outside_in_as(new_tree, coord, dom_path, RespoEffectType::Mounted, changes)?;
     }
     (
-      a @ RespoNode::Element {
+      a @ RespoNode::Element(RespoElement {
         name,
         attrs,
         style,
         event,
         children,
-      },
-      RespoNode::Element {
+      }),
+      RespoNode::Element(RespoElement {
         name: old_name,
         attrs: old_attrs,
         style: old_style,
         event: old_event,
         children: old_children,
-      },
+      }),
     ) => {
       if name != old_name {
         collect_effects_inside_out_as(old_tree, coord, dom_path, RespoEffectType::BeforeUnmount, changes)?;
@@ -131,8 +142,8 @@ where
 }
 
 fn diff_attrs<T>(
-  new_attrs: &HashMap<String, String>,
-  old_attrs: &HashMap<String, String>,
+  new_attrs: &HashMap<Rc<str>, String>,
+  old_attrs: &HashMap<Rc<str>, String>,
   coord: &[RespoCoord],
   dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
@@ -140,7 +151,7 @@ fn diff_attrs<T>(
   T: Debug + Clone,
 {
   let mut added: StrDict = HashMap::new();
-  let mut removed: HashSet<String> = HashSet::new();
+  let mut removed: HashSet<Rc<str>> = HashSet::new();
   for (key, value) in new_attrs {
     if old_attrs.contains_key(key) {
       if &old_attrs[key] != value {
@@ -168,8 +179,8 @@ fn diff_attrs<T>(
 }
 
 fn diff_style<T>(
-  new_style: &HashMap<String, String>,
-  old_style: &HashMap<String, String>,
+  new_style: &HashMap<Rc<str>, String>,
+  old_style: &HashMap<Rc<str>, String>,
   coord: &[RespoCoord],
   dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
@@ -177,7 +188,7 @@ fn diff_style<T>(
   T: Debug + Clone,
 {
   let mut added: StrDict = HashMap::new();
-  let mut removed: HashSet<String> = HashSet::new();
+  let mut removed: HashSet<Rc<str>> = HashSet::new();
   for (key, value) in new_style {
     if old_style.contains_key(key) {
       if &old_style[key] != value {
@@ -205,16 +216,16 @@ fn diff_style<T>(
 }
 
 fn diff_event<T, U>(
-  new_event: &HashMap<String, U>,
-  old_event: &HashMap<String, U>,
+  new_event: &HashMap<Rc<str>, U>,
+  old_event: &HashMap<Rc<str>, U>,
   coord: &[RespoCoord],
   dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
 ) where
   T: Debug + Clone,
 {
-  let new_keys: HashSet<String> = new_event.keys().map(ToOwned::to_owned).collect();
-  let old_keys: HashSet<String> = old_event.keys().map(ToOwned::to_owned).collect();
+  let new_keys: HashSet<Rc<str>> = new_event.keys().map(ToOwned::to_owned).collect();
+  let old_keys: HashSet<Rc<str>> = old_event.keys().map(ToOwned::to_owned).collect();
 
   if new_keys != old_keys {
     changes.push(DomChange::ModifyEvent {
@@ -374,7 +385,7 @@ where
   T: Debug + Clone,
 {
   match tree {
-    RespoNode::Component(name, effects, tree) => {
+    RespoNode::Component(RespoComponent { name, effects, tree }) => {
       if !effects.is_empty() {
         changes.push(DomChange::Effect {
           coord: coord.to_owned(),
@@ -388,7 +399,7 @@ where
       collect_effects_outside_in_as(tree, &next_coord, dom_path, effect_type, changes)?;
       Ok(())
     }
-    RespoNode::Element { children, .. } => {
+    RespoNode::Element(RespoElement { children, .. }) => {
       for (idx, (k, child)) in children.iter().enumerate() {
         let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Key(k.to_owned()));
@@ -417,7 +428,7 @@ where
   T: Debug + Clone,
 {
   match tree {
-    RespoNode::Component(name, effects, tree) => {
+    RespoNode::Component(RespoComponent { name, effects, tree }) => {
       let mut next_coord = coord.to_owned();
       next_coord.push(RespoCoord::Comp(name.to_owned()));
       collect_effects_inside_out_as(tree, &next_coord, dom_path, effect_type, changes)?;
@@ -431,7 +442,7 @@ where
       }
       Ok(())
     }
-    RespoNode::Element { children, .. } => {
+    RespoNode::Element(RespoElement { children, .. }) => {
       for (idx, (k, child)) in children.iter().enumerate() {
         let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Key(k.to_owned()));
@@ -461,7 +472,7 @@ where
   T: Debug + Clone,
 {
   match tree {
-    RespoNode::Component(name, effects, tree) => {
+    RespoNode::Component(RespoComponent { name, effects, tree }) => {
       if !effects.is_empty() {
         operations.push(ChildDomOp::NestedEffect {
           nested_coord: coord.to_owned(),
@@ -475,7 +486,7 @@ where
       nested_effects_outside_in_as(tree, &next_coord, dom_path, effect_type, operations)?;
       Ok(())
     }
-    RespoNode::Element { children, .. } => {
+    RespoNode::Element(RespoElement { children, .. }) => {
       for (k, child) in children {
         let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Key(k.to_owned()));
@@ -502,7 +513,7 @@ where
   T: Debug + Clone,
 {
   match tree {
-    RespoNode::Component(name, effects, tree) => {
+    RespoNode::Component(RespoComponent { name, effects, tree }) => {
       let mut next_coord = coord.to_owned();
       next_coord.push(RespoCoord::Comp(name.to_owned()));
       nested_effects_inside_out_as(tree, &next_coord, dom_path, effect_type, operations)?;
@@ -516,7 +527,7 @@ where
       }
       Ok(())
     }
-    RespoNode::Element { children, .. } => {
+    RespoNode::Element(RespoElement { children, .. }) => {
       for (k, child) in children {
         let mut next_coord = coord.to_owned();
         next_coord.push(RespoCoord::Key(k.to_owned()));

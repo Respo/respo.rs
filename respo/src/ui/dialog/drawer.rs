@@ -3,14 +3,19 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
+use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 
-use crate::dialog::{css_backdrop, css_drawer_card};
-use crate::ui::{ui_center, column, ui_fullscreen, ui_global};
+use crate::ui::dialog::{css_backdrop, css_drawer_card};
+use crate::ui::{column, ui_center, ui_fullscreen, ui_global};
 
-use crate::{div, space, span, CssLineHeight, CssPosition, DispatchFn, RespoAction, RespoEvent, RespoNode, RespoStyle, StatesTree};
+use crate::node::css::{CssLineHeight, CssPosition, RespoStyle};
+use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
+use crate::{div, space, span, RespoComponent};
 
-use crate::dialog::effect_drawer_fade;
+use crate::states_tree::{RespoState, RespoStatesTree};
+
+use crate::ui::dialog::EffectDrawerFade;
 
 use super::comp_esc_listener;
 
@@ -52,7 +57,7 @@ where
   T: Debug + Clone,
 {
   fn default() -> Self {
-    Self(Rc::new(|_close: _| Ok(div())))
+    Self(Rc::new(|_close: _| Ok(div().to_node())))
   }
 }
 
@@ -81,30 +86,31 @@ where
   T: Clone + Debug,
 {
   let close = Rc::new(on_close);
-  let close2 = close.clone();
-  let close3 = close.clone();
 
   Ok(
-    RespoNode::new_component(
+    RespoComponent::named(
       "drawer",
       div()
-        .style(RespoStyle::default().position(CssPosition::Absolute).to_owned())
-        .children([if show {
+        .style(RespoStyle::default().position(CssPosition::Absolute))
+        .elements([if show {
           div()
             .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
             .style(options.backdrop_style)
-            .on_click(move |e, dispatch| -> Result<(), String> {
-              if let RespoEvent::Click { original_event, .. } = e {
-                // stop propagation to prevent closing the drawer
-                original_event.stop_propagation();
+            .on_click({
+              let close = close.to_owned();
+              move |e, dispatch| -> Result<(), String> {
+                if let RespoEvent::Click { original_event, .. } = e {
+                  // stop propagation to prevent closing the drawer
+                  original_event.stop_propagation();
+                }
+                close(dispatch)?;
+                Ok(())
               }
-              close(dispatch)?;
-              Ok(())
             })
             .children([
               div()
                 .class_list(&[column(), ui_global(), css_drawer_card()])
-                .style(RespoStyle::default().padding(0.0).line_height(CssLineHeight::Px(32.0)).to_owned())
+                .style(RespoStyle::default().padding(0.0).line_height(CssLineHeight::Px(32.0)))
                 .style(options.card_style)
                 .on_click(move |e, _dispatch| -> Result<(), String> {
                   // nothing to do
@@ -114,33 +120,31 @@ where
                   }
                   Ok(())
                 })
-                .children([div()
-                  .class(column())
-                  .children([
-                    div()
-                      .class(ui_center())
-                      .children([span().inner_text(options.title.unwrap_or_else(|| "Drawer".to_owned())).to_owned()])
-                      .to_owned(),
-                    space(None, Some(8)),
-                    options.render.run(move |dispatch| -> Result<(), String> {
-                      let close = close2.clone();
+                .elements([div().class(column()).children([
+                  div()
+                    .class(ui_center())
+                    .children([span().inner_text(options.title.unwrap_or_else(|| "Drawer".to_owned())).to_node()])
+                    .to_node(),
+                  space(None, Some(8)).to_node(),
+                  options.render.run({
+                    let close = close.to_owned();
+                    move |dispatch| -> Result<(), String> {
                       close(dispatch)?;
                       Ok(())
-                    })?,
-                  ])
-                  .to_owned()])
-                .to_owned(),
-              comp_esc_listener(show, close3)?,
+                    }
+                  })?,
+                ])])
+                .to_node(),
+              comp_esc_listener(show, close)?,
             ])
-            .to_owned()
         } else {
-          span().attribute("data-name", "placeholder").to_owned()
-        }])
-        .to_owned(),
+          span().attribute("data-name", "placeholder")
+        }]),
     )
     // .effect(&[show], effect_focus)
-    .effect(&[show], effect_drawer_fade)
-    .share_with_ref(),
+    .effect(EffectDrawerFade { show })
+    .to_node()
+    .rc(),
   )
 }
 
@@ -158,7 +162,7 @@ where
   /// to close drawer
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String>;
 
-  fn new(states: StatesTree, options: DrawerOptions<T>) -> Result<Self, String>
+  fn new(states: RespoStatesTree, options: DrawerOptions<T>) -> Result<Self, String>
   where
     Self: std::marker::Sized;
 
@@ -166,7 +170,7 @@ where
   fn share_with_ref(&self) -> Rc<Self>;
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, RespoState)]
 struct DrawerPluginState {
   show: bool,
 }
@@ -180,7 +184,7 @@ where
   state: Rc<DrawerPluginState>,
   options: DrawerOptions<T>,
   /// tracking content to display
-  cursor: Vec<String>,
+  cursor: Vec<Rc<str>>,
   phantom: PhantomData<T>,
 }
 
@@ -189,7 +193,7 @@ where
   T: Clone + Debug + RespoAction,
 {
   fn render(&self) -> Result<RespoNode<T>, String> {
-    let cursor = self.cursor.clone();
+    let cursor = self.cursor.to_owned();
 
     comp_drawer(self.options.to_owned(), self.state.show, move |dispatch: DispatchFn<_>| {
       let s = DrawerPluginState { show: false };
@@ -208,9 +212,9 @@ where
     Ok(())
   }
 
-  fn new(states: StatesTree, options: DrawerOptions<T>) -> Result<Self, String> {
+  fn new(states: RespoStatesTree, options: DrawerOptions<T>) -> Result<Self, String> {
     let cursor = states.path();
-    let state = states.data.cast_or_default::<DrawerPluginState>()?;
+    let state = states.cast_branch::<DrawerPluginState>()?;
 
     let instance = Self {
       state,
@@ -223,6 +227,6 @@ where
   }
 
   fn share_with_ref(&self) -> Rc<Self> {
-    Rc::new(self.clone())
+    Rc::new(self.to_owned())
   }
 }

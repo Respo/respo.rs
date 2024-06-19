@@ -53,10 +53,10 @@ fn focus_element(el: &Node, name: &str) -> Result<(), String> {
       };
     }
     Ok(None) => {
-      app::util::log!("focus_element: {} not found", name);
+      app::util::warn_log!("Attempted to focus on element '{}', but it was not found in the DOM.", name);
     }
     Err(e) => {
-      app::util::log!("focus_element: {} not found: {:?}", name, e);
+      app::util::warn_log!("focus_element: {} not found: {:?}", name, e);
     }
   }
   Ok(())
@@ -234,7 +234,8 @@ impl RespoEffect for EffectModalClose {
           .view(event.view().as_ref())
           .location(event.location())
           .key_code(event.key_code());
-        let new_event = KeyboardEvent::new_with_keyboard_event_init_dict(&event.type_(), &init_dict).unwrap();
+        let new_event = KeyboardEvent::new_with_keyboard_event_init_dict(&event.type_(), &init_dict)
+          .expect("Failed to create new KeyboardEvent from init dict");
 
         el.dispatch_event(&new_event).unwrap();
       }

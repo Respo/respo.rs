@@ -91,7 +91,21 @@ macro_rules! log {
   }};
 }
 
+/// wraps on top of `web_sys::console.warn_1`.
+///
+/// use it like:
+/// ```ignore
+/// util::warn!("a is {}", a);
+/// ```
+#[macro_export]
+macro_rules! warn_log {
+  ($($t:tt)*) => {{
+    web_sys::console::warn_1(&format!($($t)*).into());
+  }};
+}
+
 pub use log;
+pub use warn_log;
 
 /// display type of a variable, as a debug tool
 #[allow(dead_code)]

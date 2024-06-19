@@ -93,7 +93,10 @@ pub trait RespoApp {
   /// backup store to local storage before unload
   fn backup_model_beforeunload(&self) -> Result<(), String> {
     let window = web_sys::window().expect("window");
-    let storage = window.local_storage().expect("get storage").expect("unwrap storage");
+    let storage = match window.local_storage() {
+      Ok(Some(storage)) => storage,
+      _ => return Err("Failed to access local storage".to_owned()),
+    };
     let beforeunload = Closure::wrap(Box::new({
       let p = Self::pick_storage_key();
       let store = self.get_store().to_owned();
@@ -110,7 +113,11 @@ pub trait RespoApp {
 
   fn try_load_storage(&self) -> Result<(), String> {
     let window = web_sys::window().expect("window");
-    let storage = window.local_storage().expect("get storage").expect("unwrap storage");
+    let storage = match window.local_storage() {
+      Ok(Some(storage)) => storage,
+      _ => return Err("Failed to access local storage".to_owned()),
+    };
+
     let key = Self::pick_storage_key();
     match storage.get_item(key) {
       Ok(Some(s)) => match Self::Model::try_from_string(&s) {

@@ -16,7 +16,7 @@ impl RespoState for bool {
   }
 
   fn restore_from(&mut self, s: &Value) -> Result<(), String> {
-    *self = s.as_bool().unwrap();
+    *self = s.as_bool().ok_or_else(|| "Expected a boolean value".to_string())?;
     Ok(())
   }
 }

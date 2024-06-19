@@ -8,7 +8,7 @@ use quote::quote;
 /// if you prefer implementing `RespoState` manually, you can implement `backup` and `restore_from` by yourself.
 #[proc_macro_derive(RespoState)]
 pub fn respo_state_macro_derive(input: TokenStream) -> TokenStream {
-  let ast = syn::parse(input).unwrap();
+  let ast = syn::parse(input).expect("parse failed for RespoState macro");
   impl_respo_state_macro(&ast)
 }
 

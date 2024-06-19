@@ -167,7 +167,10 @@ where
         if name == target_name {
           load_coord_target_tree(tree, &coord[1..])
         } else {
-          Err(format!("expected component {} to be {}", &name, &target_name))
+          Err(format!(
+            "Mismatch in expected component name: expected {}, found {}",
+            &target_name, &name
+          ))
         }
       }
       (RespoNode::Element(RespoElement { children, .. }), RespoCoord::Key(idx)) => match children.iter().position(|(k, _)| idx == k) {
@@ -181,7 +184,9 @@ where
       //   Some((_k, child)) => load_coord_target_tree(child, &coord[1..]),
       //   None => Err(format!("no child at index key {:?}", idx)),
       // },
-      (RespoNode::Component(..), RespoCoord::Key(..)) => Err(String::from("expected element, found target being a component")),
+      (RespoNode::Component(..), RespoCoord::Key(..)) => {
+        Err(String::from("Type mismatch: expected a DOM element, but found a component"))
+      }
       (RespoNode::Element { .. }, RespoCoord::Comp(..)) => {
         Err(format!("expected component at {:?}, found target being an element", coord))
       }
@@ -200,7 +205,12 @@ where
     RespoNode::Component(RespoComponent { name, .. }) => Err(format!("expected element, found target being a component: {}", &name)),
     RespoNode::Element(RespoElement { name: tag_name, event, .. }) => match event.get(event_name) {
       Some(v) => Ok((*v).to_owned()),
-      None => Err(format!("no handler for event:{} on {} {:?}", &event_name, tag_name, event,)),
+      None => Err(format!(
+        "No event handler found for event '{}' on element '{}', available events: {:?}",
+        &event_name,
+        tag_name,
+        event.keys()
+      )),
     },
     RespoNode::Referenced(cell) => request_for_target_handler(&cell, event_name, coord),
   }

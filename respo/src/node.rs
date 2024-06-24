@@ -190,15 +190,21 @@ pub trait RespoAction {
     })
   }
 
+  /// builder for intent actions
   fn build_intent_action(op: Self::Intent) -> Self
   where
-    Self: Sized;
+    Self: Sized,
+  {
+    todo!("build_intent_action need to be implemented when intent({:?}) is used ", op)
+  }
 
   /// a builder for states change
   fn states_action(a: RespoUpdateState) -> Self;
 
   /// handle intent seperately since it might contain effects
-  fn detect_intent(&self) -> Option<Self::Intent>;
+  fn detect_intent(&self) -> Option<Self::Intent> {
+    None
+  }
 }
 
 impl<T> DispatchFn<T>

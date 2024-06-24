@@ -3,7 +3,7 @@ pub(crate) mod patch;
 pub(crate) mod renderer;
 
 use std::{
-  cell::{Ref, RefCell, RefMut},
+  cell::{Ref, RefCell},
   fmt::Debug,
   rc::Rc,
 };
@@ -30,7 +30,7 @@ pub trait RespoApp {
   type Action: Debug + Clone + RespoAction + 'static;
 
   /// simulating pure function updates to the model, but actually it's mutations
-  fn dispatch(store: &mut RefMut<Self::Model>, action: Self::Action) -> Result<(), String>;
+  fn dispatch(store: Rc<RefCell<Self::Model>>, action: Self::Action) -> Result<(), String>;
 
   /// used when saving to local storage
   fn pick_storage_key() -> &'static str {
@@ -60,9 +60,8 @@ pub trait RespoApp {
       let store_to_action = global_store.to_owned();
       move |op: Self::Action| -> Result<(), String> {
         // util::log!("action {:?} store, {:?}", op, store_to_action.borrow());
-        let mut store = store_to_action.borrow_mut();
 
-        Self::dispatch(&mut store, op)?;
+        Self::dispatch(store_to_action.to_owned(), op)?;
         // util::log!("store after action {:?}", store);
         Ok(())
       }

@@ -7,10 +7,11 @@ mod store;
 mod task;
 mod todolist;
 
-use std::cell::{Ref, RefCell, RefMut};
+use std::cell::{Ref, RefCell};
 use std::panic;
 use std::rc::Rc;
 
+use respo::RespoAction;
 use web_sys::Node;
 
 use respo::ui::ui_global;
@@ -46,8 +47,13 @@ impl RespoApp for App {
     APP_STORE_KEY
   }
 
-  fn dispatch(store: &mut RefMut<Self::Model>, op: Self::Action) -> Result<(), String> {
-    store.update(op)
+  fn dispatch(store_to_action: Rc<RefCell<Self::Model>>, op: Self::Action) -> Result<(), String> {
+    if let Some(intent) = op.detect_intent() {
+      intent.update(store_to_action)
+    } else {
+      let mut store = store_to_action.borrow_mut();
+      store.update(op)
+    }
   }
 
   fn view(store: Ref<Self::Model>) -> Result<RespoNode<Self::Action>, String> {

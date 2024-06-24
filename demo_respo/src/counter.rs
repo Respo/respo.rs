@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use respo::{
-  button,
+  br, button,
   css::{CssColor, RespoStyle},
   div, span,
   ui::ui_button,
@@ -12,6 +12,8 @@ use serde::{Deserialize, Serialize};
 
 use respo::states_tree::{RespoState, RespoStatesTree};
 
+use crate::IntentOp;
+
 use super::store::ActionOp;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, RespoState)]
@@ -19,7 +21,7 @@ struct MainState {
   counted: i32,
 }
 
-pub fn comp_counter(states: &RespoStatesTree, _counted: i32) -> Result<RespoElement<ActionOp>, String> {
+pub fn comp_counter(states: &RespoStatesTree, global_counted: i32) -> Result<RespoElement<ActionOp>, String> {
   let cursor = states.path();
 
   let state = states.cast_branch::<MainState>()?;
@@ -61,6 +63,22 @@ pub fn comp_counter(states: &RespoStatesTree, _counted: i32) -> Result<RespoElem
     }
   };
 
+  let on_inc_twice = {
+    let cursor = cursor.to_owned();
+    let state = state.to_owned();
+    move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
+      util::log!("click {:?}", e);
+      dispatch.run(ActionOp::Intent(IntentOp::IncTwice))?;
+      dispatch.run_state(
+        &cursor,
+        MainState {
+          counted: state.counted + 2,
+        },
+      )?;
+      Ok(())
+    }
+  };
+
   Ok(
     div().elements([
       div().elements([
@@ -74,6 +92,11 @@ pub fn comp_counter(states: &RespoStatesTree, _counted: i32) -> Result<RespoElem
           .inner_text("demo dec")
           .style(RespoStyle::default().margin(4.))
           .on_click(on_dec),
+        button()
+          .class(ui_button())
+          .inner_text("demo inc twice")
+          .style(RespoStyle::default().margin(4.))
+          .on_click(on_inc_twice),
       ]),
       div().elements([span().inner_text(format!("value is: {}", counted)).style(
         RespoStyle::default()
@@ -81,7 +104,11 @@ pub fn comp_counter(states: &RespoStatesTree, _counted: i32) -> Result<RespoElem
           .font_family("Menlo".to_owned())
           .font_size(10. + counted as f32),
       )]),
-      div().elements([span().inner_text(format!("local state: {}", counted))]),
+      div().elements([
+        span().inner_text(format!("local state: {}", counted)),
+        br(),
+        span().inner_text(format!("global state: {}", global_counted)),
+      ]),
     ]),
   )
 }

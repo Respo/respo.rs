@@ -28,6 +28,7 @@ declare_tag!(div, "`<div/>`");
 declare_tag!(header, "`<header/>`");
 declare_tag!(section, "`<section/>`");
 declare_tag!(footer, "`<footer/>`");
+declare_tag!(br, "`<br/>`");
 declare_tag!(span, "`<span/>`");
 declare_tag!(input, "`<input/>`");
 declare_tag!(textarea, "`<input/>`");

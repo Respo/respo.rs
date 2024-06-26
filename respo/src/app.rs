@@ -26,11 +26,9 @@ const RESPO_APP_STORE_KEY: &str = "respo_app_respo_store_default";
 pub trait RespoApp {
   /// a type of the store, with a place for states tree
   type Model: RespoStore + Debug + Clone + 'static;
-  /// actions should include one for updating states tree
-  type Action: Debug + Clone + RespoAction + 'static;
 
   /// simulating pure function updates to the model, but actually it's mutations
-  fn dispatch(store: Rc<RefCell<Self::Model>>, action: Self::Action) -> Result<(), String>;
+  fn dispatch(store: Rc<RefCell<Self::Model>>, action: <Self::Model as RespoStore>::Action) -> Result<(), String>;
 
   /// used when saving to local storage
   fn pick_storage_key() -> &'static str {
@@ -49,7 +47,7 @@ pub trait RespoApp {
   }
 
   /// DSL for building a view
-  fn view(store: Ref<Self::Model>) -> Result<RespoNode<Self::Action>, String>;
+  fn view(store: Ref<Self::Model>) -> Result<RespoNode<<Self::Model as RespoStore>::Action>, String>;
   /// start a requestAnimationFrame loop for rendering updated store
   fn render_loop(&self) -> Result<(), String> {
     let mount_target = self.get_mount_target();
@@ -58,7 +56,7 @@ pub trait RespoApp {
     // let store_to_action = global_store.to_owned();
     let dispatch_action = {
       let store_to_action = global_store.to_owned();
-      move |op: Self::Action| -> Result<(), String> {
+      move |op: <Self::Model as RespoStore>::Action| -> Result<(), String> {
         // util::log!("action {:?} store, {:?}", op, store_to_action.borrow());
 
         Self::dispatch(store_to_action.to_owned(), op)?;
@@ -75,7 +73,7 @@ pub trait RespoApp {
       }),
       Box::new({
         let store = global_store.to_owned();
-        move || -> Result<RespoNode<Self::Action>, String> {
+        move || -> Result<RespoNode<<Self::Model as RespoStore>::Action>, String> {
           // util::log!("global store: {:?}", store);
 
           Self::view(store.borrow())

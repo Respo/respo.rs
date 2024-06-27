@@ -172,6 +172,7 @@ where
 /// guide for actions to be dispatched
 /// expecially for how you update states
 pub trait RespoAction {
+  type Intent: Debug + Clone + PartialEq + Eq;
   /// to provide syntax sugar to dispatch.run_state
   fn build_states_action(cursor: &[Rc<str>], a: Option<RespoStateBranch>) -> Self
   where
@@ -189,8 +190,21 @@ pub trait RespoAction {
     })
   }
 
+  /// builder for intent actions
+  fn build_intent_action(op: Self::Intent) -> Self
+  where
+    Self: Sized,
+  {
+    todo!("build_intent_action need to be implemented when intent({:?}) is used ", op)
+  }
+
   /// a builder for states change
   fn states_action(a: RespoUpdateState) -> Self;
+
+  /// handle intent seperately since it might contain effects
+  fn detect_intent(&self) -> Option<Self::Intent> {
+    None
+  }
 }
 
 impl<T> DispatchFn<T>
@@ -208,6 +222,10 @@ where
   {
     let a = Rc::new(data);
     (self.0)(T::build_states_action(cursor, Some(RespoStateBranch::new(a))))
+  }
+  /// alias for dispatching intent
+  pub fn run_intent(&self, op: T::Intent) -> Result<(), String> {
+    (self.0)(T::build_intent_action(op))
   }
   /// reset state to empty
   pub fn run_empty_state(&self, cursor: &[Rc<str>]) -> Result<(), String> {

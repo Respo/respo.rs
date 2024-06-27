@@ -1,4 +1,4 @@
-use std::hash::Hash;
+use std::{cell::RefCell, hash::Hash, rc::Rc};
 
 use respo::{states_tree::RespoUpdateState, util, RespoAction, RespoStore};
 use respo_state_derive::RespoState;
@@ -31,12 +31,40 @@ impl Hash for Task {
   }
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum IntentOp {
+  #[default]
+  Noop,
+  IncTwice,
+}
+
+impl IntentOp {
+  pub fn update(&self, store_to_action: Rc<RefCell<Store>>) -> Result<(), String> {
+    use IntentOp::*;
+    let mut store = store_to_action.borrow_mut();
+    match self {
+      Noop => Ok(()),
+      IncTwice => {
+        util::log!("inc twice");
+        store.update(ActionOp::Increment)?;
+        util::log!("inc twice {}", store.counted);
+        store.update(ActionOp::Increment)?;
+        util::log!("inc twice {}", store.counted);
+        store.update(ActionOp::Increment)?;
+        util::log!("inc twice {}", store.counted);
+        Ok(())
+      }
+    }
+  }
+}
+
 #[derive(Clone, Debug, Default)]
 pub enum ActionOp {
   #[default]
   Noop,
   /// contains State and Value
   StatesChange(RespoUpdateState),
+  Intent(IntentOp),
   Increment,
   Decrement,
   AddTask(String, String),
@@ -46,8 +74,23 @@ pub enum ActionOp {
 }
 
 impl RespoAction for ActionOp {
+  type Intent = IntentOp;
   fn states_action(a: RespoUpdateState) -> Self {
     Self::StatesChange(a)
+  }
+
+  fn detect_intent(&self) -> Option<<ActionOp as RespoAction>::Intent> {
+    match self {
+      ActionOp::Intent(i) => Some(i.clone()),
+      _ => None,
+    }
+  }
+
+  fn build_intent_action(op: <ActionOp as RespoAction>::Intent) -> Self
+  where
+    Self: Sized,
+  {
+    Self::Intent(op)
   }
 }
 
@@ -61,11 +104,10 @@ impl RespoStore for Store {
   fn update(&mut self, op: Self::Action) -> Result<(), String> {
     use ActionOp::*;
     match op {
-      Noop => {
-        // nothing to to
-      }
-      StatesChange(a) => {
-        self.update_states(a);
+      Noop => {} // nothing to to
+      StatesChange(a) => self.update_states(a),
+      Intent(_i) => {
+        unreachable!("intent should be handled in dispatch")
       }
       Increment => {
         self.counted += 1;

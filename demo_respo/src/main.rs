@@ -11,6 +11,7 @@ use std::cell::{Ref, RefCell};
 use std::panic;
 use std::rc::Rc;
 
+use counter::CounterState;
 use respo::RespoAction;
 use web_sys::Node;
 
@@ -64,7 +65,7 @@ impl RespoApp for App {
         .class(ui_global())
         .style(RespoStyle::default().padding(12.0))
         .children([
-          comp_counter(&states.pick("counter"), store.counted)?.to_node(),
+          comp_counter(states.pick("counter").data_cast_to::<CounterState>()?, store.counted)?.to_node(),
           comp_panel(&states.pick("panel"))?,
           comp_todolist(&states.pick("todolist"), &store.tasks)?.to_node(),
           comp_plugins_demo(&states.pick("plugins-demo"))?.to_node(),

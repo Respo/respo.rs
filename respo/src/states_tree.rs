@@ -2,6 +2,7 @@
 //! `RespoStatesTree` tree has concept of "cursor", which is a path to the current state in the tree.
 //! use `branch.pick(name)` to get a child branch, and `branch.set_in_mut(change)` to update the tree.
 
+mod casted;
 mod dyn_eq;
 mod state;
 
@@ -11,6 +12,8 @@ use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::rc::Rc;
+
+pub use casted::RespoStatesTreeCasted;
 
 use crate::log;
 pub(crate) use dyn_eq::DynEq;
@@ -136,6 +139,20 @@ impl RespoStatesTree {
         self.branches.insert(p0.to_owned(), Box::new(branch));
       }
     }
+  }
+
+  /// cast tree with a new type in data
+  pub fn data_cast_to<T>(&self) -> Result<RespoStatesTreeCasted<T>, String>
+  where
+    T: Clone + Default + RespoState + 'static,
+  {
+    let b = self.cast_branch::<T>()?;
+    Ok(RespoStatesTreeCasted {
+      data: b,
+      backup: self.backup.to_owned(),
+      cursor: self.cursor.to_owned(),
+      branches: self.branches.to_owned(),
+    })
   }
 }
 

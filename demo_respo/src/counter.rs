@@ -4,27 +4,28 @@ use respo::{
   br, button,
   css::{CssColor, RespoStyle},
   div, span,
+  states_tree::RespoStatesTreeCasted,
   ui::ui_button,
   util, DispatchFn, RespoElement, RespoEvent,
 };
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 
-use respo::states_tree::{RespoState, RespoStatesTree};
+use respo::states_tree::RespoState;
 
 use crate::IntentOp;
 
 use super::store::ActionOp;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, RespoState)]
-struct MainState {
+pub(crate) struct CounterState {
   counted: i32,
 }
 
-pub fn comp_counter(states: &RespoStatesTree, global_counted: i32) -> Result<RespoElement<ActionOp>, String> {
+pub fn comp_counter(states: RespoStatesTreeCasted<CounterState>, global_counted: i32) -> Result<RespoElement<ActionOp>, String> {
   let cursor = states.path();
 
-  let state = states.cast_branch::<MainState>()?;
+  let state = states.data;
   let counted = state.counted;
 
   let on_inc = {
@@ -39,7 +40,7 @@ pub fn comp_counter(states: &RespoStatesTree, global_counted: i32) -> Result<Res
       dispatch.run(ActionOp::Increment)?;
       dispatch.run_state(
         &cursor,
-        MainState {
+        CounterState {
           counted: state.counted + 2,
         },
       )?;
@@ -55,7 +56,7 @@ pub fn comp_counter(states: &RespoStatesTree, global_counted: i32) -> Result<Res
       dispatch.run(ActionOp::Decrement)?;
       dispatch.run_state(
         &cursor,
-        MainState {
+        CounterState {
           counted: state.counted - 1,
         },
       )?;
@@ -71,7 +72,7 @@ pub fn comp_counter(states: &RespoStatesTree, global_counted: i32) -> Result<Res
       dispatch.run(ActionOp::Intent(IntentOp::IncTwice))?;
       dispatch.run_state(
         &cursor,
-        MainState {
+        CounterState {
           counted: state.counted + 2,
         },
       )?;

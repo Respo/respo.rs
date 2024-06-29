@@ -8,14 +8,15 @@ use crate::store::ActionOp;
 
 use respo::{
   button, div, input, space, span,
+  states_tree::RespoStatesTreeCasted,
   ui::{ui_button, ui_input},
   util, DispatchFn, RespoComponent, RespoEffect, RespoEvent, RespoNode,
 };
 
-use respo::states_tree::{RespoState, RespoStatesTree};
+use respo::states_tree::RespoState;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, RespoState)]
-struct PanelState {
+pub(crate) struct PanelState {
   content: String,
 }
 
@@ -34,9 +35,9 @@ impl RespoEffect for PanelMount {
   }
 }
 
-pub fn comp_panel(states: &RespoStatesTree) -> Result<RespoNode<ActionOp>, String> {
+pub fn comp_panel(states: RespoStatesTreeCasted<PanelState>) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
-  let state = states.cast_branch::<PanelState>()?;
+  let state = states.data;
 
   let on_input = {
     let cursor = cursor.to_owned();

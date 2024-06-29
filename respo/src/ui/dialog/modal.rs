@@ -13,7 +13,7 @@ use crate::node::css::{CssLineHeight, CssPosition, RespoStyle};
 use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
 use crate::{div, space, span, RespoComponent};
 
-use crate::states_tree::{RespoState, RespoStatesTree};
+use crate::states_tree::{RespoState, RespoStatesTreeCasted};
 
 use crate::ui::dialog::EffectModalFade;
 
@@ -164,7 +164,7 @@ where
   /// to close modal
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String>;
 
-  fn new(states: RespoStatesTree, options: ModalOptions<T>) -> Result<Self, String>
+  fn new(states: RespoStatesTreeCasted<ModalPluginState>, options: ModalOptions<T>) -> Result<Self, String>
   where
     Self: std::marker::Sized;
 
@@ -173,7 +173,7 @@ where
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, RespoState)]
-struct ModalPluginState {
+pub struct ModalPluginState {
   show: bool,
 }
 
@@ -214,9 +214,9 @@ where
     Ok(())
   }
 
-  fn new(states: RespoStatesTree, options: ModalOptions<T>) -> Result<Self, String> {
+  fn new(states: RespoStatesTreeCasted<ModalPluginState>, options: ModalOptions<T>) -> Result<Self, String> {
     let cursor = states.path();
-    let state = states.cast_branch::<ModalPluginState>()?;
+    let state = states.data;
 
     let instance = Self {
       state,

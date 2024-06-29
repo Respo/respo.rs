@@ -13,6 +13,7 @@ use std::rc::Rc;
 
 use counter::CounterState;
 use respo::RespoAction;
+use todolist::TodolistState;
 use web_sys::Node;
 
 use respo::ui::ui_global;
@@ -23,7 +24,7 @@ use self::counter::comp_counter;
 pub use self::store::ActionOp;
 use self::store::*;
 use self::todolist::comp_todolist;
-use panel::comp_panel;
+use panel::{comp_panel, PanelState};
 use plugins::comp_plugins_demo;
 
 const APP_STORE_KEY: &str = "demo_respo_store";
@@ -65,10 +66,10 @@ impl RespoApp for App {
         .class(ui_global())
         .style(RespoStyle::default().padding(12.0))
         .children([
-          comp_counter(states.pick("counter").data_cast_to::<CounterState>()?, store.counted)?.to_node(),
-          comp_panel(&states.pick("panel"))?,
-          comp_todolist(&states.pick("todolist"), &store.tasks)?.to_node(),
-          comp_plugins_demo(&states.pick("plugins-demo"))?.to_node(),
+          comp_counter(states.pick_to::<CounterState>("counter")?, store.counted)?.to_node(),
+          comp_panel(states.pick_to::<PanelState>("panel")?)?,
+          comp_todolist(states.pick_to::<TodolistState>("todolist")?, &store.tasks)?.to_node(),
+          comp_plugins_demo(states.pick_to::<()>("plugins-demo")?)?.to_node(),
         ])
         .to_node(),
     )

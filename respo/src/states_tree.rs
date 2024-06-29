@@ -88,8 +88,8 @@ impl RespoStatesTree {
     }
   }
 
-  /// pick a child branch as new cursor
-  pub fn pick(&self, name: &str) -> RespoStatesTree {
+  /// internal method to pick a child branch, still using dynamic type
+  fn pick_dyn(&self, name: &str) -> RespoStatesTree {
     let mut next_cursor = self.cursor.to_owned();
     next_cursor.push(Rc::from(name));
 
@@ -115,6 +115,37 @@ impl RespoStatesTree {
     }
   }
 
+  /// pick a child branch as new cursor
+  pub fn pick_to<T>(&self, name: &str) -> Result<RespoStatesTreeCasted<T>, String>
+  where
+    T: Clone + Default + RespoState + 'static,
+  {
+    let mut next_cursor = self.cursor.to_owned();
+    next_cursor.push(Rc::from(name));
+
+    if self.branches.contains_key(name) {
+      let prev = &self.branches[name];
+      let branch = prev.cast_branch::<T>()?;
+      Ok(RespoStatesTreeCasted {
+        data: branch.to_owned(),
+        backup: prev.backup.to_owned(),
+        // data_revision: prev.data_revision,
+        // data_type_name: prev.data_type_name.to_owned(),
+        cursor: next_cursor,
+        branches: prev.branches.to_owned(),
+      })
+    } else {
+      Ok(RespoStatesTreeCasted {
+        data: Rc::new(T::default()),
+        backup: None,
+        cursor: next_cursor,
+        // data_type_name: None,
+        // data_revision: 0,
+        branches: BTreeMap::new(),
+      })
+    }
+  }
+
   /// in-place mutation of state tree
   pub(crate) fn set_in_mut(&mut self, change: RespoUpdateState) {
     if change.cursor.is_empty() {
@@ -131,7 +162,7 @@ impl RespoStatesTree {
           ..change
         });
       } else {
-        let mut branch = self.pick(p0);
+        let mut branch = self.pick_dyn(p0);
         branch.set_in_mut(RespoUpdateState {
           cursor: p_rest.to_vec(),
           ..change

@@ -17,7 +17,7 @@ use crate::node::css::{CssColor, CssLineHeight, CssPosition, CssSize, RespoStyle
 use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
 use crate::{app, button, div, input, space, span, static_styles, textarea, util, RespoComponent};
 
-use crate::states_tree::{RespoState, RespoStatesTree};
+use crate::states_tree::{RespoState, RespoStatesTreeCasted};
 
 use super::comp_esc_listener;
 
@@ -68,13 +68,13 @@ impl PromptValidator {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, RespoState)]
-struct InputState {
+pub struct PromptInputState {
   draft: String,
   error: Option<String>,
 }
 
 fn comp_prompt_modal<T, U, V>(
-  states: RespoStatesTree,
+  states: RespoStatesTreeCasted<PromptInputState>,
   options: PromptOptions,
   show: bool,
   on_submit: U,
@@ -86,9 +86,9 @@ where
   T: Clone + Debug + RespoAction,
 {
   let cursor = states.path();
-  let mut state = states.cast_branch::<InputState>()?;
+  let mut state = states.data;
   if let Some(text) = &options.initial_value {
-    state = Rc::new(InputState {
+    state = Rc::new(PromptInputState {
       draft: text.to_string(),
       error: None,
     });
@@ -103,7 +103,7 @@ where
     let cursor = cursor.to_owned();
     move |e, dispatch: DispatchFn<_>| -> Result<(), String> {
       if let RespoEvent::Input { value, .. } = e {
-        dispatch.run_state(&cursor, InputState { draft: value, error: None })?;
+        dispatch.run_state(&cursor, PromptInputState { draft: value, error: None })?;
       }
       Ok(())
     }
@@ -127,7 +127,7 @@ where
             // dispatch.run_state(&cursor, InputState { draft: text.to_owned() })?;
             dispatch.run_state(
               &cursor,
-              InputState {
+              PromptInputState {
                 draft: text.to_owned(),
                 error: Some(message),
               },
@@ -247,7 +247,7 @@ where
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String>;
 
   /// initialize the plugin, second parameter is the callback task when submitted,
-  fn new(states: RespoStatesTree, options: PromptOptions, on_submit: U) -> Result<Self, String>
+  fn new(states: RespoStatesTreeCasted<PromptPluginState>, options: PromptOptions, on_submit: U) -> Result<Self, String>
   where
     Self: std::marker::Sized;
 
@@ -256,7 +256,7 @@ where
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, RespoState)]
-struct PromptPluginState {
+pub struct PromptPluginState {
   show: bool,
   text: Option<String>,
 }
@@ -268,7 +268,7 @@ where
   T: Clone + Debug,
   U: Fn(String, DispatchFn<T>) -> Result<(), String> + 'static,
 {
-  states: RespoStatesTree,
+  states: RespoStatesTreeCasted<PromptPluginState>,
   state: Rc<PromptPluginState>,
   options: PromptOptions,
   /// tracking content to display
@@ -289,7 +289,7 @@ where
     let state = self.state.to_owned();
 
     comp_prompt_modal(
-      self.states.pick("plugin"),
+      self.states.pick_to::<PromptInputState>("plugin")?,
       self.options.to_owned(),
       self.state.show,
       {
@@ -363,12 +363,12 @@ where
     Ok(())
   }
 
-  fn new(states: RespoStatesTree, options: PromptOptions, on_submit: U) -> Result<Self, String> {
+  fn new(states: RespoStatesTreeCasted<PromptPluginState>, options: PromptOptions, on_submit: U) -> Result<Self, String> {
     let cursor = states.path();
-    let state = states.cast_branch::<PromptPluginState>()?;
+    let state = states.data.to_owned();
 
     let instance = Self {
-      states,
+      states: states.to_owned(),
       state,
       options,
       text: None,

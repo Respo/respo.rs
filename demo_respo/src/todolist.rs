@@ -1,8 +1,12 @@
-use respo::{button, div, span, ui::ui_button, util, DispatchFn, RespoElement, RespoIndexKey, RespoNode};
+use respo::{
+  button, div, span, states_tree::RespoStatesTreeCasted, ui::ui_button, util, DispatchFn, RespoElement, RespoIndexKey, RespoNode,
+};
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 
-use respo::states_tree::{RespoState, RespoStatesTree};
+use respo::states_tree::RespoState;
+
+use crate::task::TaskState;
 
 use super::{
   store::{ActionOp, Task},
@@ -10,13 +14,13 @@ use super::{
 };
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, RespoState)]
-struct TodolistState {
+pub(crate) struct TodolistState {
   hide_done: bool,
 }
 
-pub fn comp_todolist(states: &RespoStatesTree, tasks: &[Task]) -> Result<RespoElement<ActionOp>, String> {
+pub fn comp_todolist(states: RespoStatesTreeCasted<TodolistState>, tasks: &[Task]) -> Result<RespoElement<ActionOp>, String> {
   let cursor = states.path();
-  let state = states.cast_branch::<TodolistState>()?;
+  let state = states.data.to_owned();
 
   let mut children: Vec<(RespoIndexKey, RespoNode<_>)> = vec![];
   for task in tasks {
@@ -24,7 +28,10 @@ pub fn comp_todolist(states: &RespoStatesTree, tasks: &[Task]) -> Result<RespoEl
       continue;
     }
 
-    children.push((RespoIndexKey::from(&task.id), comp_task(states.pick(&task.id), task.to_owned())?));
+    children.push((
+      RespoIndexKey::from(&task.id),
+      comp_task(states.pick_to::<TaskState>(&task.id)?, task.to_owned())?,
+    ));
   }
 
   // util::log!("{:?}", &tasks);

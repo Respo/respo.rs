@@ -13,7 +13,7 @@ use crate::node::css::{CssLineHeight, CssPosition, RespoStyle};
 use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
 use crate::{div, space, span, RespoComponent};
 
-use crate::states_tree::{RespoState, RespoStatesTree};
+use crate::states_tree::{RespoState, RespoStatesTreeCasted};
 
 use crate::ui::dialog::EffectDrawerFade;
 
@@ -162,7 +162,7 @@ where
   /// to close drawer
   fn close(&self, dispatch: DispatchFn<T>) -> Result<(), String>;
 
-  fn new(states: RespoStatesTree, options: DrawerOptions<T>) -> Result<Self, String>
+  fn new(states: RespoStatesTreeCasted<DrawerPluginState>, options: DrawerOptions<T>) -> Result<Self, String>
   where
     Self: std::marker::Sized;
 
@@ -171,7 +171,7 @@ where
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, RespoState)]
-struct DrawerPluginState {
+pub struct DrawerPluginState {
   show: bool,
 }
 
@@ -212,9 +212,9 @@ where
     Ok(())
   }
 
-  fn new(states: RespoStatesTree, options: DrawerOptions<T>) -> Result<Self, String> {
+  fn new(states: RespoStatesTreeCasted<DrawerPluginState>, options: DrawerOptions<T>) -> Result<Self, String> {
     let cursor = states.path();
-    let state = states.cast_branch::<DrawerPluginState>()?;
+    let state = states.data;
 
     let instance = Self {
       state,

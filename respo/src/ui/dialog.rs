@@ -20,11 +20,11 @@ use crate::{app, input, static_styles, util, RespoComponent};
 
 pub(crate) const BUTTON_NAME: &str = "dialog-button";
 
-pub use alert::{AlertOptions, AlertPlugin, AlertPluginInterface};
-pub use confirm::{ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface};
-pub use drawer::{DrawerOptions, DrawerPlugin, DrawerPluginInterface, DrawerRenderer};
-pub use modal::{ModalOptions, ModalPlugin, ModalPluginInterface, ModalRenderer};
-pub use prompt::{PromptOptions, PromptPlugin, PromptPluginInterface, PromptValidator};
+pub use alert::{AlertOptions, AlertPlugin, AlertPluginInterface, AlertPluginState};
+pub use confirm::{ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface, ConfirmPluginState};
+pub use drawer::{DrawerOptions, DrawerPlugin, DrawerPluginInterface, DrawerPluginState, DrawerRenderer};
+pub use modal::{ModalOptions, ModalPlugin, ModalPluginInterface, ModalPluginState, ModalRenderer};
+pub use prompt::{PromptOptions, PromptPlugin, PromptPluginInterface, PromptPluginState, PromptValidator};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct EffectFocus {

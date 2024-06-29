@@ -6,17 +6,19 @@ use memoize::memoize;
 use respo::{
   button,
   css::{CssColor, CssSize, RespoStyle},
-  div, input, space, span, static_styles,
+  div, input, space, span,
+  states_tree::RespoStatesTreeCasted,
+  static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
   util, DispatchFn, RespoComponent, RespoEffect, RespoEvent, RespoNode,
 };
 
-use respo::states_tree::{RespoState, RespoStatesTree};
+use respo::states_tree::RespoState;
 
 use super::store::*;
 
 #[derive(Debug, Clone, Default, Hash, PartialEq, Eq, Serialize, Deserialize, RespoState)]
-struct TaskState {
+pub(crate) struct TaskState {
   draft: String,
 }
 
@@ -35,7 +37,7 @@ impl RespoEffect for TaskUpdateEffect {
 #[memoize(Capacity: 40)]
 pub fn comp_task(
   // _memo_caches: MemoCache<RespoNode<ActionOp>>,
-  states: RespoStatesTree,
+  states: RespoStatesTreeCasted<TaskState>,
   task: Task,
 ) -> Result<RespoNode<ActionOp>, String> {
   respo::util::log!("calling task function");
@@ -43,7 +45,7 @@ pub fn comp_task(
   let task_id = &task.id;
 
   let cursor = states.path();
-  let state = states.cast_branch::<TaskState>()?;
+  let state = states.data;
 
   let on_toggle = {
     let tid = task_id.to_owned();

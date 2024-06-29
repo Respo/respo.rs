@@ -4,21 +4,22 @@ use respo::{RespoElement, RespoEvent};
 
 use respo::{button, div, span, ui::ui_button, util, DispatchFn};
 
-use respo::states_tree::RespoStatesTree;
+use respo::states_tree::RespoStatesTreeCasted;
 
 use respo::ui::dialog::{
-  AlertOptions, AlertPlugin, AlertPluginInterface, ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface, DrawerOptions, DrawerPlugin,
-  DrawerPluginInterface, DrawerRenderer, ModalOptions, ModalPlugin, ModalPluginInterface, ModalRenderer, PromptOptions, PromptPlugin,
-  PromptPluginInterface, PromptValidator,
+  AlertOptions, AlertPlugin, AlertPluginInterface, AlertPluginState, ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface,
+  ConfirmPluginState, DrawerOptions, DrawerPlugin, DrawerPluginInterface, DrawerPluginState, DrawerRenderer, ModalOptions, ModalPlugin,
+  ModalPluginInterface, ModalPluginState, ModalRenderer, PromptOptions, PromptPlugin, PromptPluginInterface, PromptPluginState,
+  PromptValidator,
 };
 
 use super::store::*;
 
-pub fn comp_plugins_demo(states: &RespoStatesTree) -> Result<RespoElement<ActionOp>, String> {
+pub fn comp_plugins_demo(states: RespoStatesTreeCasted<()>) -> Result<RespoElement<ActionOp>, String> {
   // respo::util::log!("re-render");
 
   let alert_plugin = AlertPlugin::new(
-    states.pick("info"),
+    states.pick_to::<AlertPluginState>("info")?,
     AlertOptions {
       // card_style: RespoStyle::default().background_color(CssColor::Blue),
       ..AlertOptions::default()
@@ -43,7 +44,7 @@ pub fn comp_plugins_demo(states: &RespoStatesTree) -> Result<RespoElement<Action
   };
 
   let confirm_plugin = ConfirmPlugin::new(
-    states.pick("confirm"),
+    states.pick_to::<ConfirmPluginState>("confirm")?,
     ConfirmOptions::default(),
     |_dispatch: DispatchFn<ActionOp>| {
       respo::util::log!("on confirm");
@@ -67,7 +68,7 @@ pub fn comp_plugins_demo(states: &RespoStatesTree) -> Result<RespoElement<Action
   };
 
   let prompt_plugin = PromptPlugin::new(
-    states.pick("prompt"),
+    states.pick_to::<PromptPluginState>("prompt")?,
     PromptOptions {
       text: Some(String::from("Demo text(length 3~8)")),
       validator: Some(PromptValidator::new(|text| {
@@ -106,7 +107,7 @@ pub fn comp_plugins_demo(states: &RespoStatesTree) -> Result<RespoElement<Action
   // declare modal
 
   let modal_plugin = ModalPlugin::new(
-    states.pick("modal"),
+    states.pick_to::<ModalPluginState>("modal")?,
     ModalOptions {
       title: Some(String::from("Modal demo")),
       render: ModalRenderer::new(|close_modal: _| {
@@ -145,7 +146,7 @@ pub fn comp_plugins_demo(states: &RespoStatesTree) -> Result<RespoElement<Action
   // declare drawer
 
   let drawer_plugin = DrawerPlugin::new(
-    states.pick("drawer"),
+    states.pick_to::<DrawerPluginState>("drawer")?,
     DrawerOptions {
       title: Some(String::from("Modal demo")),
       render: DrawerRenderer::new(|close_drawer: _| {

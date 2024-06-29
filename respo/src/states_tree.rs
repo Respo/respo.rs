@@ -12,7 +12,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::rc::Rc;
 
-use crate::log;
+use crate::warn_log;
 pub(crate) use dyn_eq::DynEq;
 
 pub use state::RespoState;
@@ -61,27 +61,27 @@ impl RespoStatesTree {
   }
 
   /// get shared data from state tree. fallback to backup and then default
-  pub fn cast_branch<T>(&self) -> Result<Rc<T>, String>
+  pub fn cast_branch<T>(&self) -> Rc<T>
   where
     T: Clone + Default + RespoState + 'static,
   {
     if let Some(v) = &self.data {
       if let Some(v) = v.0.as_ref().as_any().downcast_ref::<T>() {
-        return Ok(Rc::new(v.to_owned()));
+        return Rc::new(v.to_owned());
       } else {
-        log!("failed to cast state to {}", std::any::type_name::<T>());
+        warn_log!("failed to cast state to {} , at {:?}", std::any::type_name::<T>(), self.cursor);
       }
     }
 
     match &self.backup {
       Some(v) => {
         let mut t = T::default();
-        match t.restore_from(v) {
-          Ok(_) => Ok(Rc::new(t)),
-          Err(e) => Err(e),
+        if let Err(e) = t.restore_from(v) {
+          warn_log!("failed to restore from backup: {} , at {:?}", e, self.cursor);
         }
+        Rc::new(t)
       }
-      None => Ok(Rc::new(T::default())),
+      None => Rc::new(T::default()),
     }
   }
 

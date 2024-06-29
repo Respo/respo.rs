@@ -36,7 +36,7 @@ impl RespoEffect for PanelMount {
 
 pub fn comp_panel(states: &RespoStatesTree) -> Result<RespoNode<ActionOp>, String> {
   let cursor = states.path();
-  let state = states.cast_branch::<PanelState>()?;
+  let state = states.cast_branch::<PanelState>();
 
   let on_input = {
     let cursor = cursor.to_owned();

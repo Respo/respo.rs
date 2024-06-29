@@ -16,7 +16,7 @@ struct TodolistState {
 
 pub fn comp_todolist(states: &RespoStatesTree, tasks: &[Task]) -> Result<RespoElement<ActionOp>, String> {
   let cursor = states.path();
-  let state = states.cast_branch::<TodolistState>()?;
+  let state = states.cast_branch::<TodolistState>();
 
   let mut children: Vec<(RespoIndexKey, RespoNode<_>)> = vec![];
   for task in tasks {

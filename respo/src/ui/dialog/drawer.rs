@@ -214,7 +214,7 @@ where
 
   fn new(states: RespoStatesTree, options: DrawerOptions<T>) -> Result<Self, String> {
     let cursor = states.path();
-    let state = states.cast_branch::<DrawerPluginState>()?;
+    let state = states.cast_branch::<DrawerPluginState>();
 
     let instance = Self {
       state,

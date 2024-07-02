@@ -216,7 +216,7 @@ where
 
   fn new(states: RespoStatesTree, options: ModalOptions<T>) -> Result<Self, String> {
     let cursor = states.path();
-    let state = states.cast_branch::<ModalPluginState>()?;
+    let state = states.cast_branch::<ModalPluginState>();
 
     let instance = Self {
       state,

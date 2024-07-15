@@ -98,6 +98,7 @@ pub enum ActionOp {
 }
 
 impl RespoAction for ActionOp {
+  type Intent = (); // Intent is optional, it's for async actions.
   fn states_action(a: RespoUpdateState) -> Self {
     Self::StatesChange(a)
   }
@@ -126,7 +127,6 @@ struct App {
 
 impl RespoApp for App {
   type Model = Store;
-  type Action = ActionOp;
 
   fn get_store(&self) -> Rc<RefCell<Self::Model>> {
     self.store.to_owned()

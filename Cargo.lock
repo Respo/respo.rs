@@ -209,6 +209,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "respo_router"
+version = "0.0.1"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "respo_state_derive"
 version = "0.0.1"
 dependencies = [

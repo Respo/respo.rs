@@ -10,7 +10,7 @@ use std::sync::RwLock;
 
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::console::{error_1, warn_1};
-use web_sys::{HtmlElement, HtmlLabelElement, Node};
+use web_sys::{HtmlElement, HtmlLabelElement, HtmlTextAreaElement, Node};
 
 use crate::app::diff::{collect_effects_outside_in_as, diff_tree};
 use crate::app::patch::{attach_event, patch_tree};
@@ -240,16 +240,21 @@ where
       let element = document.create_element(name)?;
       for (key, value) in attrs {
         let key = key.as_ref();
-        if key == "style" {
-          warn_1(&"style is handled outside attrs".into());
-        } else if key == "innerText" {
-          element.dyn_ref::<HtmlElement>().expect("into html element").set_inner_text(value);
-        } else if key == "innerHTML" {
-          element.set_inner_html(value);
-        } else if key == "htmlFor" {
-          element.dyn_ref::<HtmlLabelElement>().ok_or("to label element")?.set_html_for(value);
-        } else {
-          element.set_attribute(key, value)?;
+        match key {
+          "style" => warn_1(&"style is handled outside attrs".into()),
+          "innerText" => element.dyn_ref::<HtmlElement>().expect("into html element").set_inner_text(value),
+          "innerHTML" => element.set_inner_html(value),
+          "htmlFor" => element
+            .dyn_ref::<HtmlLabelElement>()
+            .expect("into label element")
+            .set_html_for(value),
+          "value" if &**name == "textarea" || &**name == "input" => element
+            .dyn_ref::<HtmlTextAreaElement>()
+            .expect("into html element")
+            .set_value(value),
+          _ => {
+            element.set_attribute(key, value)?;
+          }
         }
       }
       if !style.is_empty() {

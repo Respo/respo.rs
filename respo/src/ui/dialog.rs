@@ -105,7 +105,7 @@ impl RespoEffect for EffectModalFade {
           delay_call.forget();
         }
         None => {
-          util::log!("content not found");
+          util::warn_log!("content not found");
         }
       }
     }
@@ -181,7 +181,7 @@ impl RespoEffect for EffectDrawerFade {
           delay_call.forget();
         }
         None => {
-          app::util::log!("content not found");
+          app::util::warn_log!("content not found");
         }
       }
     }

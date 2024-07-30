@@ -230,7 +230,7 @@ where
     let window = web_sys::window().unwrap();
     // dirty global variable to store a shared callback
     if let Err(e) = Reflect::set(&window, &JsValue::from_str(NEXT_TASK_NAME), task.as_ref()) {
-      app::util::log!("failed to store next task {:?}", e);
+      app::util::error_log!("failed to store next task {:?}", e);
     }
     task.forget();
     dispatch.run_state(&self.cursor, s)?;

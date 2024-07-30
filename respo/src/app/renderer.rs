@@ -25,8 +25,8 @@ fn drain_rerender_status() -> bool {
   let ret = { *NEED_TO_ERENDER.read().expect("to drain rerender status") };
 
   if ret {
-    let mut need_to_erender = NEED_TO_ERENDER.write().expect("to drain rerender status");
-    *need_to_erender = false;
+    let mut need_to_rerender = NEED_TO_ERENDER.write().expect("to drain rerender status");
+    *need_to_rerender = false;
   }
   ret
 }
@@ -108,17 +108,15 @@ where
             let mut changes: Vec<DomChange<T>> = vec![];
             diff_tree(&new_tree, &to_prev_tree.borrow(), &Vec::new(), &Vec::new(), &mut changes)?;
 
+            // use cirru_parser::CirruWriterOptions;
             // util::log!(
             //   "prev tree: {}",
-            //   cirru_parser::format(
-            //     &[to_prev_tree2.borrow().to_owned().into()],
-            //     cirru_parser::CirruWriterOptions { use_inline: true }
-            //   )
-            //   .unwrap()
+            //   cirru_parser::format(&[to_prev_tree.borrow().to_owned().into()], CirruWriterOptions { use_inline: true }).unwrap()
             // );
+            // use crate::dom_change::changes_to_cirru;
             // util::log!(
             //   "changes: {}",
-            //   cirru_parser::format(&[changes_to_cirru(&changes)], cirru_parser::CirruWriterOptions { use_inline: true }).unwrap()
+            //   cirru_parser::format(&[changes_to_cirru(&changes)], CirruWriterOptions { use_inline: true }).unwrap()
             // );
 
             let handler = handle_event.to_owned();

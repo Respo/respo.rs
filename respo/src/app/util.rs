@@ -40,7 +40,10 @@ pub fn raf_loop_slow(interval: i32, mut cb: Box<dyn FnMut() -> Result<(), String
 
   *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
     if let Err(e) = cb() {
-      crate::log!("failed in slow loop: {}", e);
+      crate::warn_log!(
+        "Failure in slow loop, program has to stop since inconsistent states. Details: {}",
+        e
+      );
     }
 
     let h = Closure::wrap(Box::new({
@@ -95,7 +98,7 @@ macro_rules! log {
 ///
 /// use it like:
 /// ```ignore
-/// util::warn!("a is {}", a);
+/// util::warn_log!("a is {}", a);
 /// ```
 #[macro_export]
 macro_rules! warn_log {
@@ -104,6 +107,20 @@ macro_rules! warn_log {
   }};
 }
 
+/// wraps on top of `web_sys::console.error_1`.
+///
+/// use it like:
+/// ```ignore
+/// util::error_log!("a is {}", a);
+/// ```
+#[macro_export]
+macro_rules! error_log {
+  ($($t:tt)*) => {{
+    web_sys::console::error_1(&format!($($t)*).into());
+  }};
+}
+
+pub use error_log;
 pub use log;
 pub use warn_log;
 

@@ -82,7 +82,9 @@ pub trait RespoApp {
       DispatchFn::new(dispatch_action),
       Self::get_loop_delay(),
     )
-    .expect("rendering node");
+    .unwrap_or_else(|e| {
+      util::error_log!("render loop error: {:?}", e);
+    });
 
     Ok(())
   }
@@ -123,7 +125,7 @@ pub trait RespoApp {
           *store.borrow_mut() = s;
         }
         Err(e) => {
-          util::log!("error: {:?}", e);
+          util::error_log!("error: {:?}", e);
         }
       },
       _ => {

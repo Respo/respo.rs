@@ -59,7 +59,7 @@ where
             }
           }
         } else {
-          crate::util::log!("expected component for effects, got: {}", target_tree);
+          crate::util::warn_log!("expected component for effects, got: {}", target_tree);
         }
       }
     }
@@ -243,7 +243,7 @@ where
                   }
                 }
               } else {
-                crate::util::log!("expected component for effects, got: {}", target_tree);
+                crate::util::warn_log!("expected component for effects, got: {}", target_tree);
               }
             }
           }
@@ -272,7 +272,7 @@ where
             }
           }
         } else {
-          crate::util::log!("expected component for effects, got: {}", target_tree);
+          crate::util::warn_log!("expected component for effects, got: {}", target_tree);
         }
       }
     }

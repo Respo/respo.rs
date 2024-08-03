@@ -15,7 +15,7 @@ where
 {
   /// tagName
   pub name: Rc<str>,
-  pub attrs: HashMap<Rc<str>, String>,
+  pub attributes: HashMap<Rc<str>, String>,
   pub(crate) event: HashMap<Rc<str>, RespoListenerFn<T>>,
   /// inlines styles, partially typed.
   /// there's also a macro called `static_styles` for inserting CSS rules
@@ -38,7 +38,7 @@ where
   pub fn named(name: &str) -> Self {
     RespoElement {
       name: Rc::from(name),
-      attrs: HashMap::new(),
+      attributes: HashMap::new(),
       event: HashMap::new(),
       style: RespoStyle::default(),
       children: Vec::new(),
@@ -77,28 +77,42 @@ where
     RespoElement { style, ..self }
   }
   /// set an attribute on element
-  pub fn attribute<U, V>(self, property: U, value: V) -> Self
+  pub fn attr<U, V>(self, property: U, value: V) -> Self
   where
     U: Into<Rc<str>> + ToOwned,
     V: Display,
   {
-    let mut attrs = self.attrs.to_owned();
+    let mut attrs = self.attributes.to_owned();
     attrs.insert(property.into(), value.to_string());
-    RespoElement { attrs, ..self.to_owned() }
+    RespoElement {
+      attributes: attrs,
+      ..self.to_owned()
+    }
   }
   /// set an attribute on element, but using `None` indicates noting
-  pub fn maybe_attribute<U, V>(self, property: U, value: Option<V>) -> Self
+  pub fn maybe_attr<U, V>(self, property: U, value: Option<V>) -> Self
   where
     U: Into<Rc<str>> + ToOwned,
     V: Display,
   {
     if let Some(v) = value {
-      let mut attrs = self.attrs.to_owned();
+      let mut attrs = self.attributes.to_owned();
       attrs.insert(property.into(), v.to_string());
-      RespoElement { attrs, ..self }
+      RespoElement { attributes: attrs, ..self }
     } else {
       self
     }
+  }
+  /// set attributes from list of string pairs
+  pub fn attrs<V>(self, list: &[(&str, V)]) -> Self
+  where
+    V: AsRef<str>,
+  {
+    let mut attrs = self.attributes.to_owned();
+    for (k, v) in list {
+      attrs.insert((*k).into(), v.as_ref().to_owned());
+    }
+    RespoElement { attributes: attrs, ..self }
   }
   pub fn on_click<U>(self, handler: U) -> Self
   where
@@ -185,7 +199,7 @@ where
   where
     U: Into<String>,
   {
-    self.attribute("class", name.into())
+    self.attr("class", name.into())
   }
   /// attach an optional class name for adding styles
   pub fn maybe_class<U>(self, name: Option<U>) -> Self
@@ -193,7 +207,7 @@ where
     U: Into<String>,
   {
     match name {
-      Some(name) => self.attribute("class", name.into()),
+      Some(name) => self.attr("class", name.into()),
       None => self,
     }
   }
@@ -203,7 +217,7 @@ where
     U: Into<String>,
   {
     if on {
-      self.attribute("class", name.into())
+      self.attr("class", name.into())
     } else {
       self
     }
@@ -217,27 +231,27 @@ where
     for name in names {
       class_name.push((*name).to_owned().into());
     }
-    self.attribute("class", class_name.join(" "))
+    self.attr("class", class_name.join(" "))
   }
   /// writes `innerText`
   pub fn inner_text<U>(self, content: U) -> Self
   where
     U: Into<String>,
   {
-    self.attribute("innerText", content.into())
+    self.attr("innerText", content.into())
   }
   /// writes `innerHTML`
   pub fn inner_html<U>(self, content: U) -> Self
   where
     U: Into<String>,
   {
-    self.attribute("innerHTML", content.into())
+    self.attr("innerHTML", content.into())
   }
   /// writes `value`
   pub fn value<U>(self, content: U) -> Self
   where
     U: Into<String>,
   {
-    self.attribute("value", content.into())
+    self.attr("value", content.into())
   }
 }

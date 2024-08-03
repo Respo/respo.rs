@@ -231,7 +231,7 @@ where
     }
     RespoNode::Element(RespoElement {
       name,
-      attrs,
+      attributes: attrs,
       style,
       event,
       children,

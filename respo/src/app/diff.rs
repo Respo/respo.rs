@@ -88,14 +88,14 @@ where
     (
       a @ RespoNode::Element(RespoElement {
         name,
-        attrs,
+        attributes: attrs,
         style,
         event,
         children,
       }),
       RespoNode::Element(RespoElement {
         name: old_name,
-        attrs: old_attrs,
+        attributes: old_attrs,
         style: old_style,
         event: old_event,
         children: old_children,

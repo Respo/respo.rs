@@ -123,7 +123,7 @@ where
   pub fn new_tag(name: &str) -> Self {
     Self::Element(RespoElement {
       name: name.into(),
-      attrs: HashMap::new(),
+      attributes: HashMap::new(),
       event: HashMap::new(),
       style: RespoStyle::default(),
       children: Vec::new(),

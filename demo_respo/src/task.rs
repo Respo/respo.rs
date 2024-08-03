@@ -102,9 +102,8 @@ pub fn comp_task(
           .on_click(on_remove),
         div().style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0)),
         input()
+          .attrs(&[("value", state.draft.as_str()), ("placeholder", "something to update...")])
           .class(ui_input())
-          .attribute("value", &state.draft)
-          .attribute("placeholder", "something to update...")
           .on_input(on_input),
         space(Some(8), None),
         button().class(ui_button()).inner_text("Update").on_click(on_update),

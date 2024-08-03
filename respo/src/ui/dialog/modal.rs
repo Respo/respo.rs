@@ -140,7 +140,7 @@ where
               comp_esc_listener(show, close)?,
             ])
         } else {
-          span().attribute("data-name", "placeholder")
+          span().attr("data-name", "placeholder")
         }]),
     )
     // .effect(&[show], effect_focus)

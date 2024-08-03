@@ -192,10 +192,9 @@ where
                   span().inner_text(options.text.unwrap_or_else(|| "Input your text:".to_owned())),
                   space(None, Some(8)),
                   div().elements([input_el
+                    .attrs(&[("value", state.draft.as_str()), ("placeholder", "Content...")])
                     .class_list(&[ui_input()])
                     .style(RespoStyle::default().width(CssSize::Percent(100.0)))
-                    .attribute("placeholder", "Content...")
-                    .attribute("autoFocus", "autofocus")
                     .value(state.draft.to_owned())
                     .on_input(on_text_input)]),
                   match &state.error {
@@ -218,7 +217,7 @@ where
               comp_esc_listener(show, close)?,
             ])
         } else {
-          span().attribute("data-name", "placeholder")
+          span().attr("data-name", "placeholder")
         }]),
     )
     // .effect(&[show], effect_focus)

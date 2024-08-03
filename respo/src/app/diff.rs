@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::rc::Rc;
@@ -109,7 +110,8 @@ where
         });
         collect_effects_outside_in_as(new_tree, coord, dom_path, RespoEffectType::Mounted, changes)?;
       } else {
-        diff_attrs(attrs, old_attrs, coord, dom_path, changes);
+        let reset_inner = RefCell::new(false);
+        diff_attrs(attrs, old_attrs, coord, dom_path, changes, &reset_inner);
         diff_style(
           &HashMap::from_iter(style.0.to_owned()),
           &HashMap::from_iter(old_style.0.to_owned()),
@@ -119,7 +121,12 @@ where
         );
 
         diff_event(event, old_event, coord, dom_path, changes);
-        diff_children(children, old_children, coord, dom_path, changes)?;
+        if *reset_inner.borrow() {
+          // children is empty after innerHTML or innerText changed
+          diff_children(children, &[], coord, dom_path, changes)?;
+        } else {
+          diff_children(children, old_children, coord, dom_path, changes)?;
+        }
       }
     }
     (RespoNode::Referenced(new_cell), RespoNode::Referenced(old_cell)) => {
@@ -147,6 +154,7 @@ fn diff_attrs<T>(
   coord: &[RespoCoord],
   dom_path: &[u32],
   changes: &mut Vec<DomChange<T>>,
+  reset_inner: &RefCell<bool>,
 ) where
   T: Debug + Clone,
 {
@@ -156,15 +164,24 @@ fn diff_attrs<T>(
     if old_attrs.contains_key(key) {
       if &old_attrs[key] != value {
         added.insert(key.to_owned(), value.to_owned());
+        if inner_changed(key) {
+          *reset_inner.borrow_mut() = true;
+        }
       }
     } else {
       added.insert(key.to_owned(), value.to_owned());
+      if inner_changed(key) {
+        *reset_inner.borrow_mut() = true;
+      }
     }
   }
 
   for key in old_attrs.keys() {
     if !new_attrs.contains_key(key) {
       removed.insert(key.to_owned());
+      if inner_changed(key) {
+        *reset_inner.borrow_mut() = true;
+      }
     }
   }
 
@@ -176,6 +193,11 @@ fn diff_attrs<T>(
       unset: removed,
     });
   }
+}
+
+/// changed innerHTML or innerText, which resets children values
+fn inner_changed(key: &Rc<str>) -> bool {
+  key == &"innerHTML".into() || key == &"innerText".into() || key == &"inner-text".into()
 }
 
 fn diff_style<T>(

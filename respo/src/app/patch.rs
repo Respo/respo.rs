@@ -199,7 +199,10 @@ where
                 .expect("get node")
                 .children()
                 .item(*idx)
-                .ok_or_else(|| format!("child to remove not found at {}", &idx))?;
+                .ok_or_else(|| {
+                  util::warn_log!("child not found at {:?}", coord);
+                  format!("child to remove not found at {}", &idx)
+                })?;
               target.remove_child(&child).expect("child removed");
             }
             ChildDomOp::InsertAfter(idx, k, node) => {

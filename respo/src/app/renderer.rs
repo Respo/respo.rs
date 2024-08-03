@@ -3,6 +3,7 @@ use crate::node::dom_change::RespoCoord;
 use crate::node::{
   DispatchFn, DomChange, RespoComponent, RespoEffectType, RespoElement, RespoEventMark, RespoEventMarkFn, RespoListenerFn, RespoNode,
 };
+use crate::warn_log;
 use std::cell::RefCell;
 use std::fmt::Debug;
 use std::rc::Rc;
@@ -10,7 +11,7 @@ use std::sync::RwLock;
 
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::console::{error_1, warn_1};
-use web_sys::{HtmlElement, HtmlLabelElement, HtmlTextAreaElement, Node};
+use web_sys::{HtmlElement, HtmlInputElement, HtmlLabelElement, HtmlTextAreaElement, Node};
 
 use crate::app::diff::{collect_effects_outside_in_as, diff_tree};
 use crate::app::patch::{attach_event, patch_tree};
@@ -236,20 +237,28 @@ where
       children,
     }) => {
       let element = document.create_element(name)?;
+      let mut inner_set = false;
       for (key, value) in attrs {
         let key = key.as_ref();
         match key {
           "style" => warn_1(&"style is handled outside attrs".into()),
-          "innerText" => element.dyn_ref::<HtmlElement>().expect("into html element").set_inner_text(value),
-          "innerHTML" => element.set_inner_html(value),
+          "innerText" => {
+            inner_set = true;
+            element.dyn_ref::<HtmlElement>().expect("into html element").set_inner_text(value)
+          }
+          "innerHTML" => {
+            inner_set = true;
+            element.set_inner_html(value)
+          }
           "htmlFor" => element
             .dyn_ref::<HtmlLabelElement>()
             .expect("into label element")
             .set_html_for(value),
-          "value" if &**name == "textarea" || &**name == "input" => element
+          "value" if &**name == "textarea" => element
             .dyn_ref::<HtmlTextAreaElement>()
-            .expect("into html element")
+            .expect("into textarea element")
             .set_value(value),
+          "value" if &**name == "input" => element.dyn_ref::<HtmlInputElement>().expect("into input element").set_value(value),
           _ => {
             element.set_attribute(key, value)?;
           }
@@ -257,6 +266,13 @@ where
       }
       if !style.is_empty() {
         element.set_attribute("style", &style.to_string())?;
+      }
+      if inner_set && !children.is_empty() {
+        warn_log!(
+          "innerText or innerHTML is set, it's conflicted with children: {} {:?}",
+          inner_set,
+          children
+        );
       }
       for (k, child) in children {
         let mut next_coord = coord.to_owned();

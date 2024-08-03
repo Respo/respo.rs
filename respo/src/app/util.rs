@@ -41,7 +41,7 @@ pub fn raf_loop_slow(interval: i32, mut cb: Box<dyn FnMut() -> Result<(), String
   *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
     if let Err(e) = cb() {
       crate::warn_log!(
-        "Failure in slow loop, program has to stop since inconsistent states. Details: {}",
+        "Failure in slow loop, program has to stop since inconsistent DOM states. Details: {}",
         e
       );
     }

@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use respo::{
   br, button,
-  css::{CssColor, RespoStyle},
+  css::{respo_style, CssColor},
   div, span,
   ui::ui_button,
   util, DispatchFn, RespoElement, RespoEvent,
@@ -85,21 +85,21 @@ pub fn comp_counter(states: &RespoStatesTree, global_counted: i32) -> Result<Res
         button()
           .class(ui_button())
           .inner_text("demo inc")
-          .style(RespoStyle::default().margin(4.))
+          .style(respo_style().margin(4))
           .on_click(on_inc),
         button()
           .class(ui_button())
           .inner_text("demo dec")
-          .style(RespoStyle::default().margin(4.))
+          .style(respo_style().margin(4))
           .on_click(on_dec),
         button()
           .class(ui_button())
           .inner_text("demo inc twice")
-          .style(RespoStyle::default().margin(4.))
+          .style(respo_style().margin(4))
           .on_click(on_inc_twice),
       ]),
       div().elements([span().inner_text(format!("value is: {}", counted)).style(
-        RespoStyle::default()
+        respo_style()
           .color(CssColor::Hsluv(270, 100, 40))
           .font_family("Menlo".to_owned())
           .font_size(10. + counted as f32),

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::ui::dialog::{css_backdrop, css_button, css_modal_card};
 use crate::ui::dialog::{EffectFocus, EffectModalFade, BUTTON_NAME};
-use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_row_parted};
+use crate::ui::{column, respo_style, ui_button, ui_center, ui_fullscreen, ui_global, ui_row_parted};
 
 use crate::node::css::{CssLineHeight, CssPosition, RespoStyle};
 use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
@@ -43,60 +43,58 @@ where
   Ok(
     RespoComponent::named(
       "alert-modal",
-      div()
-        .style(RespoStyle::default().position(CssPosition::Absolute))
-        .elements([if show {
-          div()
-            .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
-            .style(options.backdrop_style)
-            .on_click({
-              let close = close.to_owned();
-              move |e, dispatch| -> Result<(), String> {
+      div().style(respo_style().position(CssPosition::Absolute)).elements([if show {
+        div()
+          .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
+          .style(options.backdrop_style)
+          .on_click({
+            let close = close.to_owned();
+            move |e, dispatch| -> Result<(), String> {
+              if let RespoEvent::Click { original_event, .. } = e {
+                // stop propagation to prevent closing the modal
+                original_event.stop_propagation();
+              }
+              close(dispatch)?;
+              Ok(())
+            }
+          })
+          .children([
+            div()
+              .class_list(&[column(), ui_global(), css_modal_card()])
+              .style(respo_style().line_height(CssLineHeight::Px(32.0)))
+              .style(options.card_style)
+              .on_click(move |e, _dispatch| -> Result<(), String> {
+                // nothing to do
                 if let RespoEvent::Click { original_event, .. } = e {
                   // stop propagation to prevent closing the modal
                   original_event.stop_propagation();
                 }
-                close(dispatch)?;
                 Ok(())
-              }
-            })
-            .children([
-              div()
-                .class_list(&[column(), ui_global(), css_modal_card()])
-                .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)))
-                .style(options.card_style)
-                .on_click(move |e, _dispatch| -> Result<(), String> {
-                  // nothing to do
-                  if let RespoEvent::Click { original_event, .. } = e {
-                    // stop propagation to prevent closing the modal
-                    original_event.stop_propagation();
-                  }
-                  Ok(())
-                })
-                .elements([div().elements([
-                  span().inner_text(options.text.unwrap_or_else(|| "Alert!".to_owned())),
-                  space(None, Some(8)),
-                  div().class(ui_row_parted()).elements([
-                    span(),
-                    button()
-                      .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
-                      .inner_text(options.button_text.unwrap_or_else(|| "Read".to_owned()))
-                      .on_click({
-                        let close = close.to_owned();
-                        move |_e, dispatch| -> Result<(), String> {
-                          read(dispatch.to_owned())?;
-                          close(dispatch)?;
-                          Ok(())
-                        }
-                      }),
-                  ]),
-                ])])
-                .to_node(),
-              comp_esc_listener(show, close)?,
-            ])
-        } else {
-          span().attr("data-name", "placeholder")
-        }]),
+              })
+              .elements([div().elements([
+                span().inner_text(options.text.unwrap_or_else(|| "Alert!".to_owned())),
+                space(None, Some(8)),
+                div().class(ui_row_parted()).elements([
+                  span(),
+                  button()
+                    .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
+                    .inner_text(options.button_text.unwrap_or_else(|| "Read".to_owned()))
+                    .on_click({
+                      let close = close.to_owned();
+                      move |_e, dispatch| -> Result<(), String> {
+                        read(dispatch.to_owned())?;
+                        close(dispatch)?;
+                        Ok(())
+                      }
+                    }),
+                ]),
+              ])])
+              .to_node(),
+            comp_esc_listener(show, close)?,
+          ])
+      } else {
+        span().attr("data-name", "placeholder")
+      }]),
     )
     .effect(EffectFocus { show })
     .effect(EffectModalFade { show })

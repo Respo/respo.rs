@@ -20,12 +20,13 @@ pub use element::RespoElement;
 
 use crate::states_tree::{DynEq, RespoStateBranch, RespoUpdateState};
 
-use css::RespoStyle;
+use css::respo_style;
 
 pub(crate) use dom_change::RespoCoord;
 pub(crate) use dom_change::{ChildDomOp, DomChange};
 
 pub use component::effect::{RespoEffect, RespoEffectType};
+pub use css::ConvertRespoCssSize;
 
 /// an `Element` or a `Component`
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -125,7 +126,7 @@ where
       name: name.into(),
       attributes: HashMap::new(),
       event: HashMap::new(),
-      style: RespoStyle::default(),
+      style: respo_style(),
       children: Vec::new(),
     })
   }

@@ -2,7 +2,7 @@
 
 use std::fmt::Debug;
 
-use respo::{button, css::RespoStyle, div, span, ui::ui_button, util, DispatchFn, RespoElement, RespoEvent};
+use respo::{button, css::respo_style, div, span, ui::ui_button, util, DispatchFn, RespoElement, RespoEvent};
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 
@@ -45,7 +45,7 @@ pub fn comp_inner_text(states: &RespoStatesTree) -> Result<RespoElement<ActionOp
       div().elements([button()
         .class(ui_button())
         .inner_text("Switch inner text")
-        .style(RespoStyle::default().margin(4.))
+        .style(respo_style().margin(4))
         .on_click(on_inc)]),
       div().elements([if state.inner_text {
         div().inner_text("inner text")

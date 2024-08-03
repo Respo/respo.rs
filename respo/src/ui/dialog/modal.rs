@@ -7,7 +7,7 @@ use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 
 use crate::ui::dialog::{css_backdrop, css_modal_card};
-use crate::ui::{column, ui_center, ui_fullscreen, ui_global};
+use crate::ui::{column, respo_style, ui_center, ui_fullscreen, ui_global};
 
 use crate::node::css::{CssLineHeight, CssPosition, RespoStyle};
 use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
@@ -90,58 +90,56 @@ where
   Ok(
     RespoComponent::named(
       "modal",
-      div()
-        .style(RespoStyle::default().position(CssPosition::Absolute))
-        .elements([if show {
-          div()
-            .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
-            .style(options.backdrop_style)
-            .to_owned()
-            .on_click({
-              let close = close.to_owned();
-              move |e, dispatch| -> Result<(), String> {
+      div().style(respo_style().position(CssPosition::Absolute)).elements([if show {
+        div()
+          .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
+          .style(options.backdrop_style)
+          .to_owned()
+          .on_click({
+            let close = close.to_owned();
+            move |e, dispatch| -> Result<(), String> {
+              if let RespoEvent::Click { original_event, .. } = e {
+                // stop propagation to prevent closing the modal
+                original_event.stop_propagation();
+              }
+              close(dispatch)?;
+              Ok(())
+            }
+          })
+          .children([
+            div()
+              .class_list(&[column(), ui_global(), css_modal_card()])
+              .style(respo_style().padding(0).line_height(CssLineHeight::Px(32.0)))
+              .style(options.card_style)
+              .to_owned()
+              .on_click(move |e, _dispatch| -> Result<(), String> {
+                // nothing to do
                 if let RespoEvent::Click { original_event, .. } = e {
                   // stop propagation to prevent closing the modal
                   original_event.stop_propagation();
                 }
-                close(dispatch)?;
                 Ok(())
-              }
-            })
-            .children([
-              div()
-                .class_list(&[column(), ui_global(), css_modal_card()])
-                .style(RespoStyle::default().padding(0.0).line_height(CssLineHeight::Px(32.0)))
-                .style(options.card_style)
-                .to_owned()
-                .on_click(move |e, _dispatch| -> Result<(), String> {
-                  // nothing to do
-                  if let RespoEvent::Click { original_event, .. } = e {
-                    // stop propagation to prevent closing the modal
-                    original_event.stop_propagation();
-                  }
-                  Ok(())
-                })
-                .elements([div().class(column()).children([
-                  div()
-                    .class(ui_center())
-                    .elements([span().inner_text(options.title.unwrap_or_else(|| "Modal".to_owned()))])
-                    .to_node(),
-                  space(None, Some(8)).to_node(),
-                  {
-                    let close = close.to_owned();
-                    options.render.run(move |dispatch| -> Result<(), String> {
-                      close(dispatch)?;
-                      Ok(())
-                    })?
-                  },
-                ])])
-                .to_node(),
-              comp_esc_listener(show, close)?,
-            ])
-        } else {
-          span().attr("data-name", "placeholder")
-        }]),
+              })
+              .elements([div().class(column()).children([
+                div()
+                  .class(ui_center())
+                  .elements([span().inner_text(options.title.unwrap_or_else(|| "Modal".to_owned()))])
+                  .to_node(),
+                space(None, Some(8)).to_node(),
+                {
+                  let close = close.to_owned();
+                  options.render.run(move |dispatch| -> Result<(), String> {
+                    close(dispatch)?;
+                    Ok(())
+                  })?
+                },
+              ])])
+              .to_node(),
+            comp_esc_listener(show, close)?,
+          ])
+      } else {
+        span().attr("data-name", "placeholder")
+      }]),
     )
     // .effect(&[show], effect_focus)
     .effect(EffectModalFade { show })

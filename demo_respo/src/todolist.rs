@@ -24,7 +24,7 @@ pub fn comp_todolist(states: &RespoStatesTree, tasks: &[Task]) -> Result<RespoEl
       continue;
     }
 
-    children.push((RespoIndexKey::from(&task.id), comp_task(states.pick(&task.id), task.to_owned())?));
+    children.push(((&task.id).into(), comp_task(states.pick(&task.id), task.to_owned())?));
   }
 
   // util::log!("{:?}", &tasks);
@@ -47,7 +47,7 @@ pub fn comp_todolist(states: &RespoStatesTree, tasks: &[Task]) -> Result<RespoEl
 
   Ok(div().elements([
     div().elements([
-      span().inner_text(format!("tasks size: {} ... {}", tasks.len(), state.hide_done.to_owned())),
+      span().inner_text(format!("tasks size: {} ... {}", tasks.len(), state.hide_done)),
       button().class(ui_button()).inner_text("hide done").on_click(on_hide),
     ]),
     div().children_indexed(children),

@@ -14,7 +14,11 @@ use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{Element, HtmlElement, KeyboardEvent, KeyboardEventInit, Node};
 
 use crate::component::effect::RespoEffect;
-use crate::node::css::{CssColor, CssDisplay, CssOverflow, CssPosition, CssSize, RespoStyle};
+use crate::css::CssColor;
+use crate::node::css::{
+  CssColor::{Hsl, Hsla},
+  CssDisplay, CssOverflow, CssPosition,
+};
 use crate::node::{DispatchFn, RespoEvent, RespoNode};
 use crate::{app, input, static_styles, util, RespoComponent};
 
@@ -25,6 +29,8 @@ pub use confirm::{ConfirmOptions, ConfirmPlugin, ConfirmPluginInterface};
 pub use drawer::{DrawerOptions, DrawerPlugin, DrawerPluginInterface, DrawerRenderer};
 pub use modal::{ModalOptions, ModalPlugin, ModalPluginInterface, ModalRenderer};
 pub use prompt::{PromptOptions, PromptPlugin, PromptPluginInterface, PromptValidator};
+
+use super::{respo_style, ConvertRespoCssSize};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct EffectFocus {
@@ -274,7 +280,7 @@ where
     RespoComponent::named(
       "esc-listener",
       input()
-        .style(RespoStyle::default().display(CssDisplay::None))
+        .style(respo_style().display(CssDisplay::None))
         .on_keydown(move |e, dispatch| -> Result<(), String> {
           if let RespoEvent::Keyboard { key, .. } = e {
             if key == "Escape" {
@@ -294,8 +300,8 @@ static_styles!(
   css_backdrop,
   (
     "&",
-    RespoStyle::default()
-      .background_color(CssColor::Hsla(0.0, 30.0, 10.0, 0.6))
+    respo_style()
+      .background_color(Hsla(0.0, 30.0, 10.0, 0.6))
       .position(CssPosition::Fixed)
       .z_index(999)
   )
@@ -305,16 +311,16 @@ static_styles!(
   css_modal_card,
   (
     "&",
-    RespoStyle::default()
-      .background_color(CssColor::Hsl(0, 0, 100))
-      .max_width(CssSize::Px(600.0))
-      .width(CssSize::Percent(100.))
-      .max_height(CssSize::Vh(80.0))
+    respo_style()
+      .background_color(Hsl(0, 0, 100))
+      .max_width(600.px())
+      .width(100.percent())
+      .max_height(80.vh())
       .overflow(CssOverflow::Auto)
       .border_radius(3.0)
-      .color(CssColor::Hsl(0, 0, 0))
+      .color(Hsl(0, 0, 0))
       .insert("margin", "auto".to_owned())
-      .padding(16.0)
+      .padding(16)
   )
 );
 
@@ -322,18 +328,18 @@ static_styles!(
   css_drawer_card,
   (
     "&",
-    RespoStyle::default()
-      .background_color(CssColor::Hsl(0, 0, 100))
-      .max_width(CssSize::Vw(50.0))
-      .width(CssSize::Px(400.))
-      .height(CssSize::Vh(100.0))
+    respo_style()
+      .background_color(Hsl(0, 0, 100))
+      .max_width(50.vw())
+      .width(400.px())
+      .height(100.vh())
       .overflow(CssOverflow::Auto)
-      .color(CssColor::Hsl(0, 0, 0))
-      .top(CssSize::Px(0.))
-      .right(CssSize::Px(0.))
-      .bottom(CssSize::Px(0.))
+      .color(Hsl(0, 0, 0))
+      .top(0.px())
+      .right(0.px())
+      .bottom(0.px())
       .position(CssPosition::Absolute)
-      .box_shadow(-2., 0., 12., 0., CssColor::Hsla(0., 0., 0., 0.2))
+      .box_shadow(-2., 0., 12., 0., Hsla(0., 0., 0., 0.2))
       .transform_property("transform, opacity".to_owned())
   )
 );
@@ -342,9 +348,9 @@ static_styles!(
   css_button,
   (
     "&",
-    RespoStyle::default()
+    respo_style()
       .border_radius(4.0)
       .background_color(CssColor::White)
-      .border_color(CssColor::Hsl(0, 0, 0))
+      .border_color(Hsl(0, 0, 0))
   )
 );

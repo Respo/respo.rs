@@ -13,12 +13,13 @@ use std::panic;
 use std::rc::Rc;
 
 use inner_text::comp_inner_text;
+use respo::css::respo_style;
 use respo::{space, RespoAction};
 use web_sys::Node;
 
 use respo::ui::ui_global;
-use respo::{css::RespoStyle, util, RespoApp, RespoNode, RespoStore};
 use respo::{div, util::query_select_node};
+use respo::{util, RespoApp, RespoNode, RespoStore};
 
 use self::counter::comp_counter;
 pub use self::store::ActionOp;
@@ -64,7 +65,7 @@ impl RespoApp for App {
     Ok(
       div()
         .class(ui_global())
-        .style(RespoStyle::default().padding(12.0))
+        .style(respo_style().padding(12))
         .children([
           comp_counter(&states.pick("counter"), store.counted)?.to_node(),
           space(None, Some(80)).to_node(),

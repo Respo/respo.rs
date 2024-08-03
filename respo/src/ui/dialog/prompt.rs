@@ -11,11 +11,11 @@ use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 
 use crate::ui::dialog::{css_backdrop, css_button, css_modal_card, EffectModalFade, BUTTON_NAME};
-use crate::ui::{column, ui_button, ui_center, ui_fullscreen, ui_global, ui_input, ui_row_parted, ui_textarea};
+use crate::ui::{column, respo_style, ui_button, ui_center, ui_fullscreen, ui_global, ui_input, ui_row_parted, ui_textarea};
 
-use crate::node::css::{CssColor, CssLineHeight, CssPosition, CssSize, RespoStyle};
+use crate::node::css::{CssColor, CssLineHeight, CssPosition, RespoStyle};
 use crate::node::{DispatchFn, RespoAction, RespoEvent, RespoNode};
-use crate::{app, button, div, input, space, span, static_styles, textarea, util, RespoComponent};
+use crate::{app, button, div, input, space, span, static_styles, textarea, util, ConvertRespoCssSize, RespoComponent};
 
 use crate::states_tree::{RespoState, RespoStatesTree};
 
@@ -152,73 +152,71 @@ where
   Ok(
     RespoComponent::named(
       "prompt-modal",
-      div()
-        .style(RespoStyle::default().position(CssPosition::Absolute))
-        .elements([if show {
-          div()
-            .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
-            .style(options.backdrop_style)
-            .to_owned()
-            .on_click({
-              let close = close.to_owned();
-              move |e, dispatch| -> Result<(), String> {
+      div().style(respo_style().position(CssPosition::Absolute)).elements([if show {
+        div()
+          .class_list(&[ui_fullscreen(), ui_center(), css_backdrop()])
+          .style(options.backdrop_style)
+          .to_owned()
+          .on_click({
+            let close = close.to_owned();
+            move |e, dispatch| -> Result<(), String> {
+              if let RespoEvent::Click { original_event, .. } = e {
+                // stop propagation to prevent closing the modal
+                original_event.stop_propagation();
+              }
+              {
+                let dispatch = dispatch.to_owned();
+                close(dispatch)?;
+              }
+              dispatch.run_empty_state(&cursor)?;
+              Ok(())
+            }
+          })
+          .children([
+            div()
+              .class_list(&[column(), ui_global(), css_modal_card()])
+              .style(respo_style().line_height(CssLineHeight::Px(32.0)))
+              .style(options.card_style)
+              .style(options.input_style)
+              .on_click(move |e, _dispatch| -> Result<(), String> {
+                // nothing to do
                 if let RespoEvent::Click { original_event, .. } = e {
                   // stop propagation to prevent closing the modal
                   original_event.stop_propagation();
                 }
-                {
-                  let dispatch = dispatch.to_owned();
-                  close(dispatch)?;
-                }
-                dispatch.run_empty_state(&cursor)?;
                 Ok(())
-              }
-            })
-            .children([
-              div()
-                .class_list(&[column(), ui_global(), css_modal_card()])
-                .style(RespoStyle::default().line_height(CssLineHeight::Px(32.0)))
-                .style(options.card_style)
-                .style(options.input_style)
-                .on_click(move |e, _dispatch| -> Result<(), String> {
-                  // nothing to do
-                  if let RespoEvent::Click { original_event, .. } = e {
-                    // stop propagation to prevent closing the modal
-                    original_event.stop_propagation();
-                  }
-                  Ok(())
-                })
-                .elements([div().elements([
-                  span().inner_text(options.text.unwrap_or_else(|| "Input your text:".to_owned())),
-                  space(None, Some(8)),
-                  div().elements([input_el
-                    .attrs(&[("value", state.draft.as_str()), ("placeholder", "Content...")])
-                    .class_list(&[ui_input()])
-                    .style(RespoStyle::default().width(CssSize::Percent(100.0)))
-                    .value(state.draft.to_owned())
-                    .on_input(on_text_input)]),
-                  match &state.error {
-                    Some(message) => div().class_list(&[css_error()]).inner_text(message),
-                    None => span(),
-                  },
-                  space(None, Some(8)),
-                  div().class(ui_row_parted()).elements([
-                    span(),
-                    button()
-                      .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
-                      .inner_text(options.button_text.unwrap_or_else(|| "Submit".to_owned()))
-                      .on_click(move |_e, dispatch| -> Result<(), String> {
-                        check_submit(&state.draft, dispatch)?;
-                        Ok(())
-                      }),
-                  ]),
-                ])])
-                .to_node(),
-              comp_esc_listener(show, close)?,
-            ])
-        } else {
-          span().attr("data-name", "placeholder")
-        }]),
+              })
+              .elements([div().elements([
+                span().inner_text(options.text.unwrap_or_else(|| "Input your text:".to_owned())),
+                space(None, Some(8)),
+                div().elements([input_el
+                  .attrs(&[("value", state.draft.as_str()), ("placeholder", "Content...")])
+                  .class_list(&[ui_input()])
+                  .style(respo_style().width(100.percent()))
+                  .value(state.draft.to_owned())
+                  .on_input(on_text_input)]),
+                match &state.error {
+                  Some(message) => div().class_list(&[css_error()]).inner_text(message),
+                  None => span(),
+                },
+                space(None, Some(8)),
+                div().class(ui_row_parted()).elements([
+                  span(),
+                  button()
+                    .class_list(&[ui_button(), css_button(), BUTTON_NAME.to_owned()])
+                    .inner_text(options.button_text.unwrap_or_else(|| "Submit".to_owned()))
+                    .on_click(move |_e, dispatch| -> Result<(), String> {
+                      check_submit(&state.draft, dispatch)?;
+                      Ok(())
+                    }),
+                ]),
+              ])])
+              .to_node(),
+            comp_esc_listener(show, close)?,
+          ])
+      } else {
+        span().attr("data-name", "placeholder")
+      }]),
     )
     // .effect(&[show], effect_focus)
     .effect(EffectModalFade { show })
@@ -384,4 +382,4 @@ where
   }
 }
 
-static_styles!(css_error, ("&", RespoStyle::default().color(CssColor::Red)));
+static_styles!(css_error, ("&", respo_style().color(CssColor::Red)));

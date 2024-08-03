@@ -7,6 +7,8 @@ use std::{
 
 use crate::{css::RespoStyle, DispatchFn, RespoEvent, RespoIndexKey, RespoListenerFn, RespoNode};
 
+use super::css::respo_style;
+
 /// internal abstraction for an element
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RespoElement<T>
@@ -40,7 +42,7 @@ where
       name: Rc::from(name),
       attributes: HashMap::new(),
       event: HashMap::new(),
-      style: RespoStyle::default(),
+      style: respo_style(),
       children: Vec::new(),
     }
   }
@@ -51,7 +53,7 @@ where
 
   /// attach styles
   /// ```ignore
-  /// element.style(RespoStyle::default().margin(10))
+  /// element.style(respo_style().margin(10))
   /// ```
   pub fn style(self, more: RespoStyle) -> Self {
     let mut style = self.style;

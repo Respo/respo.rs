@@ -13,6 +13,7 @@ use web_sys::console::warn_1;
 use crate::node::{RespoComponent, RespoEffectType, RespoEvent, RespoEventMark, RespoEventMarkFn, RespoNode};
 
 use super::renderer::load_coord_target_tree;
+use super::util;
 use crate::node::dom_change::{ChildDomOp, DomChange, RespoCoord};
 
 use crate::app::renderer::build_dom_tree;
@@ -59,7 +60,7 @@ where
             }
           }
         } else {
-          crate::util::log!("expected component for effects, got: {}", target_tree);
+          crate::util::warn_log!("expected component for effects, got: {}", target_tree);
         }
       }
     }
@@ -198,7 +199,10 @@ where
                 .expect("get node")
                 .children()
                 .item(*idx)
-                .ok_or_else(|| format!("child to remove not found at {}", &idx))?;
+                .ok_or_else(|| {
+                  util::warn_log!("child not found at {:?}", coord);
+                  format!("child to remove not found at {}", &idx)
+                })?;
               target.remove_child(&child).expect("child removed");
             }
             ChildDomOp::InsertAfter(idx, k, node) => {
@@ -243,7 +247,7 @@ where
                   }
                 }
               } else {
-                crate::util::log!("expected component for effects, got: {}", target_tree);
+                crate::util::warn_log!("expected component for effects, got: {}", target_tree);
               }
             }
           }
@@ -272,7 +276,7 @@ where
             }
           }
         } else {
-          crate::util::log!("expected component for effects, got: {}", target_tree);
+          crate::util::warn_log!("expected component for effects, got: {}", target_tree);
         }
       }
     }
@@ -386,11 +390,25 @@ pub fn attach_event(element: &Element, key: &str, coord: &[RespoCoord], handle_e
           .run(RespoEventMark::new("change", &coord, wrap_event))
           .expect("handle change event");
       }) as Box<dyn FnMut(InputEvent)>);
-      element
-        .dyn_ref::<HtmlInputElement>()
-        .expect("convert to html input element")
-        .set_onchange(Some(handler.as_ref().unchecked_ref()));
-      handler.forget();
+      match element.tag_name().as_str() {
+        "INPUT" => {
+          element
+            .dyn_ref::<HtmlInputElement>()
+            .expect("convert to html input element")
+            .set_onchange(Some(handler.as_ref().unchecked_ref()));
+          handler.forget();
+        }
+        "TEXTAREA" => {
+          element
+            .dyn_ref::<HtmlTextAreaElement>()
+            .expect("convert to html input element")
+            .set_onchange(Some(handler.as_ref().unchecked_ref()));
+          handler.forget();
+        }
+        _ => {
+          util::warn_log!("not handled change event for element: {}", element.tag_name());
+        }
+      }
     }
     "keydown" => {
       let handler = Closure::wrap(Box::new(move |e: KeyboardEvent| {
@@ -409,11 +427,26 @@ pub fn attach_event(element: &Element, key: &str, coord: &[RespoCoord], handle_e
           .run(RespoEventMark::new("keydown", &coord, wrap_event))
           .expect("handle keydown event");
       }) as Box<dyn FnMut(KeyboardEvent)>);
-      element
-        .dyn_ref::<HtmlInputElement>()
-        .expect("convert to html input element")
-        .set_onkeydown(Some(handler.as_ref().unchecked_ref()));
-      handler.forget();
+
+      match element.tag_name().as_str() {
+        "INPUT" => {
+          element
+            .dyn_ref::<HtmlInputElement>()
+            .expect("convert to html input element")
+            .set_onkeydown(Some(handler.as_ref().unchecked_ref()));
+          handler.forget();
+        }
+        "TEXTAREA" => {
+          element
+            .dyn_ref::<HtmlTextAreaElement>()
+            .expect("convert to html input element")
+            .set_onkeydown(Some(handler.as_ref().unchecked_ref()));
+          handler.forget();
+        }
+        _ => {
+          util::warn_log!("not handled keydown event for element: {}", element.tag_name());
+        }
+      }
     }
     "keyup" => {
       let handler = Closure::wrap(Box::new(move |e: KeyboardEvent| {
@@ -431,11 +464,25 @@ pub fn attach_event(element: &Element, key: &str, coord: &[RespoCoord], handle_e
           .run(RespoEventMark::new("keyup", &coord, wrap_event))
           .expect("handle keyup event");
       }) as Box<dyn FnMut(KeyboardEvent)>);
-      element
-        .dyn_ref::<HtmlInputElement>()
-        .expect("convert to html input element")
-        .set_onkeyup(Some(handler.as_ref().unchecked_ref()));
-      handler.forget();
+      match element.tag_name().as_str() {
+        "INPUT" => {
+          element
+            .dyn_ref::<HtmlInputElement>()
+            .expect("convert to html input element")
+            .set_onkeyup(Some(handler.as_ref().unchecked_ref()));
+          handler.forget();
+        }
+        "TEXTAREA" => {
+          element
+            .dyn_ref::<HtmlTextAreaElement>()
+            .expect("convert to html input element")
+            .set_onkeyup(Some(handler.as_ref().unchecked_ref()));
+          handler.forget();
+        }
+        _ => {
+          util::warn_log!("not handled keyup event for element: {}", element.tag_name());
+        }
+      }
     }
     "keypress" => {
       let handler = Closure::wrap(Box::new(move |e: KeyboardEvent| {
@@ -453,11 +500,25 @@ pub fn attach_event(element: &Element, key: &str, coord: &[RespoCoord], handle_e
           .run(RespoEventMark::new("keypress", &coord, wrap_event))
           .expect("handle keypress event");
       }) as Box<dyn FnMut(KeyboardEvent)>);
-      element
-        .dyn_ref::<HtmlInputElement>()
-        .expect("convert to html input element")
-        .set_onkeypress(Some(handler.as_ref().unchecked_ref()));
-      handler.forget();
+      match element.tag_name().as_str() {
+        "INPUT" => {
+          element
+            .dyn_ref::<HtmlInputElement>()
+            .expect("convert to html input element")
+            .set_onkeypress(Some(handler.as_ref().unchecked_ref()));
+          handler.forget();
+        }
+        "TEXTAREA" => {
+          element
+            .dyn_ref::<HtmlTextAreaElement>()
+            .expect("convert to html input element")
+            .set_onkeypress(Some(handler.as_ref().unchecked_ref()));
+          handler.forget();
+        }
+        _ => {
+          util::warn_log!("not handled keypress event for element: {}", element.tag_name());
+        }
+      }
     }
     "focus" => {
       let handler = Closure::wrap(Box::new(move |e: FocusEvent| {

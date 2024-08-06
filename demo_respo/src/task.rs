@@ -5,7 +5,10 @@ use std::fmt::Debug;
 use memoize::memoize;
 use respo::{
   button,
-  css::{CssColor, CssSize, RespoStyle},
+  css::{
+    respo_style, ConvertRespoCssSize,
+    CssColor::{self, Hsl},
+  },
   div, input, space, span, static_styles,
   ui::{ui_button, ui_center, ui_input, ui_row_middle},
   util, DispatchFn, RespoComponent, RespoEffect, RespoEvent, RespoNode,
@@ -100,11 +103,10 @@ pub fn comp_task(
           .class_list(&[ui_center(), style_remove_button()])
           .inner_text("✕")
           .on_click(on_remove),
-        div().style(RespoStyle::default().margin4(0.0, 0.0, 0.0, 20.0)),
+        div().style(respo_style().margin4(0, 0, 0, 20)),
         input()
+          .attrs(&[("value", state.draft.as_str()), ("placeholder", "something to update...")])
           .class(ui_input())
-          .attribute("value", &state.draft)
-          .attribute("placeholder", "something to update...")
           .on_input(on_input),
         space(Some(8), None),
         button().class(ui_button()).inner_text("Update").on_click(on_update),
@@ -118,19 +120,19 @@ pub fn comp_task(
 
 static_styles!(
   style_task_container,
-  ("&", RespoStyle::default().margin(4.).background_color(CssColor::Hsl(200, 90, 96)))
+  ("&", respo_style().margin(4).background_color(Hsl(200, 90, 96)))
 );
 
 static_styles!(
   style_done_button,
   (
     "&",
-    RespoStyle::default()
-      .width(CssSize::Px(24.0))
-      .height(CssSize::Px(24.0))
-      .margin(4.)
-      .cursor("pointer".to_owned())
-      .background_color(CssColor::Hsl(20, 90, 70)),
+    respo_style()
+      .width(24.px())
+      .height(24.px())
+      .margin(4)
+      .cursor("pointer")
+      .background_color(Hsl(20, 90, 70)),
   )
 );
 
@@ -138,13 +140,12 @@ static_styles!(
   style_remove_button,
   (
     "&",
-    RespoStyle::default()
-      .width(CssSize::Px(16.0))
-      .height(CssSize::Px(16.0))
-      .margin(4.)
-      .cursor("pointer".to_owned())
-      .margin4(0.0, 0.0, 0.0, 16.0)
-      .color(CssColor::Hsl(0, 90, 90)),
+    respo_style()
+      .width(16.px())
+      .height(16.px())
+      .cursor("pointer")
+      .margin4(0, 0, 0, 16)
+      .color(Hsl(0, 90, 90)),
   ),
-  ("$0:hover", RespoStyle::default().color(CssColor::Hsl(0, 90, 80))),
+  ("$0:hover", respo_style().color(Hsl(0, 90, 80))),
 );

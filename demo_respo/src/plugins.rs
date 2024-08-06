@@ -1,5 +1,6 @@
+use respo::css::respo_style;
 use respo::ui::{ui_button_danger, ui_button_primary};
-use respo::{css::RespoStyle, space, ui::ui_row_parted};
+use respo::{space, ui::ui_row_parted};
 use respo::{RespoElement, RespoEvent};
 
 use respo::{button, div, span, ui::ui_button, util, DispatchFn};
@@ -20,7 +21,7 @@ pub fn comp_plugins_demo(states: &RespoStatesTree) -> Result<RespoElement<Action
   let alert_plugin = AlertPlugin::new(
     states.pick("info"),
     AlertOptions {
-      // card_style: RespoStyle::default().background_color(CssColor::Blue),
+      // card_style: respo_style().background_color(CssColor::Blue),
       ..AlertOptions::default()
     },
     |_dispatch: DispatchFn<ActionOp>| {
@@ -116,7 +117,7 @@ pub fn comp_plugins_demo(states: &RespoStatesTree) -> Result<RespoElement<Action
         };
         Ok(
           div()
-            .style(RespoStyle::default().padding(8.0))
+            .style(respo_style().padding(8))
             .elements([
               div().elements([span().inner_text("content in custom modal")]),
               div()
@@ -155,7 +156,7 @@ pub fn comp_plugins_demo(states: &RespoStatesTree) -> Result<RespoElement<Action
         };
         Ok(
           div()
-            .style(RespoStyle::default().padding(8.0))
+            .style(respo_style().padding(8))
             .elements([
               div().elements([span().inner_text("content in custom drawer")]),
               div()

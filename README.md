@@ -19,7 +19,7 @@ Here is some preview of DOM syntax:
 Ok(
   div()
     .class(ui_global())
-    .style(RespoStyle::default().padding(12.0))
+    .style(respo_style().padding(12.0))
     .children([
       comp_counter(&states.pick("counter"), store.counted)?,
       comp_panel(&states.pick("panel"))?,
@@ -35,15 +35,15 @@ static_styles!(
   style_remove_button,
   (
     "&",
-    RespoStyle::default()
-      .width(CssSize::Px(16.0))
-      .height(CssSize::Px(16.0))
+    respo_style()
+      .width(16.px())
+      .height(16.px())
       .margin(4.)
-      .cursor("pointer".to_owned())
+      .cursor("pointer")
       .margin4(0.0, 0.0, 0.0, 16.0)
       .color(CssColor::Hsl(0, 90, 90)),
   ),
-  ("&:hover", RespoStyle::default().color(CssColor::Hsl(0, 90, 80))),
+  ("&:hover", respo_style().color(CssColor::Hsl(0, 90, 80))),
 );
 ```
 
@@ -146,7 +146,7 @@ impl RespoApp for App {
     Ok(
       div()
         .class(ui_global())
-        .style(RespoStyle::default().padding(12.0))
+        .style(respo_style().padding(12.0))
         .children([
           comp_counter(&states.pick("counter"), store.counted)?,
           comp_panel(&states.pick("panel"))?,

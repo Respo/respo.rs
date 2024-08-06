@@ -6,17 +6,19 @@
 //!  style_done_button,
 //!  (
 //!    "&",
-//!    RespoStyle::default()
-//!      .width(CssSize::Px(24.0))
-//!      .height(CssSize::Px(24.0))
+//!    respo_style()
+//!      .width(24.px())
+//!      .height(24.px())
 //!      .margin(4.)
-//!      .cursor("pointer".to_owned())
+//!      .cursor("pointer")
 //!      .background_color(CssColor::Hsl(20, 90, 70)),
 //!  )
 //! );
 //! ```
 //!
 //! then `style_done_button()` returns the class name, while CSS is generated and injected into the `<style/>`.
+
+mod css_size;
 
 use std::{
   collections::HashSet,
@@ -25,9 +27,12 @@ use std::{
   sync::RwLock,
 };
 
+use css_size::CssPx;
 use hsluv::hsluv_to_rgb;
 use wasm_bindgen::JsCast;
 use web_sys::Element;
+
+pub use css_size::{ConvertRespoCssSize, CssSize};
 
 lazy_static::lazy_static! {
   static ref CLASS_NAME_IN_TAGS: RwLock<HashSet<String>> = RwLock::new(HashSet::new());
@@ -39,6 +44,11 @@ lazy_static::lazy_static! {
 /// TODO order of rules might matter in edge cases
 #[derive(Debug, Clone, PartialEq, Default, Eq)]
 pub struct RespoStyle(pub Vec<(Rc<str>, String)>);
+
+/// this is an alias
+pub fn respo_style() -> RespoStyle {
+  RespoStyle::default()
+}
 
 impl RespoStyle {
   pub fn insert(self, property: &str, value: String) -> Self {
@@ -81,17 +91,23 @@ impl RespoStyle {
   pub fn height(self, rule: CssSize) -> Self {
     self.insert("height", rule.to_string())
   }
-  pub fn margin(self, m: f32) -> Self {
-    self.insert("margin", format!("{}px", m))
+  pub fn margin<T: Into<CssPx>>(self, m: T) -> Self {
+    self.insert("margin", format!("{}", m.into()))
   }
-  pub fn margin4(self, top: f32, right: f32, bottom: f32, left: f32) -> Self {
-    self.insert("margin", format!("{}px {}px {}px {}px", top, right, bottom, left))
+  pub fn margin4<T: Into<CssPx>>(self, top: T, right: T, bottom: T, left: T) -> Self {
+    self.insert(
+      "margin",
+      format!("{} {} {} {}", top.into(), right.into(), bottom.into(), left.into()),
+    )
   }
-  pub fn padding(self, p: f32) -> Self {
-    self.insert("padding", format!("{}px", p))
+  pub fn padding<T: Into<CssPx>>(self, p: T) -> Self {
+    self.insert("padding", format!("{}", p.into()))
   }
-  pub fn padding4(self, top: f32, right: f32, bottom: f32, left: f32) -> Self {
-    self.insert("padding", format!("{}px {}px {}px {}px", top, right, bottom, left))
+  pub fn padding4<T: Into<CssPx>>(self, top: T, right: T, bottom: T, left: T) -> Self {
+    self.insert(
+      "padding",
+      format!("{} {} {} {}", top.into(), right.into(), bottom.into(), left.into()),
+    )
   }
   pub fn border(self, rule: Option<(f32, CssBorderStyle, CssColor)>) -> Self {
     match rule {
@@ -186,8 +202,8 @@ impl RespoStyle {
   pub fn text_overflow(self, overflow: CssTextOverflow) -> Self {
     self.insert("text-overflow", overflow.to_string())
   }
-  pub fn cursor(self, cursor: String) -> Self {
-    self.insert("cursor", cursor)
+  pub fn cursor(self, cursor: &str) -> Self {
+    self.insert("cursor", cursor.to_owned())
   }
   pub fn display(self, display: CssDisplay) -> Self {
     self.insert("display", display.to_string())
@@ -245,30 +261,6 @@ impl RespoStyle {
   }
   pub fn text_decoration(self, decoration: CssTextDecoration) -> Self {
     self.insert("text-decoration", decoration.to_string())
-  }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum CssSize {
-  Auto,
-  Px(f32),
-  Percent(f32),
-  Vw(f32),
-  Vh(f32),
-  /// may be calc or something
-  Custom(String),
-}
-
-impl Display for CssSize {
-  fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-    match self {
-      Self::Auto => write!(f, "auto"),
-      Self::Px(v) => write!(f, "{}px", v),
-      Self::Percent(v) => write!(f, "{}%", v),
-      Self::Vw(v) => write!(f, "{}vw", v),
-      Self::Vh(v) => write!(f, "{}vh", v),
-      Self::Custom(v) => write!(f, "{}", v),
-    }
   }
 }
 
@@ -761,7 +753,7 @@ pub fn css_name_from_path(p: &str) -> String {
 /// ```rust
 /// respo::static_style_seq!(the_name,
 ///   &[
-///     ("&", respo::css::RespoStyle::default())
+///     ("&", respo::css::respo_style())
 ///   ]
 /// );
 /// ```
@@ -783,7 +775,7 @@ macro_rules! static_style_seq {
 /// macro to create a public function of CSS rules(up to 5 tuples) at current file scope,
 /// ```rust
 /// respo::static_styles!(the_name,
-///   ("&", respo::css::RespoStyle::default())
+///   ("&", respo::css::respo_style())
 /// );
 /// ```
 /// gets a function like:

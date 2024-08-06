@@ -4,7 +4,7 @@
 use std::fmt::Debug;
 
 use super::RespoElement;
-use crate::css::{CssSize, RespoStyle};
+use crate::css::{respo_style, ConvertRespoCssSize};
 
 /// a macro for creating a function with a named node
 /// ```ignore
@@ -56,26 +56,22 @@ where
 {
   match (w, h) {
     (Some(wv), Some(hv)) => div().style(
-      RespoStyle::default()
-        .width(CssSize::Px(wv as f32))
-        .height(CssSize::Px(hv as f32))
+      respo_style()
+        .width(wv.px())
+        .height(hv.px())
         .display(crate::node::css::CssDisplay::InlineBlock),
     ),
-    (Some(wv), None) => span().style(
-      RespoStyle::default()
-        .width(CssSize::Px(wv as f32))
-        .display(crate::node::css::CssDisplay::InlineBlock),
-    ),
+    (Some(wv), None) => span().style(respo_style().width(wv.px()).display(crate::node::css::CssDisplay::InlineBlock)),
     (None, Some(hv)) => div().style(
-      RespoStyle::default()
-        .height(CssSize::Px(hv as f32))
-        .width(CssSize::Px(1.0))
+      respo_style()
+        .height(hv.px())
+        .width(1.px())
         .display(crate::node::css::CssDisplay::Block),
     ),
     (None, None) => span().style(
-      RespoStyle::default()
-        .width(CssSize::Px(8.))
-        .height(CssSize::Px(8.))
+      respo_style()
+        .width(8.px())
+        .height(8.px())
         .display(crate::node::css::CssDisplay::InlineBlock),
     ),
   }

@@ -65,9 +65,8 @@ pub fn comp_panel(states: &RespoStatesTree) -> Result<RespoNode<ActionOp>, Strin
       "panel",
       div().elements([
         input()
+          .attrs(&[("placeholder", "some content..."), ("value", state.content.as_str())])
           .class(ui_input())
-          .attribute("placeholder", "some content...")
-          .attribute("value", state.content.to_owned())
           .on_input(on_input),
         space(Some(8), None),
         button().class(ui_button()).inner_text("add").on_click(on_submit),

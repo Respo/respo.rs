@@ -232,14 +232,13 @@ impl RespoEffect for EffectModalClose {
     let listener = Closure::wrap(Box::new({
       let el = el.to_owned();
       move |event: web_sys::KeyboardEvent| {
-        let mut init_dict: KeyboardEventInit = KeyboardEventInit::new();
-        init_dict
-          .key(&event.key())
-          .code(&event.code())
-          .char_code(event.char_code())
-          .view(event.view().as_ref())
-          .location(event.location())
-          .key_code(event.key_code());
+        let init_dict: KeyboardEventInit = KeyboardEventInit::new();
+        init_dict.set_key(&event.key());
+        init_dict.set_code(&event.code());
+        init_dict.set_char_code(event.char_code());
+        init_dict.set_view(event.view().as_ref());
+        init_dict.set_location(event.location());
+        init_dict.set_key_code(event.key_code());
         let new_event = KeyboardEvent::new_with_keyboard_event_init_dict(&event.type_(), &init_dict)
           .expect("Failed to create new KeyboardEvent from init dict");
 

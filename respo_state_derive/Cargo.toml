@@ -10,8 +10,14 @@ documentation = "https://docs.rs/crate/respo_state_derive/"
 readme = "README.md"
 
 [dependencies]
-quote = { version = "1.0.36", features = ["proc-macro"] }
-syn = { version = "2.0.66", features = ["clone-impls", "derive", "parsing", "printing", "proc-macro"] }
+quote = { version = "1.0.37", features = ["proc-macro"] }
+syn = { version = "2.0.77", features = [
+  "clone-impls",
+  "derive",
+  "parsing",
+  "printing",
+  "proc-macro",
+] }
 
 # proc-macro2 = "1.0.85"
 # proc-macro2 = { version = "1.0.85", features = ["proc-macro"] }

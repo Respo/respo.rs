@@ -13,13 +13,13 @@ readme = "README.md"
 
 [dependencies]
 js-sys = "0.3.69"
-wasm-bindgen = "0.2.92"
-lazy_static = "1.4.0"
+wasm-bindgen = "0.2.93"
+lazy_static = "1.5.0"
 cirru_parser = "0.1.31"
 # cirru_parser = { path = "/Users/chenyong/repo/cirru/parser.rs" }
 rust-hsluv = "0.1.4"
-serde = { version = "1.0.203", features = ["derive", "rc"] }
-serde_json = "1.0.117"
+serde = { version = "1.0.210", features = ["derive", "rc"] }
+serde_json = "1.0.128"
 # respo_state_derive = { path = "../respo_state_derive" }
 respo_state_derive = "0.0.1"
 
@@ -28,7 +28,7 @@ respo_state_derive = "0.0.1"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies.web-sys]
-version = "0.3.69"
+version = "0.3.70"
 features = [
   "console",
   'Document',

@@ -15,15 +15,15 @@ readme = "README.md"
 memoize = "0.4.2"
 respo = { path = "../respo/" }
 js-sys = "0.3.69"
-wasm-bindgen = "0.2.92"
+wasm-bindgen = "0.2.93"
 console_error_panic_hook = "0.1.7"
-uuid = { version = "1.8.0", features = [ "v4", "js" ] }
-serde = { version = "1.0.203", features = ["derive", "rc"] }
-serde_json = "1.0.117"
+uuid = { version = "1.10.0", features = ["v4", "js"] }
+serde = { version = "1.0.210", features = ["derive", "rc"] }
+serde_json = "1.0.128"
 respo_state_derive = { path = "../respo_state_derive" }
 
 [dependencies.web-sys]
-version = "0.3.69"
+version = "0.3.70"
 features = [
   "console",
   'Document',
@@ -43,5 +43,5 @@ features = [
   "FocusEvent",
   "HtmlLabelElement",
   "BeforeUnloadEvent",
-  "Storage"
+  "Storage",
 ]

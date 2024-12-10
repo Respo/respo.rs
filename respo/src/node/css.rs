@@ -736,6 +736,55 @@ where
     name.into()
   }
 }
+/// does internal work inside the macro `contained_style!(name, &styles)`.
+/// inserts CSS as `<style .. />` under `<head ... />` element
+/// notice that the code only generats once and being cached as DOM states, with extra `<contained> { ... }` wrapper
+///
+/// NOT working for dynamic styles that changes over time, use inline styles instead.
+pub fn declare_contained_style<T, U>(name: T, rules: &[(Option<String>, U, RespoStyle)]) -> String
+where
+  T: Into<String> + Clone,
+  U: Into<String> + Clone + Display,
+{
+  let mut defined_styles = CLASS_NAME_IN_TAGS.write().expect("access styles");
+  if defined_styles.contains(&name.to_owned().into()) {
+    name.into()
+  } else {
+    let window = web_sys::window().expect("window");
+    let document = window.document().expect("load document");
+    let head = document.head().expect("head");
+    let style_tag = document.create_element("style").expect("create style tag");
+    style_tag
+      .set_attribute("id", &format!("def__{}", name.to_owned().into()))
+      .expect("name tag");
+
+    let mut styles = String::from("");
+    for (contained, query, properties) in rules {
+      styles.push_str(
+        &query
+          .to_string()
+          .replace("$0", &format!(".{}", &name.to_owned().into()))
+          .replace('&', &format!(".{}", &name.to_owned().into())),
+      );
+      styles.push_str(" {\n");
+      styles.push_str(&properties.to_string());
+      styles.push_str("}\n");
+
+      if let Some(contained) = contained {
+        styles = format!("{} {{\n{}\n}}", contained, styles);
+      }
+    }
+
+    style_tag.dyn_ref::<Element>().expect("into element").set_inner_html(&styles);
+    head
+      .append_child(style_tag.dyn_ref::<Element>().expect("get element"))
+      .expect("add style");
+
+    defined_styles.insert(name.to_owned().into());
+
+    name.into()
+  }
+}
 
 /// turns `src/a/b.rs` into `a_b`, (used inside macro)
 pub fn css_name_from_path(p: &str) -> String {
@@ -812,5 +861,71 @@ macro_rules! static_styles {
   };
   ($a:ident, $b:expr, $c:expr, $d:expr, $e:expr, $f:expr) => {
     $crate::static_style_seq!($a, &[$b, $c, $d, $e, $f]);
+  };
+}
+
+/// macro to create a public function of CSS rules with a slice at current file scope,
+/// ```rust
+/// respo::contained_style_seq!(the_name,
+///   &[
+///     ("&", respo::css::respo_style())
+///   ]
+/// );
+/// ```
+/// gets a function like:
+/// ```ignore
+/// pub fn the_name() -> String
+/// ```
+#[macro_export]
+macro_rules! contained_style_seq {
+  ($a:ident, $b:expr) => {
+    pub fn $a() -> String {
+      // let name = $crate::css_name_from_path(std::file!());
+      let name = $crate::css::css_name_from_path(std::module_path!());
+      $crate::css::declare_contained_style(format!("{}__{}", name, stringify!($a)), $b)
+    }
+  };
+}
+
+/// macro to create a public function of CSS rules(up to 5 tuples) at current file scope,
+/// ```rust
+/// respo::static_styles!(the_name,
+///   ("&", respo::css::respo_style())
+/// );
+/// ```
+/// gets a function like:
+/// ```ignore
+/// pub fn the_name() -> String
+/// ```
+/// if you have more styles to specify, use `static_style_seq!` instead.
+#[macro_export]
+macro_rules! contained_styles {
+  ($a:ident, $b:expr) => {
+    $crate::contained_style_seq!($a, &[$b]);
+  };
+  // to allow optional trailing comma
+  ($a:ident, $b:expr,) => {
+    $crate::contained_style_seq!($a, &[$b]);
+  };
+  ($a:ident, $b:expr, $c:expr) => {
+    $crate::contained_style_seq!($a, &[$b, $c]);
+  };
+  ($a:ident, $b:expr, $c:expr,) => {
+    $crate::contained_style_seq!($a, &[$b, $c]);
+  };
+  ($a:ident, $b:expr, $c:expr, $d:expr) => {
+    $crate::contained_style_seq!($a, &[$b, $c, $d]);
+  };
+  ($a:ident, $b:expr, $c:expr, $d:expr,) => {
+    $crate::contained_style_seq!($a, &[$b, $c, $d]);
+  };
+  ($a:ident, $b:expr, $c:expr, $d:expr, $e:expr) => {
+    $crate::contained_style_seq!($a, &[$b, $c, $d, $e]);
+  };
+  ($a:ident, $b:expr, $c:expr, $d:expr, $e:expr,) => {
+    $crate::contained_style_seq!($a, &[$b, $c, $d, $e]);
+  };
+  ($a:ident, $b:expr, $c:expr, $d:expr, $e:expr, $f:expr) => {
+    $crate::contained_style_seq!($a, &[$b, $c, $d, $e, $f]);
   };
 }

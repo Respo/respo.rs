@@ -1,6 +1,6 @@
 [package]
 name = "respo"
-version = "0.1.14"
+version = "0.1.15"
 edition = "2021"
 description = "a tiny virtual DOM library migrated from ClojureScript"
 license = "Apache-2.0"
@@ -12,14 +12,14 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-js-sys = "0.3.69"
+js-sys = "0.3.76"
 wasm-bindgen = "0.2.93"
 lazy_static = "1.5.0"
 cirru_parser = "0.1.31"
 # cirru_parser = { path = "/Users/chenyong/repo/cirru/parser.rs" }
 rust-hsluv = "0.1.4"
-serde = { version = "1.0.210", features = ["derive", "rc"] }
-serde_json = "1.0.128"
+serde = { version = "1.0.215", features = ["derive", "rc"] }
+serde_json = "1.0.133"
 # respo_state_derive = { path = "../respo_state_derive" }
 respo_state_derive = "0.0.1"
 
@@ -28,7 +28,7 @@ respo_state_derive = "0.0.1"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies.web-sys]
-version = "0.3.70"
+version = "0.3.76"
 features = [
   "console",
   'Document',

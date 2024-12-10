@@ -14,7 +14,7 @@ use std::rc::Rc;
 
 use inner_text::comp_inner_text;
 use respo::css::respo_style;
-use respo::{space, RespoAction};
+use respo::{contained_styles, space, RespoAction};
 use web_sys::Node;
 
 use respo::ui::ui_global;
@@ -64,7 +64,7 @@ impl RespoApp for App {
 
     Ok(
       div()
-        .class(ui_global())
+        .class(ui_global() + " " + &style_container())
         .style(respo_style().padding(12))
         .children([
           comp_counter(&states.pick("counter"), store.counted)?.to_node(),
@@ -97,3 +97,12 @@ fn main() {
 
   app.render_loop().expect("app render");
 }
+
+contained_styles!(
+  style_container,
+  (
+    Some("@media only screen and (max-width: 600px)".to_owned()),
+    "&",
+    respo_style().background_color(respo::css::CssColor::Hsl(0, 0, 95))
+  )
+);

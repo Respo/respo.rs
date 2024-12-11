@@ -897,7 +897,7 @@ macro_rules! contained_style_seq {
 /// ```ignore
 /// pub fn the_name() -> String
 /// ```
-/// if you have more styles to specify, use `static_style_seq!` instead.
+/// if you have more styles to specify, use `contained_style_seq!` instead.
 #[macro_export]
 macro_rules! contained_styles {
   ($a:ident, $b:expr) => {

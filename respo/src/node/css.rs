@@ -834,33 +834,8 @@ macro_rules! static_style_seq {
 /// if you have more styles to specify, use `static_style_seq!` instead.
 #[macro_export]
 macro_rules! static_styles {
-  ($a:ident, $b:expr) => {
-    $crate::static_style_seq!($a, &[$b]);
-  };
-  // to allow optional trailing comma
-  ($a:ident, $b:expr,) => {
-    $crate::static_style_seq!($a, &[$b]);
-  };
-  ($a:ident, $b:expr, $c:expr) => {
-    $crate::static_style_seq!($a, &[$b, $c]);
-  };
-  ($a:ident, $b:expr, $c:expr,) => {
-    $crate::static_style_seq!($a, &[$b, $c]);
-  };
-  ($a:ident, $b:expr, $c:expr, $d:expr) => {
-    $crate::static_style_seq!($a, &[$b, $c, $d]);
-  };
-  ($a:ident, $b:expr, $c:expr, $d:expr,) => {
-    $crate::static_style_seq!($a, &[$b, $c, $d]);
-  };
-  ($a:ident, $b:expr, $c:expr, $d:expr, $e:expr) => {
-    $crate::static_style_seq!($a, &[$b, $c, $d, $e]);
-  };
-  ($a:ident, $b:expr, $c:expr, $d:expr, $e:expr,) => {
-    $crate::static_style_seq!($a, &[$b, $c, $d, $e]);
-  };
-  ($a:ident, $b:expr, $c:expr, $d:expr, $e:expr, $f:expr) => {
-    $crate::static_style_seq!($a, &[$b, $c, $d, $e, $f]);
+  ($a:ident, $($b:expr),* $(,)?) => {
+    $crate::static_style_seq!($a, &[$($b),*]);
   };
 }
 
@@ -889,43 +864,27 @@ macro_rules! contained_style_seq {
 
 /// macro to create a public function of CSS rules(up to 5 tuples) at current file scope,
 /// ```rust
-/// respo::contained_styles!(the_name,
-///   (Some("@container".to_string()), "&", respo::css::respo_style())
+/// // Example with multiple container queries
+/// use respo::css::{CssSize, CssColor};
+/// respo::contained_style_seq!(responsive_card,
+///   &[
+///     (None, "&", respo::css::respo_style().width(CssSize::Px(200.))),
+///     (Some("@container (min-width: 300px)".to_string()), "&", respo::css::respo_style().width(CssSize::Px(300.))),
+///   ]
 /// );
-/// ```
-/// gets a function like:
-/// ```ignore
-/// pub fn the_name() -> String
+///
+/// // Example combining with media queries
+/// respo::contained_style_seq!(hybrid_responsive,
+///   &[
+///     (Some("@media (prefers-color-scheme: dark)".to_string()), "&",
+///       respo::css::respo_style().background_color(CssColor::Rgb(20, 20, 20)))
+///   ]
+/// );
 /// ```
 /// if you have more styles to specify, use `contained_style_seq!` instead.
 #[macro_export]
 macro_rules! contained_styles {
-  ($a:ident, $b:expr) => {
-    $crate::contained_style_seq!($a, &[$b]);
-  };
-  // to allow optional trailing comma
-  ($a:ident, $b:expr,) => {
-    $crate::contained_style_seq!($a, &[$b]);
-  };
-  ($a:ident, $b:expr, $c:expr) => {
-    $crate::contained_style_seq!($a, &[$b, $c]);
-  };
-  ($a:ident, $b:expr, $c:expr,) => {
-    $crate::contained_style_seq!($a, &[$b, $c]);
-  };
-  ($a:ident, $b:expr, $c:expr, $d:expr) => {
-    $crate::contained_style_seq!($a, &[$b, $c, $d]);
-  };
-  ($a:ident, $b:expr, $c:expr, $d:expr,) => {
-    $crate::contained_style_seq!($a, &[$b, $c, $d]);
-  };
-  ($a:ident, $b:expr, $c:expr, $d:expr, $e:expr) => {
-    $crate::contained_style_seq!($a, &[$b, $c, $d, $e]);
-  };
-  ($a:ident, $b:expr, $c:expr, $d:expr, $e:expr,) => {
-    $crate::contained_style_seq!($a, &[$b, $c, $d, $e]);
-  };
-  ($a:ident, $b:expr, $c:expr, $d:expr, $e:expr, $f:expr) => {
-    $crate::contained_style_seq!($a, &[$b, $c, $d, $e, $f]);
+  ($a:ident, $($b:expr),* $(,)?) => {
+    $crate::contained_style_seq!($a, &[$($b),*]);
   };
 }

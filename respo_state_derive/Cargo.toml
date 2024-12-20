@@ -11,7 +11,7 @@ readme = "README.md"
 
 [dependencies]
 quote = { version = "1.0.37", features = ["proc-macro"] }
-syn = { version = "2.0.77", features = [
+syn = { version = "2.0.90", features = [
   "clone-impls",
   "derive",
   "parsing",

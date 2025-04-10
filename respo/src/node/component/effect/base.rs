@@ -2,17 +2,6 @@
 
 use std::{any::Any, fmt::Debug};
 
-/// A trick to share upcasting
-/// https://stackoverflow.com/a/28664881/883571
-pub trait AsRespoEffectBase {
-  fn as_base(&self) -> &dyn RespoEffectDynEq;
-}
-
-impl<T: RespoEffectDynEq> AsRespoEffectBase for T {
-  fn as_base(&self) -> &dyn RespoEffectDynEq {
-    self
-  }
-}
 
 pub trait RespoEffectDynEq
 where

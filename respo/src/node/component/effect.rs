@@ -2,7 +2,7 @@ mod base;
 
 use std::{any::Any, fmt::Debug, rc::Rc};
 
-use base::{AsRespoEffectBase, RespoEffectDynEq};
+use base::RespoEffectDynEq;
 use cirru_parser::Cirru;
 use web_sys::Node;
 
@@ -11,7 +11,7 @@ use web_sys::Node;
 /// to handle lifecycle events, mainly for manually manipulating DOM
 pub trait RespoEffect
 where
-  Self: Debug + Any + RespoEffectDynEq + AsRespoEffectBase + 'static,
+  Self: Debug + Any + RespoEffectDynEq + 'static,
 {
   /// actually run effect
   #[allow(unused_variables)]
@@ -52,7 +52,7 @@ pub struct RespoEffectBox(pub Rc<dyn RespoEffect>);
 impl PartialEq for RespoEffectBox {
   fn eq(&self, other: &Self) -> bool {
     let r = self.0.as_ref();
-    r.do_eq(other.0.as_ref().as_base()) == Some(true)
+    r.do_eq(other.0.as_ref() as &dyn RespoEffectDynEq) == Some(true)
   }
 }
 impl Eq for RespoEffectBox {}

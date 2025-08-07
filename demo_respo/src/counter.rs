@@ -98,16 +98,16 @@ pub fn comp_counter(states: &RespoStatesTree, global_counted: i32) -> Result<Res
           .style(respo_style().margin(4))
           .on_click(on_inc_twice),
       ]),
-      div().elements([span().inner_text(format!("value is: {}", counted)).style(
+      div().elements([span().inner_text(format!("value is: {counted}")).style(
         respo_style()
           .color(CssColor::Hsluv(270, 100, 40))
           .font_family("Menlo".to_owned())
           .font_size(10. + counted as f32),
       )]),
       div().elements([
-        span().inner_text(format!("local state: {}", counted)),
+        span().inner_text(format!("local state: {counted}")),
         br(),
-        span().inner_text(format!("global state: {}", global_counted)),
+        span().inner_text(format!("global state: {global_counted}")),
       ]),
     ]),
   )

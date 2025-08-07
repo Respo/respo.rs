@@ -70,7 +70,7 @@ pub fn comp_panel(states: &RespoStatesTree) -> Result<RespoNode<ActionOp>, Strin
           .on_input(on_input),
         space(Some(8), None),
         button().class(ui_button()).inner_text("add").on_click(on_submit),
-        span().inner_text(format!("got panel state: {:?}", state)),
+        span().inner_text(format!("got panel state: {state:?}")),
       ]),
     )
     .effect(PanelMount::default())

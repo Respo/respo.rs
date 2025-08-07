@@ -67,11 +67,11 @@ where
           mark_need_rerender();
         }
         Err(e) => {
-          error_1(&format!("event handler error: {:?}", e).into());
+          error_1(&format!("event handler error: {e:?}").into());
         }
       },
       Err(msg) => {
-        error_1(&format!("event not handled: {}", msg).into());
+        error_1(&format!("event not handled: {msg}").into());
       }
     }
 
@@ -174,10 +174,10 @@ where
       }
       (RespoNode::Element(RespoElement { children, .. }), RespoCoord::Key(idx)) => match children.iter().position(|(k, _)| idx == k) {
         Some(i) => {
-          let child = &children.get(i).ok_or_else(|| format!("to get child {:?} {}", idx, i))?.1;
+          let child = &children.get(i).ok_or_else(|| format!("to get child {idx:?} {i}"))?.1;
           load_coord_target_tree(child, &coord[1..])
         }
-        None => Err(format!("no child at index key {:?}", idx)),
+        None => Err(format!("no child at index key {idx:?}")),
       },
       // match children.get(*idx as usize) {
       //   Some((_k, child)) => load_coord_target_tree(child, &coord[1..]),
@@ -187,7 +187,7 @@ where
         Err(String::from("Type mismatch: expected a DOM element, but found a component"))
       }
       (RespoNode::Element { .. }, RespoCoord::Comp(..)) => {
-        Err(format!("expected component at {:?}, found target being an element", coord))
+        Err(format!("expected component at {coord:?}, found target being an element"))
       }
       (RespoNode::Referenced(cell), _) => load_coord_target_tree(cell, coord),
     }

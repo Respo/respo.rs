@@ -77,7 +77,7 @@ pub fn query_select_node(pattern: &str) -> Result<Node, String> {
   if let Some(element) = target.dyn_ref::<Node>() {
     Ok(element.to_owned())
   } else {
-    Err(format!("failed to find {}", pattern))
+    Err(format!("failed to find {pattern}"))
   }
 }
 

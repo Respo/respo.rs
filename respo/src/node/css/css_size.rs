@@ -39,11 +39,11 @@ impl Display for CssSize {
   fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
     match self {
       Self::Auto => write!(f, "auto"),
-      Self::Px(v) => write!(f, "{}px", v),
-      Self::Percent(v) => write!(f, "{}%", v),
-      Self::Vw(v) => write!(f, "{}vw", v),
-      Self::Vh(v) => write!(f, "{}vh", v),
-      Self::Custom(v) => write!(f, "{}", v),
+      Self::Px(v) => write!(f, "{v}px"),
+      Self::Percent(v) => write!(f, "{v}%"),
+      Self::Vw(v) => write!(f, "{v}vw"),
+      Self::Vh(v) => write!(f, "{v}vh"),
+      Self::Custom(v) => write!(f, "{v}"),
     }
   }
 }
@@ -68,7 +68,7 @@ impl From<i32> for CssPx {
 impl Display for CssPx {
   fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
     match self {
-      Self::Px(v) => write!(f, "{}px", v),
+      Self::Px(v) => write!(f, "{v}px"),
     }
   }
 }

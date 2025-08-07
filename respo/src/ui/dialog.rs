@@ -49,7 +49,7 @@ impl RespoEffect for EffectFocus {
 }
 
 fn focus_element(el: &Node, name: &str) -> Result<(), String> {
-  match el.dyn_ref::<Element>().unwrap().query_selector(&format!(".{}", name)) {
+  match el.dyn_ref::<Element>().unwrap().query_selector(&format!(".{name}")) {
     Ok(Some(element)) => {
       match element.dyn_ref::<HtmlElement>() {
         Some(el) => el.focus().unwrap(),

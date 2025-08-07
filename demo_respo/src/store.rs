@@ -133,7 +133,7 @@ impl RespoStore for Store {
           }
         }
         if !found {
-          return Err(format!("task {} not found", id));
+          return Err(format!("task {id} not found"));
         }
       }
       ToggleTask(id) => {
@@ -146,7 +146,7 @@ impl RespoStore for Store {
           }
         }
         if !found {
-          return Err(format!("task {} not found", id));
+          return Err(format!("task {id} not found"));
         }
       }
     }
@@ -161,6 +161,6 @@ impl RespoStore for Store {
   where
     Self: Sized,
   {
-    serde_json::from_str(s).map_err(|e| format!("parse store: {}", e))
+    serde_json::from_str(s).map_err(|e| format!("parse store: {e}"))
   }
 }

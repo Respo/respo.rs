@@ -61,7 +61,7 @@ impl RespoStyle {
     let mut result = String::new();
     for rule in rules {
       let (query, value) = rule;
-      let _ = write!(result, "{} {{\n{}\n}}", query, value);
+      let _ = write!(result, "{query} {{\n{value}\n}}");
     }
     result
   }
@@ -78,7 +78,7 @@ impl RespoStyle {
 impl Display for RespoStyle {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     for (key, value) in self.0.iter() {
-      writeln!(f, "{}: {};", key, value)?;
+      writeln!(f, "{key}: {value};")?;
     }
     Ok(())
   }
@@ -112,9 +112,9 @@ impl RespoStyle {
   pub fn border(self, rule: Option<(f32, CssBorderStyle, CssColor)>) -> Self {
     match rule {
       Some((width, style, color)) => self
-        .insert("border-width", format!("{}px", width))
-        .insert("border-style", format!("{}", style))
-        .insert("border-color", format!("{}", color)),
+        .insert("border-width", format!("{width}px"))
+        .insert("border-style", format!("{style}"))
+        .insert("border-color", format!("{color}")),
       None => self
         .insert("border-width", "0px".to_owned())
         .insert("border-style", "none".to_owned())
@@ -124,9 +124,9 @@ impl RespoStyle {
   pub fn outline(self, rule: Option<(f32, CssBorderStyle, CssColor)>) -> Self {
     match rule {
       Some((width, style, color)) => self
-        .insert("outline-width", format!("{}px", width))
-        .insert("outline-style", format!("{}", style))
-        .insert("outline-color", format!("{}", color)),
+        .insert("outline-width", format!("{width}px"))
+        .insert("outline-style", format!("{style}"))
+        .insert("outline-color", format!("{color}")),
       None => self
         .insert("outline-width", "0px".to_owned())
         .insert("outline-style", "none".to_owned())
@@ -134,10 +134,10 @@ impl RespoStyle {
     }
   }
   pub fn box_shadow(self, x: f32, y: f32, blur: f32, spread: f32, color: CssColor) -> Self {
-    self.insert("box-shadow", format!("{}px {}px {}px {}px {}", x, y, blur, spread, color))
+    self.insert("box-shadow", format!("{x}px {y}px {blur}px {spread}px {color}"))
   }
   pub fn border_radius(self, r: f32) -> Self {
-    self.insert("border-radius", format!("{}px", r))
+    self.insert("border-radius", format!("{r}px"))
   }
   pub fn border_color(self, color: CssColor) -> Self {
     self.insert("border-color", color.to_string())
@@ -158,7 +158,7 @@ impl RespoStyle {
     self.insert("min-height", rule.to_string())
   }
   pub fn opacity(self, o: f32) -> Self {
-    self.insert("opacity", format!("{}", o))
+    self.insert("opacity", format!("{o}"))
   }
   pub fn background_color(self, color: CssColor) -> Self {
     self.insert("background-color", color.to_string())
@@ -179,7 +179,7 @@ impl RespoStyle {
     self.insert("font-family", font)
   }
   pub fn font_size(self, size: f32) -> Self {
-    self.insert("font-size", format!("{}px", size))
+    self.insert("font-size", format!("{size}px"))
   }
   pub fn font_style(self, style: CssFontStyle) -> Self {
     self.insert("font-style", style.to_string())
@@ -188,7 +188,7 @@ impl RespoStyle {
     self.insert("font-weight", weight.to_string())
   }
   pub fn text_shadow(self, x: f32, y: f32, blur: f32, color: CssColor) -> Self {
-    self.insert("text-shadow", format!("{}px {}px {}px {}", x, y, blur, color))
+    self.insert("text-shadow", format!("{x}px {y}px {blur}px {color}"))
   }
   pub fn line_height(self, height: CssLineHeight) -> Self {
     self.insert("line-height", height.to_string())
@@ -245,10 +245,10 @@ impl RespoStyle {
     self.insert("tranform-origin", origin)
   }
   pub fn transition_duration(self, duration: f32) -> Self {
-    self.insert("transition-duration", format!("{}ms", duration))
+    self.insert("transition-duration", format!("{duration}ms"))
   }
   pub fn transition_delay(self, delay: f32) -> Self {
-    self.insert("transition-delay", format!("{}ms", delay))
+    self.insert("transition-delay", format!("{delay}ms"))
   }
   pub fn transform_timing_function(self, function: CssTimingFunction) -> Self {
     self.insert("transition-timing-function", function.to_string())
@@ -322,8 +322,8 @@ impl Display for CssColor {
       f,
       "{}",
       match self {
-        Self::Hsla(h, s, l, a) => format!("hsla({}, {}%, {}%, {})", h, s, l, a),
-        Self::Hsl(h, s, l) => format!("hsl({}, {}%, {}%)", h, s, l),
+        Self::Hsla(h, s, l, a) => format!("hsla({h}, {s}%, {l}%, {a})"),
+        Self::Hsl(h, s, l) => format!("hsl({h}, {s}%, {l}%)"),
         Self::Hsluva(h, c, l, a) => {
           let (r, g, b) = hsluv_to_rgb((*h as f64, *c as f64, *l as f64));
           format!("rgba({}, {}, {}, {})", r * 256., g * 256., b * 256., a)
@@ -332,9 +332,9 @@ impl Display for CssColor {
           let (r, g, b) = hsluv_to_rgb((*h as f64, *c as f64, *l as f64));
           format!("rgb({}, {}, {})", r * 256., g * 256., b * 256.)
         }
-        Self::Rgba(r, g, b, a) => format!("rgba({}, {}, {}, {})", r, g, b, a),
-        Self::Rgb(r, g, b) => format!("rgb({}, {}, {})", r, g, b),
-        Self::Hex(r, g, b) => format!("#{:02x}{:02x}{:02x}", r, g, b),
+        Self::Rgba(r, g, b, a) => format!("rgba({r}, {g}, {b}, {a})"),
+        Self::Rgb(r, g, b) => format!("rgb({r}, {g}, {b})"),
+        Self::Hex(r, g, b) => format!("#{r:02x}{g:02x}{b:02x}"),
         Self::Red => "red".to_string(),
         Self::Green => "green".to_string(),
         Self::Blue => "blue".to_string(),
@@ -360,8 +360,8 @@ pub enum CssLineHeight {
 impl Display for CssLineHeight {
   fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
     match self {
-      CssLineHeight::Em(v) => write!(f, "{}em", v),
-      CssLineHeight::Px(v) => write!(f, "{}px", v),
+      CssLineHeight::Em(v) => write!(f, "{v}em"),
+      CssLineHeight::Px(v) => write!(f, "{v}px"),
     }
   }
 }
@@ -536,7 +536,7 @@ impl Display for CssBackgroundSize {
     match self {
       Self::Cover => write!(f, "cover"),
       Self::Contain => write!(f, "contain"),
-      Self::Wh(w, h) => write!(f, "{}px {}px", w, h),
+      Self::Wh(w, h) => write!(f, "{w}px {h}px"),
     }
   }
 }
@@ -572,10 +572,10 @@ pub enum CssTransform {
 impl Display for CssTransform {
   fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
     match self {
-      Self::Translate(x, y) => write!(f, "translate({}px, {}px)", x, y),
-      Self::Scale(x, y) => write!(f, "scale({}, {})", x, y),
-      Self::Rotate(r) => write!(f, "rotate({}deg)", r),
-      Self::Skew(x, y) => write!(f, "skew({}deg, {}deg)", x, y),
+      Self::Translate(x, y) => write!(f, "translate({x}px, {y}px)"),
+      Self::Scale(x, y) => write!(f, "scale({x}, {y})"),
+      Self::Rotate(r) => write!(f, "rotate({r}deg)"),
+      Self::Skew(x, y) => write!(f, "skew({x}deg, {y}deg)"),
       Self::Matrix(a, b, c, d, e, g) => write!(f, "matrix({a}, {b}, {c}, {d}, {e}, {g})"),
     }
   }
@@ -671,7 +671,7 @@ impl Display for CssFontWeight {
       Self::Bold => write!(f, "bold"),
       Self::Bolder => write!(f, "bolder"),
       Self::Lighter => write!(f, "lighter"),
-      Self::Weight(w) => write!(f, "{}", w),
+      Self::Weight(w) => write!(f, "{w}"),
     }
   }
 }
@@ -771,7 +771,7 @@ where
       styles.push_str("}\n");
 
       if let Some(contained) = contained {
-        styles = format!("{} {{\n{}\n}}", contained, styles);
+        styles = format!("{contained} {{\n{styles}\n}}");
       }
     }
 

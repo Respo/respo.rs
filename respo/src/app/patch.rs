@@ -97,7 +97,7 @@ where
                 }
               }
               name => {
-                return Err(format!("unsupported value for {}", name));
+                return Err(format!("unsupported value for {name}"));
               }
             }
           } else {
@@ -144,7 +144,7 @@ where
             "input" => {
               el.set_oninput(None);
             }
-            _ => warn_1(&format!("TODO event {}", k).into()),
+            _ => warn_1(&format!("TODO event {k}").into()),
           }
         }
       }
@@ -545,7 +545,7 @@ pub fn attach_event(element: &Element, key: &str, coord: &[RespoCoord], handle_e
       handler.forget();
     }
     _ => {
-      warn_1(&format!("unhandled event: {}", key).into());
+      warn_1(&format!("unhandled event: {key}").into());
     }
   }
   Ok(())

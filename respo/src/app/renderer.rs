@@ -32,7 +32,23 @@ fn drain_rerender_status() -> bool {
   ret
 }
 
-pub(crate) fn mark_need_rerender() {
+/// Marks the current UI as needing rerender
+///
+/// This method is used to explicitly trigger UI rerendering. In certain scenarios,
+/// when external business logic updates the state but cannot trigger rendering through the normal action flow,
+/// this method can be called to notify the rendering loop to update.
+///
+/// # Use Cases
+///
+/// - Update UI after async operations complete
+/// - State changes in external event listeners
+/// - Manual state updates that need to be synced to DOM
+///
+/// # Notes
+///
+/// This is a low-overhead operation. If already marked as needing render,
+/// repeated calls will not incur additional cost.
+pub fn request_rerender() {
   let ret = { *NEED_TO_ERENDER.read().expect("to drain rerender status") };
 
   if !ret {
@@ -64,7 +80,7 @@ where
       Ok(handler) => match handler.run(mark.event_info, dispatch_action.to_owned()) {
         Ok(()) => {
           // util::log!("finished event: {} {:?}", mark.name, mark.coord);
-          mark_need_rerender();
+          request_rerender();
         }
         Err(e) => {
           error_1(&format!("event handler error: {e:?}").into());

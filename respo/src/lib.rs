@@ -51,3 +51,6 @@ pub use node::element::alias::*;
 pub use node::*;
 
 pub use app::{util, RespoApp, RespoStore};
+
+// Re-export rendering control functions
+pub use app::renderer::request_rerender;

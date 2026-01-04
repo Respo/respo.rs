@@ -1,5 +1,6 @@
 use crate::app::util;
 use crate::node::dom_change::RespoCoord;
+use crate::node::global_event::{GlobalEvent, GlobalEventCtx};
 use crate::node::{
   DispatchFn, DomChange, RespoComponent, RespoEffectType, RespoElement, RespoEventMark, RespoEventMarkFn, RespoListenerFn, RespoNode,
 };
@@ -16,9 +17,15 @@ use web_sys::{HtmlElement, HtmlInputElement, HtmlLabelElement, HtmlTextAreaEleme
 use crate::app::diff::{collect_effects_outside_in_as, diff_tree};
 use crate::app::patch::{attach_event, patch_tree};
 
+type GlobalEventDispatcher = dyn Fn(&dyn GlobalEvent) -> Result<usize, String> + 'static;
+
 lazy_static::lazy_static! {
   /// event queue that code in the loop will detect
   static ref NEED_TO_ERENDER: RwLock<bool> = RwLock::new(false);
+}
+
+thread_local! {
+  static GLOBAL_EVENT_DISPATCHER: RefCell<Option<Box<GlobalEventDispatcher>>> = RefCell::new(None);
 }
 
 /// check where need to trigger rerendering, also resets the status to false
@@ -57,6 +64,26 @@ pub fn request_rerender() {
   }
 }
 
+/// Broadcasts a global event to every component listener currently mounted in the tree.
+///
+/// Returns the number of listeners invoked, or an error when the renderer is not initialized yet.
+pub fn broadcast_global_event(event: &dyn GlobalEvent) -> Result<usize, String> {
+  GLOBAL_EVENT_DISPATCHER.with(|dispatcher| {
+    let hit = match dispatcher.borrow().as_ref() {
+      Some(handler) => handler(event)?,
+      None => {
+        return Err(String::from(
+          "global event dispatcher is not ready; call RespoApp::render_loop() first",
+        ))
+      }
+    };
+    if hit > 0 {
+      request_rerender();
+    }
+    Ok(hit)
+  })
+}
+
 /// render elements
 pub(crate) fn render_node<T, U>(
   mount_target: Node,
@@ -73,6 +100,18 @@ where
   let prev_store = RefCell::new(get_store());
   let tree0: RespoNode<T> = renderer()?;
   let prev_tree = Rc::new(RefCell::new(tree0.to_owned()));
+
+  {
+    let tree_for_global = prev_tree.to_owned();
+    let dispatch_for_global = dispatch_action.to_owned();
+    GLOBAL_EVENT_DISPATCHER.with(|dispatcher| {
+      *dispatcher.borrow_mut() = Some(Box::new(move |event: &dyn GlobalEvent| -> Result<usize, String> {
+        let snapshot = tree_for_global.borrow();
+        let mut component_path = Vec::new();
+        traverse_global_listeners(&snapshot, event, &dispatch_for_global, &mut component_path)
+      }));
+    });
+  }
 
   let to_prev_tree = prev_tree.to_owned();
   let handle_event = RespoEventMarkFn::new(move |mark: RespoEventMark| -> Result<(), String> {
@@ -228,6 +267,45 @@ where
       )),
     },
     RespoNode::Referenced(cell) => request_for_target_handler(&cell, event_name, coord),
+  }
+}
+
+fn traverse_global_listeners<T>(
+  node: &RespoNode<T>,
+  event: &dyn GlobalEvent,
+  dispatch: &DispatchFn<T>,
+  component_path: &mut Vec<Rc<str>>,
+) -> Result<usize, String>
+where
+  T: Debug + Clone,
+{
+  match node {
+    RespoNode::Component(component) => {
+      component_path.push(component.name.to_owned());
+      let result = (|| -> Result<usize, String> {
+        let mut hit = 0usize;
+        for handler in &component.listeners {
+          let ctx = GlobalEventCtx {
+            dispatch,
+            component_path: component_path.as_slice(),
+          };
+          handler.call(event, &ctx)?;
+          hit += 1;
+        }
+        hit += traverse_global_listeners(component.tree.as_ref(), event, dispatch, component_path)?;
+        Ok(hit)
+      })();
+      component_path.pop();
+      result
+    }
+    RespoNode::Element(element) => {
+      let mut hit = 0usize;
+      for (_, child) in &element.children {
+        hit += traverse_global_listeners(child, event, dispatch, component_path)?;
+      }
+      Ok(hit)
+    }
+    RespoNode::Referenced(cell) => traverse_global_listeners(cell, event, dispatch, component_path),
   }
 }
 

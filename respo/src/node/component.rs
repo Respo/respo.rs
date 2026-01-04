@@ -4,6 +4,7 @@ use std::{fmt::Debug, rc::Rc};
 
 use effect::RespoEffectBox;
 
+use crate::node::global_event::GlobalEventHandler;
 use crate::{RespoEffect, RespoElement, RespoNode};
 
 /// internal abstraction for a component
@@ -15,6 +16,8 @@ where
   pub name: Rc<str>,
   pub effects: Vec<RespoEffectBox>,
   pub tree: Box<RespoNode<T>>,
+  /// Global event listeners registered on this component; order reflects registration sequence.
+  pub listeners: Vec<GlobalEventHandler<T>>,
 }
 
 impl<T> From<RespoComponent<T>> for RespoNode<T>
@@ -35,6 +38,7 @@ where
       name: Rc::from(name),
       effects: vec![],
       tree: Box::new(tree.to_node()),
+      listeners: Vec::new(),
     }
   }
   pub fn to_node(self) -> RespoNode<T> {
@@ -46,10 +50,31 @@ where
   where
     S: RespoEffect + 'static,
   {
-    let RespoComponent { name, mut effects, tree } = self;
+    let RespoComponent {
+      name,
+      mut effects,
+      tree,
+      listeners,
+    } = self;
     {
       effects.push(RespoEffectBox::new(eff));
-      RespoComponent { name, effects, tree }
+      RespoComponent {
+        name,
+        effects,
+        tree,
+        listeners,
+      }
     }
+  }
+
+  /// append a global event listener to this component.
+  pub fn push_listener(mut self, handler: GlobalEventHandler<T>) -> Self {
+    self.listeners.push(handler);
+    self
+  }
+
+  /// clears all registered global listeners on this component.
+  pub fn clear_listeners(&mut self) {
+    self.listeners.clear();
   }
 }

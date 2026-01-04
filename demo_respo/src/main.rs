@@ -1,6 +1,7 @@
 extern crate console_error_panic_hook;
 
 mod counter;
+mod hotkeys;
 mod inner_text;
 mod panel;
 mod plugins;
@@ -12,10 +13,12 @@ use std::cell::{Ref, RefCell};
 use std::panic;
 use std::rc::Rc;
 
+use hotkeys::{comp_hotkey_demo, HotkeyEvent};
 use inner_text::comp_inner_text;
 use respo::css::respo_style;
-use respo::{contained_styles, space, RespoAction};
-use web_sys::Node;
+use respo::{broadcast_global_event, contained_styles, space, RespoAction};
+use wasm_bindgen::{closure::Closure, JsCast};
+use web_sys::{KeyboardEvent, Node};
 
 use respo::ui::ui_global;
 use respo::{div, util::query_select_node};
@@ -76,6 +79,8 @@ impl RespoApp for App {
           space(None, Some(80)).to_node(),
           comp_inner_text(&states.pick("inner-text"))?.to_node(),
           space(None, Some(80)).to_node(),
+          comp_hotkey_demo(&states.pick("hotkeys"))?,
+          space(None, Some(80)).to_node(),
         ])
         .to_node(),
     )
@@ -95,7 +100,35 @@ fn main() {
 
   util::log!("store: {:?}", app.store);
 
+  install_global_hotkeys();
+
   app.render_loop().expect("app render");
+}
+
+fn install_global_hotkeys() {
+  let window = web_sys::window().expect("window");
+  let handler = Closure::wrap(Box::new(move |event: KeyboardEvent| {
+    let ctrl_like = event.ctrl_key() || event.meta_key();
+    if !ctrl_like {
+      return;
+    }
+
+    let key = event.key();
+    if key.to_lowercase() != "k" {
+      return;
+    }
+
+    event.prevent_default();
+    let hotkey = HotkeyEvent::new(key, event.ctrl_key(), event.meta_key(), event.alt_key(), event.shift_key());
+    if let Err(err) = broadcast_global_event(&hotkey) {
+      util::error_log!("broadcast global event failed: {err}");
+    }
+  }) as Box<dyn FnMut(KeyboardEvent)>);
+
+  window
+    .add_event_listener_with_callback("keydown", handler.as_ref().unchecked_ref())
+    .expect("install hotkey listener");
+  handler.forget();
 }
 
 contained_styles!(

@@ -53,4 +53,4 @@ pub use node::*;
 pub use app::{util, RespoApp, RespoStore};
 
 // Re-export rendering control functions
-pub use app::renderer::request_rerender;
+pub use app::renderer::{broadcast_global_event, request_rerender};

@@ -4,6 +4,7 @@ pub(crate) mod component;
 pub mod css;
 pub(crate) mod dom_change;
 pub(crate) mod element;
+pub mod global_event;
 mod listener;
 
 use std::boxed::Box;
@@ -17,6 +18,7 @@ pub(crate) use listener::{RespoEventMark, RespoListenerFn};
 
 pub use component::RespoComponent;
 pub use element::RespoElement;
+pub use global_event::*;
 
 use crate::states_tree::{DynEq, RespoStateBranch, RespoUpdateState};
 
@@ -136,6 +138,7 @@ where
       name: name.into(),
       effects: Vec::new(),
       tree: Box::new(tree),
+      listeners: Vec::new(),
     })
   }
   /// wrap with a `Rc<T>` to enable memory reuse and skipping in diff

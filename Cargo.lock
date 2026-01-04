@@ -202,7 +202,7 @@ dependencies = [
 
 [[package]]
 name = "respo"
-version = "0.1.16"
+version = "0.1.17"
 dependencies = [
  "cirru_parser",
  "js-sys",

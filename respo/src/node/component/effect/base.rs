@@ -2,7 +2,6 @@
 
 use std::{any::Any, fmt::Debug};
 
-
 pub trait RespoEffectDynEq
 where
   Self: Debug + Any + 'static,

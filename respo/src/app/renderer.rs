@@ -282,26 +282,42 @@ where
   match node {
     RespoNode::Component(component) => {
       component_path.push(component.name.to_owned());
-      let result = (|| -> Result<usize, String> {
+      let result = {
         let mut hit = 0usize;
         for handler in &component.listeners {
           let ctx = GlobalEventCtx {
             dispatch,
             component_path: component_path.as_slice(),
           };
-          handler.call(event, &ctx)?;
-          hit += 1;
+          match handler.call(event, &ctx) {
+            Ok(_) => {
+              hit += 1;
+            }
+            Err(e) => {
+              error_1(&format!("global event handler error at {component_path:?}: {e}").into());
+            }
+          }
         }
-        hit += traverse_global_listeners(component.tree.as_ref(), event, dispatch, component_path)?;
+        match traverse_global_listeners(component.tree.as_ref(), event, dispatch, component_path) {
+          Ok(child_hit) => hit += child_hit,
+          Err(e) => {
+            error_1(&format!("traverse global listeners error: {e}").into());
+          }
+        }
         Ok(hit)
-      })();
+      };
       component_path.pop();
       result
     }
     RespoNode::Element(element) => {
       let mut hit = 0usize;
       for (_, child) in &element.children {
-        hit += traverse_global_listeners(child, event, dispatch, component_path)?;
+        match traverse_global_listeners(child, event, dispatch, component_path) {
+          Ok(child_hit) => hit += child_hit,
+          Err(e) => {
+            error_1(&format!("traverse global listeners error: {e}").into());
+          }
+        }
       }
       Ok(hit)
     }

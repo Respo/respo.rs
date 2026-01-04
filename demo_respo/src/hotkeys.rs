@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use respo::css::{respo_style, CssBorderStyle, CssColor, CssDisplay};
 use respo::states_tree::{RespoState, RespoStatesTree};
-use respo::{div, downcast_event, global_event_handler, request_rerender, span, DispatchFn, RespoComponent, RespoNode};
+use respo::{div, downcast_event, global_event_handler, request_rerender, span, static_styles, DispatchFn, RespoComponent, RespoNode};
 use respo_state_derive::RespoState;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{closure::Closure, JsCast};
@@ -79,24 +79,31 @@ pub fn comp_hotkey_demo(states: &RespoStatesTree) -> Result<RespoNode<ActionOp>,
   Ok(
     RespoComponent::named(
       "hotkey-demo",
-      div()
-        .style(
-          respo_style()
-            .padding(16)
-            .border(Some((1.0, CssBorderStyle::Dashed, CssColor::Hsl(0, 0, 73))))
-            .border_radius(8.0),
-        )
-        .elements([
-          span().inner_text("Global shortcut demo"),
-          span()
-            .style(respo_style().display(CssDisplay::Block).margin4(8, 0, 0, 0).font_size(14.0))
-            .inner_text(last_combo.as_str()),
-        ]),
+      div().class(style_hotkey_container()).elements([
+        span().inner_text("Global shortcut demo"),
+        span().class(style_hotkey_text()).inner_text(last_combo.as_str()),
+      ]),
     )
     .push_listener(listener)
     .to_node(),
   )
 }
+
+static_styles!(
+  style_hotkey_container,
+  (
+    "&",
+    respo_style()
+      .padding(16)
+      .border(Some((1.0, CssBorderStyle::Dashed, CssColor::Hsl(0, 0, 73))))
+      .border_radius(8.0),
+  )
+);
+
+static_styles!(
+  style_hotkey_text,
+  ("&", respo_style().display(CssDisplay::Block).margin4(8, 0, 0, 0).font_size(14.0),)
+);
 
 fn schedule_reset(dispatch: DispatchFn<ActionOp>, cursor: Vec<Rc<str>>) -> Result<(), String> {
   let window = window().ok_or_else(|| String::from("window is not available"))?;

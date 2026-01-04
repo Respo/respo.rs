@@ -4,6 +4,9 @@ use std::rc::Rc;
 
 use crate::node::DispatchFn;
 
+/// Type alias for a global event handler function.
+pub type GlobalEventHandlerFn<T> = dyn Fn(&dyn GlobalEvent, &GlobalEventCtx<T>) -> Result<(), String> + 'static;
+
 /// Trait implemented by events that can be broadcast via the global listeners pipeline.
 ///
 /// Implementors gain runtime type information via `as_any`, which enables listeners
@@ -49,7 +52,7 @@ pub struct GlobalEventHandler<T>
 where
   T: Debug + Clone,
 {
-  inner: Rc<dyn Fn(&dyn GlobalEvent, &GlobalEventCtx<T>) -> Result<(), String> + 'static>,
+  inner: Rc<GlobalEventHandlerFn<T>>,
 }
 
 impl<T> Clone for GlobalEventHandler<T>
